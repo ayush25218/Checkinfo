@@ -1,4 +1,4 @@
-import { AccountHeader, MemberShell } from "../_components/MemberPanel";
+import { AccountHeader, MemberShell } from "@/frontend/member/MemberPanel";
 
 const dashboardCards = [
   ["Profile status", "78%", "Complete media, category, and service tags"],

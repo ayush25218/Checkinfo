@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { categories as backendCategories, memberProfile } from "@/backend/checkinfo";
 
 export const imageSlots = [
   "Primary image",
@@ -8,16 +9,7 @@ export const imageSlots = [
   "Gallery image 5",
 ];
 
-export const categories = [
-  "Website Developer",
-  "Advertising",
-  "Animation Institute",
-  "Restaurants",
-  "Hotels",
-  "Education",
-  "Hospitals",
-  "Home Decor",
-];
+export const categories = backendCategories;
 
 const accountNav = [
   ["Dashboard", "/members/myaccount"],
@@ -52,10 +44,10 @@ export function MemberShell({
         </a>
 
         <div className="member-card">
-          <div className="avatar">AK</div>
-          <strong>Ayush Kumar</strong>
-          <span>Business owner account</span>
-          <small>demo@checkinfo.in</small>
+          <div className="avatar">{memberProfile.initials}</div>
+          <strong>{memberProfile.name}</strong>
+          <span>{memberProfile.role}</span>
+          <small>{memberProfile.email}</small>
         </div>
 
         <nav className="panel-nav" aria-label="Member panel navigation">

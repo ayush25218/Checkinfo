@@ -1,4 +1,4 @@
-import { AccountHeader, MemberShell, PanelSection } from "../_components/MemberPanel";
+import { AccountHeader, MemberShell, PanelSection } from "@/frontend/member/MemberPanel";
 
 const packages = [
   ["Free Listing", "₹0", "Basic profile, category listing, contact visibility"],

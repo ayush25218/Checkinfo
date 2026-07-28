@@ -5,7 +5,7 @@ import {
   imageSlots,
   MemberShell,
   PanelSection,
-} from "../_components/MemberPanel";
+} from "@/frontend/member/MemberPanel";
 
 export default function EditAccountPage() {
   return (

@@ -3,7 +3,7 @@ import {
   AdminPageBody,
   adminPages,
   AdminShell,
-} from "../_components/AdminPanel";
+} from "@/frontend/admin/AdminPanel";
 
 export default async function AdminPage({
   params,
@@ -17,7 +17,7 @@ export default async function AdminPage({
   return (
     <AdminShell active={active}>
       <AdminHeader page={page} />
-      <AdminPageBody page={page} />
+      <AdminPageBody page={page} resource={active} />
     </AdminShell>
   );
 }

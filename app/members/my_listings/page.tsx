@@ -1,4 +1,4 @@
-import { AccountHeader, MemberShell, PanelSection } from "../_components/MemberPanel";
+import { AccountHeader, MemberShell, PanelSection } from "@/frontend/member/MemberPanel";
 
 const listings = [
   ["Dreamz Institute", "Draft", "Education", "GTB Nagar, New Delhi", "Complete profile to publish"],

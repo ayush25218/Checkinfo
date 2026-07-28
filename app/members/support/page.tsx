@@ -1,4 +1,4 @@
-import { AccountHeader, Field, MemberShell, PanelSection } from "../_components/MemberPanel";
+import { AccountHeader, Field, MemberShell, PanelSection } from "@/frontend/member/MemberPanel";
 
 export default function SupportPage() {
   return (

@@ -3,7 +3,7 @@ import {
   Field,
   MemberShell,
   PanelSection,
-} from "../_components/MemberPanel";
+} from "@/frontend/member/MemberPanel";
 
 export default function ChangePasswordPage() {
   return (

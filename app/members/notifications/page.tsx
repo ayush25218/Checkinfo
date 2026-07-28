@@ -1,4 +1,4 @@
-import { AccountHeader, MemberShell, PanelSection } from "../_components/MemberPanel";
+import { AccountHeader, MemberShell, PanelSection } from "@/frontend/member/MemberPanel";
 
 const notifications = [
   ["Profile reminder", "Add images and keyword tags to improve listing quality.", "Today"],

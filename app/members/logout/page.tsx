@@ -1,4 +1,4 @@
-import { AccountHeader, MemberShell } from "../_components/MemberPanel";
+import { AccountHeader, MemberShell } from "@/frontend/member/MemberPanel";
 
 export default function LogoutPage() {
   return (
