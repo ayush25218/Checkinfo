@@ -19,9 +19,9 @@ export function AdminShell({
         </a>
         <nav aria-label="Admin navigation">
           {adminGroups.map(([group, items]) => (
-            <section className="admin-nav-group" key={group as string}>
-              <h2>{group as string}</h2>
-              {(items as string[][]).map(([label, slug]) => (
+            <section className="admin-nav-group" key={group}>
+              <h2>{group}</h2>
+              {items.map(([label, slug]) => (
                 <a
                   aria-current={active === slug ? "page" : undefined}
                   href={`/admin/${slug}`}
