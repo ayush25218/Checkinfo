@@ -1160,6 +1160,16 @@ cite {
   padding: 18px;
 }
 
+.admin-sidebar nav {
+  display: grid;
+  gap: 0;
+  align-items: stretch;
+  justify-content: stretch;
+  width: 100%;
+  color: #111111;
+  font-size: 12px;
+}
+
 .admin-logo {
   display: grid;
   gap: 4px;
@@ -1184,6 +1194,7 @@ cite {
   display: grid;
   gap: 4px;
   margin-top: 18px;
+  width: 100%;
 }
 
 .admin-nav-group h2 {
@@ -1193,10 +1204,12 @@ cite {
 }
 
 .admin-nav-group a {
+  display: block;
   border-radius: 4px;
   color: #222222;
   font-size: 12px;
   padding: 8px 10px;
+  width: 100%;
 }
 
 .admin-nav-group a:hover,
