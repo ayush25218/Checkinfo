@@ -21,9 +21,14 @@ export const categories = [
 
 const accountNav = [
   ["Dashboard", "/members/myaccount"],
+  ["Add Listing", "/members/add_listing"],
+  ["My Listings", "/members/my_listings"],
   ["Edit Detail", "/members/edit_account"],
   ["My Enquiries", "/members/enquirylisting"],
   ["Manage Reviews", "/members/reviewlisting"],
+  ["Featured Packages", "/members/packages"],
+  ["Notifications", "/members/notifications"],
+  ["Support", "/members/support"],
   ["Change Password", "/members/change_password"],
   ["Logout", "/members/logout"],
 ];

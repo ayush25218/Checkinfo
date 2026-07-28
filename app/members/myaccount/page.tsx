@@ -1,16 +1,21 @@
 import { AccountHeader, MemberShell } from "../_components/MemberPanel";
 
 const dashboardCards = [
-  ["Profile status", "Draft ready", "Complete contact and category details"],
+  ["Profile status", "78%", "Complete media, category, and service tags"],
+  ["Listings", "1 active", "Manage free and featured business ads"],
   ["Enquiries", "0 new", "Track buyer leads from your listing"],
-  ["Reviews", "0 pending", "Review customer feedback in one place"],
-  ["Security", "Password active", "Update account access anytime"],
+  ["Reach score", "Starter", "Upgrade package to boost search ranking"],
 ];
 
 const quickActions = [
+  ["Add Listing", "Create a new business profile with media, location, and services.", "/members/add_listing"],
+  ["My Listings", "View active, pending, draft, and featured ads in one place.", "/members/my_listings"],
   ["Edit Detail", "Update business profile, media, contact details, and category.", "/members/edit_account"],
   ["My Enquiries", "Filter and manage buyer enquiries received from listings.", "/members/enquirylisting"],
   ["Manage Reviews", "View customer feedback and moderate reviews.", "/members/reviewlisting"],
+  ["Featured Packages", "Compare visibility plans and promotional placements.", "/members/packages"],
+  ["Notifications", "See profile alerts, approval updates, and enquiry activity.", "/members/notifications"],
+  ["Support", "Contact Checkinfo care for listing or payment help.", "/members/support"],
   ["Change Password", "Keep account login secure with a fresh password.", "/members/change_password"],
 ];
 
@@ -20,8 +25,8 @@ export default function DashboardPage() {
       <AccountHeader
         action={<a className="primary-button" href="/#advertise">Post Your Ad</a>}
         eyebrow="Welcome to your account"
-        subtitle="Manage your business profile, enquiries, reviews, and password from separate pages."
-        title="What do you want to do today?"
+        subtitle="Manage listings, visibility, enquiries, reviews, support, and security from dedicated pages."
+        title="Your business command center"
       />
 
       <section className="dashboard-grid">

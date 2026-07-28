@@ -67,6 +67,13 @@ const stats = [
   ["9718-290-290", "business support"],
 ];
 
+const smartSearches = [
+  "best website developer near me",
+  "family restaurants open today",
+  "school admissions in Delhi",
+  "hotel with banquet hall",
+];
+
 function GoogleAdSlot({
   label,
   slot,
@@ -138,7 +145,7 @@ export default function Home() {
           </form>
 
           <div className="quick-tags" aria-label="Popular searches">
-            {["Travels", "Property", "Hotels", "Education", "Events"].map(
+            {["Travels", "Property", "Hotels", "Education", "Events", "Hospitals"].map(
               (item) => (
                 <a href="#featured" key={item}>
                   {item}
@@ -167,6 +174,18 @@ export default function Home() {
         </aside>
       </section>
 
+      <section className="smart-search-strip" aria-label="Smart search examples">
+        <div>
+          <p className="eyebrow">Smart Discovery</p>
+          <h2>Search like you think. Find like a pro.</h2>
+        </div>
+        <div className="search-marquee">
+          {smartSearches.map((search) => (
+            <span key={search}>{search}</span>
+          ))}
+        </div>
+      </section>
+
       <section className="stats-band" aria-label="Checkinfo summary">
         {stats.map(([value, label]) => (
           <div key={label}>
@@ -189,6 +208,7 @@ export default function Home() {
             <a className="category-tile" href="#featured" key={category}>
               <span>{String(index + 1).padStart(2, "0")}</span>
               <strong>{category}</strong>
+              <small>Explore verified providers</small>
             </a>
           ))}
         </div>
