@@ -118,6 +118,7 @@ export default function Home() {
         </nav>
         <div className="header-actions">
           <a className="ghost-button" href="/members/myaccount">My Panel</a>
+          <a className="ghost-button" href="/admin">Admin Panel</a>
           <a className="primary-button" href="#advertise">Post Your Ad</a>
         </div>
       </header>
