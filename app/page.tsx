@@ -110,7 +110,7 @@ export default function Home() {
           <a href="#contact">Contact</a>
         </nav>
         <div className="header-actions">
-          <a className="ghost-button" href="#login">Login</a>
+          <a className="ghost-button" href="/members/myaccount">My Panel</a>
           <a className="primary-button" href="#advertise">Post Your Ad</a>
         </div>
       </header>
