@@ -676,6 +676,12 @@ cite {
   color: #ffffff;
 }
 
+.panel-nav a.active,
+.panel-nav a[aria-current="page"] {
+  background: rgba(15, 107, 99, 0.95);
+  color: #ffffff;
+}
+
 .account-main {
   display: grid;
   gap: 20px;
@@ -746,6 +752,32 @@ cite {
 .dashboard-card p {
   margin: 0;
   line-height: 1.45;
+}
+
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.shortcut-card {
+  display: grid;
+  gap: 10px;
+  min-height: 140px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.shortcut-card strong {
+  color: var(--brand-dark);
+  font-size: 21px;
+}
+
+.shortcut-card span {
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .panel-section {
@@ -916,6 +948,7 @@ cite {
   }
 
   .dashboard-grid,
+  .shortcut-grid,
   .filter-grid,
   .upload-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -953,6 +986,7 @@ cite {
   .form-grid,
   .filter-grid,
   .upload-grid,
+  .shortcut-grid,
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
