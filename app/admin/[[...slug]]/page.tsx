@@ -4,6 +4,10 @@ import {
   adminPages,
   AdminShell,
 } from "@/frontend/admin/AdminPanel";
+import {
+  ManageBusinessModule,
+  ManageCategoriesModule,
+} from "@/frontend/admin/AdminWorkingModules";
 
 export default async function AdminPage({
   params,
@@ -17,7 +21,13 @@ export default async function AdminPage({
   return (
     <AdminShell active={active}>
       <AdminHeader page={page} />
-      <AdminPageBody page={page} resource={active} />
+      {active === "categories" ? (
+        <ManageCategoriesModule />
+      ) : active === "business" ? (
+        <ManageBusinessModule />
+      ) : (
+        <AdminPageBody page={page} resource={active} />
+      )}
     </AdminShell>
   );
 }
