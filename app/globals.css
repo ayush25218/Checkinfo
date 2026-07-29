@@ -1328,7 +1328,8 @@ cite {
 
 .admin-filters select,
 .admin-editor select,
-.admin-editor input {
+.admin-editor input,
+.admin-editor textarea {
   min-height: 34px;
   border: 1px solid #d9d9d9;
   border-radius: 4px;
@@ -1336,6 +1337,12 @@ cite {
   color: #111111;
   font-size: 12px;
   padding: 0 10px;
+}
+
+.admin-editor textarea {
+  min-height: 76px;
+  padding: 9px 10px;
+  resize: vertical;
 }
 
 .admin-actions {
@@ -1369,8 +1376,19 @@ cite {
 }
 
 .admin-editor-members,
-.admin-editor-location {
+.admin-editor-location,
+.admin-editor-subadmins,
+.admin-editor-settings,
+.admin-editor-password {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-editor-meta {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-wide-field {
+  grid-column: 1 / -1;
 }
 
 .admin-editor label {
@@ -1459,6 +1477,16 @@ cite {
   min-width: 980px;
 }
 
+.admin-real-table-meta .admin-real-row {
+  grid-template-columns: 1fr 1.3fr 1.3fr 1.6fr 150px;
+  min-width: 1080px;
+}
+
+.admin-real-table-subadmins .admin-real-row {
+  grid-template-columns: 80px 1.3fr 1fr 1fr 1fr 130px 110px 100px;
+  min-width: 1120px;
+}
+
 .admin-real-row:last-child {
   border-bottom: 0;
 }
@@ -1471,6 +1499,26 @@ cite {
   font-size: 12px;
   min-height: 42px;
   padding: 9px 10px;
+}
+
+.admin-real-row span:has(.admin-link-button) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.admin-settings-preview {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #eeeeee;
+  background: #fbfbfb;
+  color: #111111;
+  font-size: 12px;
+  padding: 12px;
+}
+
+.admin-settings-preview strong {
+  font-size: 14px;
 }
 
 .admin-real-row small {

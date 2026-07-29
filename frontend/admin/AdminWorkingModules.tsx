@@ -70,6 +70,36 @@ type LocationRecord = {
 
 type LocationAdminRecord = StateRecord | CityRecord | LocationRecord;
 
+type MetaRecord = {
+  id: string;
+  description: string;
+  keywords: string;
+  title: string;
+  url: string;
+};
+
+type SubadminRecord = {
+  id: string;
+  email: string;
+  name: string;
+  phone: string;
+  registeredAt: string;
+  status: "Active" | "Inactive";
+  username: string;
+};
+
+type AdminSettingsRecord = {
+  address: string;
+  analyticsId: string;
+  email: string;
+  facebook: string;
+  instagram: string;
+  mapEmbed: string;
+  phone: string;
+  webCode: string;
+  youtube: string;
+};
+
 const categorySeed: CategoryRecord[] = categories.map((name, index) => ({
   id: `cat-${index + 1}`,
   image: "Image",
@@ -146,6 +176,56 @@ const locationSeed: LocationRecord[] = [
   { id: "loc-2", city: "Mumbai", country: "India", name: "Andheri East", state: "Maharashtra", status: "Active" },
   { id: "loc-3", city: "Bengaluru", country: "India", name: "Residency Road", state: "Karnataka", status: "Active" },
 ];
+
+const metaSeed: MetaRecord[] = [
+  {
+    id: "meta-1",
+    description: "Find trusted local businesses and service providers on Checkinfo.",
+    keywords: "business directory, local search, india services",
+    title: "Checkinfo - India Business Directory",
+    url: "/",
+  },
+  {
+    id: "meta-2",
+    description: "Compare website developers, agencies, and digital partners near you.",
+    keywords: "website developer, digital marketing, web agency",
+    title: "Website Developer Listings",
+    url: "/category/website-developer",
+  },
+];
+
+const subadminSeed: SubadminRecord[] = [
+  {
+    id: "sub-1",
+    email: "admin1@example.com",
+    name: "Support Admin",
+    phone: "98XXXXXX10",
+    registeredAt: "23 Dec, 2024",
+    status: "Active",
+    username: "admin-one",
+  },
+  {
+    id: "sub-2",
+    email: "admin2@example.com",
+    name: "Content Admin",
+    phone: "78XXXXXX38",
+    registeredAt: "23 Dec, 2024",
+    status: "Active",
+    username: "admin-two",
+  },
+];
+
+const adminSettingsSeed: AdminSettingsRecord = {
+  address: "New Delhi, India",
+  analyticsId: "",
+  email: "info@checkinfo.in",
+  facebook: "",
+  instagram: "",
+  mapEmbed: "",
+  phone: "9718-290-290",
+  webCode: "",
+  youtube: "",
+};
 
 function readStored<T>(key: string, fallback: T) {
   if (typeof window === "undefined") return fallback;
@@ -935,6 +1015,278 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
             <span><button type="button" className="admin-link-button" onClick={() => editRecord(record)}>Edit</button></span>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+export function ManageMetaTagsModule() {
+  const [records, setRecords] = useState(() => readStored("checkinfo-admin-meta", metaSeed));
+  const [query, setQuery] = useState("");
+  const [editing, setEditing] = useState<MetaRecord | null>(null);
+  const [form, setForm] = useState({ description: "", keywords: "", title: "", url: "" });
+
+  const filtered = useMemo(
+    () => records.filter((record) => [record.url, record.title].join(" ").toLowerCase().includes(query.toLowerCase())),
+    [query, records],
+  );
+
+  function sync(next: MetaRecord[]) {
+    setRecords(next);
+    writeStored("checkinfo-admin-meta", next);
+  }
+
+  function resetForm() {
+    setEditing(null);
+    setForm({ description: "", keywords: "", title: "", url: "" });
+  }
+
+  function saveRecord() {
+    if (!form.url.trim() || !form.title.trim()) return;
+    const nextRecord: MetaRecord = {
+      id: editing?.id ?? `meta-${Date.now()}`,
+      description: form.description.trim(),
+      keywords: form.keywords.trim(),
+      title: form.title.trim(),
+      url: form.url.trim(),
+    };
+    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    resetForm();
+  }
+
+  function deleteRecord(id: string) {
+    sync(records.filter((record) => record.id !== id));
+    if (editing?.id === id) resetForm();
+  }
+
+  return (
+    <section className="admin-card">
+      <div className="admin-filters">
+        <label><span>URL</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="URL" /></label>
+        <label><span>Records Per Page</span><input value={filtered.length} readOnly /></label>
+        <button type="button" onClick={() => undefined}>Submit</button>
+      </div>
+
+      <div className="admin-editor admin-editor-meta">
+        <label><span>URL</span><input value={form.url} onChange={(event) => setForm({ ...form, url: event.target.value })} placeholder="/category/name" /></label>
+        <label><span>Meta Title</span><input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} /></label>
+        <label><span>Meta Keywords</span><input value={form.keywords} onChange={(event) => setForm({ ...form, keywords: event.target.value })} /></label>
+        <label className="admin-wide-field"><span>Meta Description</span><textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label>
+        <button type="button" onClick={saveRecord}>{editing ? "Update Meta" : "Add Meta"}</button>
+        {editing ? <button type="button" className="admin-light-button" onClick={resetForm}>Cancel</button> : null}
+      </div>
+
+      <div className="admin-real-table admin-real-table-meta">
+        <div className="admin-real-row admin-real-head">
+          <span>URL</span><span>Title</span><span>Keywords</span><span>Description</span><span>Action</span>
+        </div>
+        {filtered.map((record) => (
+          <div className="admin-real-row" key={record.id}>
+            <span>{record.url}</span><span>{record.title}</span><span>{record.keywords}</span><span>{record.description}</span>
+            <span>
+              <button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm(record); }}>Edit</button>
+              <button type="button" className="admin-link-button" onClick={() => deleteRecord(record.id)}>Delete</button>
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ManageSubadminsModule() {
+  const [records, setRecords] = useState(() => readStored("checkinfo-admin-subadmins", subadminSeed));
+  const [selected, setSelected] = useState<string[]>([]);
+  const [filters, setFilters] = useState({ keyword: "", status: "All" });
+  const [editing, setEditing] = useState<SubadminRecord | null>(null);
+  const [form, setForm] = useState({
+    email: "",
+    name: "",
+    phone: "",
+    registeredAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+    status: "Active" as "Active" | "Inactive",
+    username: "",
+  });
+
+  const filtered = useMemo(
+    () =>
+      records
+        .filter((record) => [record.email, record.username, record.name].join(" ").toLowerCase().includes(filters.keyword.toLowerCase()))
+        .filter((record) => filters.status === "All" || record.status === filters.status),
+    [filters, records],
+  );
+
+  function sync(next: SubadminRecord[]) {
+    setRecords(next);
+    writeStored("checkinfo-admin-subadmins", next);
+  }
+
+  function resetForm() {
+    setEditing(null);
+    setForm({
+      email: "",
+      name: "",
+      phone: "",
+      registeredAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+      status: "Active",
+      username: "",
+    });
+  }
+
+  function saveRecord() {
+    if (!form.email.trim() || !form.username.trim()) return;
+    const nextRecord: SubadminRecord = {
+      id: editing?.id ?? `sub-${Date.now()}`,
+      email: form.email.trim(),
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      registeredAt: form.registeredAt,
+      status: form.status,
+      username: form.username.trim(),
+    };
+    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    resetForm();
+  }
+
+  function bulkStatus(nextStatus: "Active" | "Inactive") {
+    sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
+    setSelected([]);
+  }
+
+  function deleteSelected() {
+    sync(records.filter((record) => !selected.includes(record.id)));
+    setSelected([]);
+  }
+
+  return (
+    <section className="admin-card">
+      <div className="admin-filters">
+        <label><span>Email, Username</span><input value={filters.keyword} onChange={(event) => setFilters({ ...filters, keyword: event.target.value })} /></label>
+        <label>
+          <span>Status</span>
+          <select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
+            <option>All</option><option>Active</option><option>Inactive</option>
+          </select>
+        </label>
+        <label><span>Records Per Page</span><input value={filtered.length} readOnly /></label>
+        <button type="button" onClick={() => undefined}>Submit</button>
+      </div>
+
+      <div className="admin-editor admin-editor-subadmins">
+        <label><span>Email</span><input value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
+        <label><span>Username</span><input value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} /></label>
+        <label><span>Name</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
+        <label><span>Phone</span><input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
+        <label><span>Registration Date</span><input value={form.registeredAt} onChange={(event) => setForm({ ...form, registeredAt: event.target.value })} /></label>
+        <label>
+          <span>Status</span>
+          <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as "Active" | "Inactive" })}>
+            <option>Active</option><option>Inactive</option>
+          </select>
+        </label>
+        <button type="button" onClick={saveRecord}>{editing ? "Update Sub Admin" : "Add Sub Admin"}</button>
+        {editing ? <button type="button" className="admin-light-button" onClick={resetForm}>Cancel</button> : null}
+      </div>
+
+      <div className="admin-actions">
+        <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Activate</button>
+        <button type="button" onClick={() => bulkStatus("Inactive")} disabled={!selected.length}>Deactivate</button>
+        <button type="button" onClick={deleteSelected} disabled={!selected.length}>Delete</button>
+      </div>
+
+      <div className="admin-real-table admin-real-table-subadmins">
+        <div className="admin-real-row admin-real-head">
+          <span>Select</span><span>Email</span><span>Username</span><span>Name</span><span>Phone</span><span>Registration Date</span><span>Status</span><span>Action</span>
+        </div>
+        {filtered.map((record) => (
+          <div className="admin-real-row" key={record.id}>
+            <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
+            <span>{record.email}</span><span>{record.username}</span><span>{record.name}</span><span>{record.phone}</span><span>{record.registeredAt}</span>
+            <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
+            <span><button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm(record); }}>Edit</button></span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ManageAdminSettingsModule() {
+  const [settings, setSettings] = useState(() => readStored("checkinfo-admin-settings", adminSettingsSeed));
+  const [saved, setSaved] = useState(false);
+
+  function update<K extends keyof AdminSettingsRecord>(key: K, value: AdminSettingsRecord[K]) {
+    setSaved(false);
+    setSettings({ ...settings, [key]: value });
+  }
+
+  function saveSettings() {
+    writeStored("checkinfo-admin-settings", settings);
+    setSaved(true);
+  }
+
+  return (
+    <section className="admin-card">
+      <div className="admin-editor admin-editor-settings">
+        <label><span>Admin Email</span><input value={settings.email} onChange={(event) => update("email", event.target.value)} /></label>
+        <label><span>Phone</span><input value={settings.phone} onChange={(event) => update("phone", event.target.value)} /></label>
+        <label><span>Address</span><input value={settings.address} onChange={(event) => update("address", event.target.value)} /></label>
+        <label><span>Google Analytics ID</span><input value={settings.analyticsId} onChange={(event) => update("analyticsId", event.target.value)} /></label>
+        <label><span>Facebook</span><input value={settings.facebook} onChange={(event) => update("facebook", event.target.value)} /></label>
+        <label><span>YouTube</span><input value={settings.youtube} onChange={(event) => update("youtube", event.target.value)} /></label>
+        <label><span>Instagram</span><input value={settings.instagram} onChange={(event) => update("instagram", event.target.value)} /></label>
+        <label className="admin-wide-field"><span>Map Embed Code</span><textarea value={settings.mapEmbed} onChange={(event) => update("mapEmbed", event.target.value)} /></label>
+        <label className="admin-wide-field"><span>Web Code / Header Script</span><textarea value={settings.webCode} onChange={(event) => update("webCode", event.target.value)} /></label>
+        <button type="button" onClick={saveSettings}>Update Info</button>
+      </div>
+
+      <div className="admin-settings-preview">
+        <strong>Current saved contact block</strong>
+        <span>{settings.email}</span>
+        <span>{settings.phone}</span>
+        <span>{settings.address}</span>
+        {saved ? <b className="admin-status admin-status-active">Saved</b> : <b className="admin-status admin-status-pending">Unsaved changes</b>}
+      </div>
+    </section>
+  );
+}
+
+export function ChangeAdminPasswordModule() {
+  const [form, setForm] = useState({ confirmPassword: "", newPassword: "", oldPassword: "" });
+  const [message, setMessage] = useState("Password has not been changed in this browser session.");
+
+  function updatePassword() {
+    if (!form.oldPassword || !form.newPassword || !form.confirmPassword) {
+      setMessage("All password fields are required.");
+      return;
+    }
+
+    if (form.newPassword.length < 8) {
+      setMessage("New password must be at least 8 characters.");
+      return;
+    }
+
+    if (form.newPassword !== form.confirmPassword) {
+      setMessage("New password and confirm password do not match.");
+      return;
+    }
+
+    writeStored("checkinfo-admin-password-updated", { updatedAt: new Date().toISOString() });
+    setForm({ confirmPassword: "", newPassword: "", oldPassword: "" });
+    setMessage("Password validation passed and update is queued. Connect real auth before production use.");
+  }
+
+  return (
+    <section className="admin-card">
+      <div className="admin-editor admin-editor-password">
+        <label><span>Old Password</span><input type="password" value={form.oldPassword} onChange={(event) => setForm({ ...form, oldPassword: event.target.value })} /></label>
+        <label><span>New Password</span><input type="password" value={form.newPassword} onChange={(event) => setForm({ ...form, newPassword: event.target.value })} /></label>
+        <label><span>Confirm Password</span><input type="password" value={form.confirmPassword} onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })} /></label>
+        <button type="button" onClick={updatePassword}>Update Info</button>
+      </div>
+      <div className="admin-settings-preview">
+        <strong>Password status</strong>
+        <span>{message}</span>
       </div>
     </section>
   );

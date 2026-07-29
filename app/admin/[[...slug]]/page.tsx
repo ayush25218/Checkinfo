@@ -5,13 +5,17 @@ import {
   AdminShell,
 } from "@/frontend/admin/AdminPanel";
 import {
+  ChangeAdminPasswordModule,
+  ManageAdminSettingsModule,
   ManageBusinessModule,
   ManageCategoriesModule,
   ManageCitiesModule,
   ManageLocationsModule,
   ManageMembersModule,
+  ManageMetaTagsModule,
   ManageNewsletterModule,
   ManageStatesModule,
+  ManageSubadminsModule,
 } from "@/frontend/admin/AdminWorkingModules";
 
 export default async function AdminPage({
@@ -34,6 +38,14 @@ export default async function AdminPage({
         <ManageMembersModule />
       ) : active === "newsletter" ? (
         <ManageNewsletterModule />
+      ) : active === "meta" ? (
+        <ManageMetaTagsModule />
+      ) : active === "subadmins" ? (
+        <ManageSubadminsModule />
+      ) : active === "settings" ? (
+        <ManageAdminSettingsModule />
+      ) : active === "admin-password" ? (
+        <ChangeAdminPasswordModule />
       ) : active === "states" ? (
         <ManageStatesModule />
       ) : active === "cities" ? (
