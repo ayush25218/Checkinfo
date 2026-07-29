@@ -1,4 +1,5 @@
 import { categories } from "@/backend/checkinfo";
+import { LocationSearchForm } from "./LocationSearchForm";
 
 const featuredAds = [
   {
@@ -120,10 +121,7 @@ export function HomePage() {
           <strong>Checkinfo</strong>
           <small>Check kiya kya?</small>
         </a>
-        <form className="check-top-search" action="/api/web/search" method="get">
-          <input name="q" placeholder="Search" />
-          <button type="submit">Search</button>
-        </form>
+        <LocationSearchForm className="check-top-search" compact />
         <nav aria-label="Primary navigation">
           <a href="/members/myaccount">My Profile</a>
           <a href="#categories">Business</a>
@@ -142,11 +140,7 @@ export function HomePage() {
             new listings, trending searches, customer care, and free business
             onboarding.
           </p>
-          <form className="check-hero-search" action="/api/web/search" method="get">
-            <input name="q" placeholder="What are you looking for?" />
-            <input name="location" placeholder="City or location" />
-            <button type="submit">Search</button>
-          </form>
+          <LocationSearchForm className="check-hero-search" />
         </div>
         <div className="check-hero-panel">
           <strong>Checkinfo</strong>
