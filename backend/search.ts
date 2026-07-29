@@ -163,9 +163,11 @@ async function fetchGooglePlaces(params: DirectorySearchParams) {
   });
 
   if (!response.ok) {
+    const errorPayload = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
+    const message = errorPayload?.error?.message ? ` ${errorPayload.error.message}` : "";
     return {
       places: [] as DirectorySearchResult[],
-      warning: `Google Places request failed with status ${response.status}.`,
+      warning: `Google Places request failed with status ${response.status}.${message}`,
     };
   }
 
