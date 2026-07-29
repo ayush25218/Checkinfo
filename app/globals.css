@@ -1368,6 +1368,11 @@ cite {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
+.admin-editor-members,
+.admin-editor-location {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .admin-editor label {
   display: grid;
   gap: 5px;
@@ -1427,6 +1432,31 @@ cite {
 .admin-real-table-business .admin-real-row {
   grid-template-columns: 80px 1.2fr 1.35fr 1.4fr 1.25fr 120px 100px;
   min-width: 1100px;
+}
+
+.admin-real-table-members .admin-real-row {
+  grid-template-columns: 80px 1fr 1fr 1.4fr 1fr 130px 110px 140px;
+  min-width: 1120px;
+}
+
+.admin-real-table-newsletter .admin-real-row {
+  grid-template-columns: 80px 1.6fr 1fr 1.4fr 130px 100px;
+  min-width: 920px;
+}
+
+.admin-real-table-states .admin-real-row {
+  grid-template-columns: 80px 1.5fr 1.1fr 120px 100px;
+  min-width: 760px;
+}
+
+.admin-real-table-cities .admin-real-row {
+  grid-template-columns: 80px 1.4fr 1.2fr 1fr 120px 100px;
+  min-width: 880px;
+}
+
+.admin-real-table-locations .admin-real-row {
+  grid-template-columns: 80px 1.4fr 1.2fr 1.2fr 1fr 120px 100px;
+  min-width: 980px;
 }
 
 .admin-real-row:last-child {
