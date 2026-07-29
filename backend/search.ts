@@ -1,4 +1,6 @@
-import { categories, listings, type Listing } from "./checkinfo";
+import { categories } from "./checkinfo";
+import { getAdminResource } from "./directoryStore";
+import type { MemberListing } from "./member";
 
 type PlaceLocation = {
   latitude: number;
@@ -69,8 +71,17 @@ function queryTokens(query = "") {
     .filter((token) => token.length > 2 && !["near", "best", "top", "the"].includes(token));
 }
 
-function listingMatches(listing: Listing, query = "", location = "") {
-  const haystack = normalizeText([listing.name, listing.type, listing.location, listing.category].join(" "));
+type SearchableListing = Partial<MemberListing> & {
+  badge?: string;
+  contact?: string;
+  details?: string;
+  ownerEmail?: string;
+  ownerId?: string;
+  ownerName?: string;
+};
+
+function listingMatches(listing: SearchableListing, query = "", location = "") {
+  const haystack = normalizeText([listing.name, listing.description, listing.keywords, listing.details, listing.location, listing.address, listing.category].join(" "));
   const tokens = queryTokens(query);
   const locationTokens = queryTokens(location);
 
@@ -80,29 +91,32 @@ function listingMatches(listing: Listing, query = "", location = "") {
   return hasQueryMatch && hasLocationMatch;
 }
 
-function listingToResult(listing: Listing, source: "sponsored" | "local"): DirectorySearchResult {
+function listingToResult(listing: SearchableListing, source: "sponsored" | "local"): DirectorySearchResult {
   return {
-    address: listing.location,
-    badge: listing.badge,
-    category: listing.category,
-    id: `${source}-${normalizeText(listing.name).replaceAll(" ", "-")}`,
-    name: listing.name,
-    rating: Number(listing.score),
+    address: listing.address || listing.location || "Address not available",
+    badge: listing.status === "Featured" ? "Featured" : "Verified",
+    category: listing.category ?? "Business",
+    id: `${source}-${normalizeText(listing.name || listing.id || "business").replaceAll(" ", "-")}`,
+    name: listing.name || "Business listing",
+    phone: listing.mobile || listing.contact,
     source,
     sponsored: source === "sponsored",
+    website: listing.website,
   };
 }
 
 function getSponsoredListings(query = "", location = "") {
-  return listings
-    .filter((listing) => listing.status === "Featured" || listing.badge === "Featured")
+  const business = (getAdminResource("business") ?? []) as SearchableListing[];
+  return business
+    .filter((listing) => listing.status === "Featured")
     .filter((listing) => listingMatches(listing, query, location))
     .map((listing) => listingToResult(listing, "sponsored"));
 }
 
 function getFallbackLocalListings(query = "", location = "") {
-  return listings
-    .filter((listing) => listing.status !== "Featured" && listing.badge !== "Featured")
+  const business = (getAdminResource("business") ?? []) as SearchableListing[];
+  return business
+    .filter((listing) => listing.status === "Active")
     .filter((listing) => listingMatches(listing, query, location))
     .map((listing) => listingToResult(listing, "local"));
 }

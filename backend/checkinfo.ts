@@ -34,79 +34,19 @@ export const categories = [
   "PG/Hostels",
 ];
 
-export const listings: Listing[] = [
-  {
-    badge: "Featured",
-    category: "Travel Agents",
-    location: "Dwarka Nagar, Visakhapatnam",
-    name: "Thomas Cook",
-    score: "4.8",
-    status: "Active",
-    type: "Money transfer, visa services, holiday services",
-  },
-  {
-    badge: "Verified",
-    category: "Travel Agents",
-    location: "Residency Road, Bengaluru",
-    name: "Travelyaari",
-    score: "4.6",
-    status: "Active",
-    type: "Travel agent, tour operator",
-  },
-  {
-    badge: "Popular",
-    category: "Education",
-    location: "GTB Nagar, New Delhi",
-    name: "Dreamz Institute",
-    score: "4.7",
-    status: "Draft",
-    type: "Coaching, fashion design, entrance exam training",
-  },
-  {
-    badge: "Trending",
-    category: "Advertising",
-    location: "Andheri East, Mumbai",
-    name: "Orbit Communication",
-    score: "4.5",
-    status: "Pending",
-    type: "SMS service provider",
-  },
-  {
-    badge: "New",
-    category: "Manufacturer",
-    location: "Naroda Road, Ahmedabad",
-    name: "Unnati Pumps Pvt Ltd.",
-    score: "4.4",
-    status: "Active",
-    type: "Submersible pumps, motors, borewell solutions",
-  },
-  {
-    badge: "Featured",
-    category: "Website Developer",
-    location: "Pimpri-Chinchwad, Maharashtra",
-    name: "Digital Krushna",
-    score: "4.9",
-    status: "Featured",
-    type: "Digital marketing agency",
-  },
-];
+export const listings: Listing[] = [];
 
 export const memberProfile = {
-  email: "demo@checkinfo.in",
-  initials: "AK",
-  name: "Ayush Kumar",
-  phone: "98XXXXXX10",
+  email: "",
+  initials: "BO",
+  name: "Business Owner",
+  phone: "",
   role: "Business owner account",
 };
 
-export const memberEnquiries = [
-  ["Demo User", "user@example.com", "Need website development contact", "Today"],
-  ["Business Lead", "lead@example.com", "Asked for package details", "Yesterday"],
-];
+export const memberEnquiries: string[][] = [];
 
-export const memberReviews = [
-  ["Satish Sharma", "Write information about our business thank you", "Active"],
-];
+export const memberReviews: string[][] = [];
 
 export const adminGroups = [
   ["Dashboard", [["Dashboard", "dashboard"]]],
@@ -159,10 +99,7 @@ function enquiryPage(title: string, subtitle: string): AdminPageConfig {
     columns: ["User Info", "Email", "Message Details", "Action"],
     filters: ["Name, Email", "Records Per Page"],
     group: "Other Management",
-    rows: [
-      ["Demo User", "user@example.com", "Customer message preview", "Send Reply"],
-      ["Business Lead", "lead@example.com", "Need listing details", "Send Reply"],
-    ],
+    rows: [],
     subtitle,
     title,
   };
@@ -219,10 +156,10 @@ export const adminPages: Record<string, AdminPageConfig> = {
     title: "Manage Business",
   },
   export: tablePage("Business Management", "Manage Export", "Export business and category data for reporting.", ["Export Type", "Format", "Action"], [["Business Export", "CSV", "Download"], ["Category Export", "CSV", "Download"]], ["Export Business", "Export Categories"]),
-  members: tablePage("Members Management", "Manage Members", "Control registered users, account status, mail, and switch-account workflow.", ["Name", "Username", "Registration Date", "Status", "Action"], [["Raghavendra", "member-demo", "28 Jul, 2026", "Active", "View / Send Mail"], ["Ayush Kumar", "business-owner", "Demo", "Active", "View Details"]], ["Registration", "Activate", "Deactivate", "Delete"], ["Name, Username", "Status", "Records Per Page"]),
-  newsletter: tablePage("Newsletter", "Manage Newsletter", "Search subscriber records and send newsletter campaigns.", ["Email", "Current Status", "Action"], [["subscriber1@example.com", "Subscribed", "Send"], ["subscriber2@example.com", "Subscribed", "Delete"]], ["Send", "Delete"], ["Email", "Records Per Page"]),
+  members: tablePage("Members Management", "Manage Members", "Control registered users, account status, mail, and switch-account workflow.", ["Name", "Username", "Registration Date", "Status", "Action"], [], ["Registration", "Activate", "Deactivate", "Delete"], ["Name, Username", "Status", "Records Per Page"]),
+  newsletter: tablePage("Newsletter", "Manage Newsletter", "Search subscriber records and send newsletter campaigns.", ["Email", "Current Status", "Action"], [], ["Send", "Delete"], ["Email", "Records Per Page"]),
   meta: tablePage("Manage Admin", "Manage Meta Tags", "Maintain SEO title, keywords, and descriptions for listing pages.", ["URL", "Meta Details", "Action"], [["/business/raghavendra", "Title, keyword, description", "Edit"], ["/category/website-developer", "Title, keyword, description", "Edit"]], undefined, ["URL", "Records Per Page"]),
-  subadmins: tablePage("Manage Admin", "Manage Subadmins", "Add, activate, deactivate, and delete admin team users.", ["Email", "Username", "Name", "Phone", "Registration Date", "Status", "Action"], [["admin1@example.com", "admin-one", "Support Admin", "98XXXXXX10", "23 Dec, 2024", "Active", "Edit"], ["admin2@example.com", "admin-two", "Content Admin", "78XXXXXX38", "23 Dec, 2024", "Active", "Edit"]], ["Add Sub Admin", "Activate", "Deactivate", "Delete"], ["Email, Username", "Status", "Records Per Page"]),
+  subadmins: tablePage("Manage Admin", "Manage Subadmins", "Add, activate, deactivate, and delete admin team users.", ["Email", "Username", "Name", "Phone", "Registration Date", "Status", "Action"], [], ["Add Sub Admin", "Activate", "Deactivate", "Delete"], ["Email, Username", "Status", "Records Per Page"]),
   settings: tablePage("Manage Admin", "Manage Admin Settings", "Update admin email, phone, address, social links, analytics, and web code.", ["Setting", "Value", "Action"], [["Contact Email", "info@checkinfo.in", "Update"], ["Phone", "9718-290-290", "Update"], ["Analytics", "Google analytics and web code", "Update"]], ["Update Info"], ["Admin Email", "Phone", "Address", "Google Analytics ID"]),
   "admin-password": { actions: ["Update Info"], filters: ["Old Password", "New Password", "Confirm Password"], group: "Manage Admin", subtitle: "Change administrator login password.", title: "Change Password" },
   states: tablePage("Locations Management", "Manage States", "Add, search, activate, and delete states.", ["State Name", "Country Name", "Status", "Action"], [["Delhi", "India", "Active", "Edit"], ["Maharashtra", "India", "Active", "Edit"]], ["Add State", "Activate", "Deactivate", "Delete"], ["State Name", "Status", "Records Per Page"]),
@@ -233,7 +170,7 @@ export const adminPages: Record<string, AdminPageConfig> = {
   "business-enquiries": enquiryPage("Manage Business Enquiry", "Buyer enquiries generated from business detail pages."),
   banners: tablePage("Other Management", "Manage Banners", "Control banner positions, images, and active status.", ["Banner Position", "Banner Picture", "Current Status", "Action"], [["Home Page Middle Small", "Image", "Active", "Edit"], ["Home Page Middle Big", "Image", "Active", "Edit"]], ["Add Banner", "Activate", "Deactivate", "Delete"], ["Banner Position", "Records Per Page"]),
   "header-images": tablePage("Other Management", "Manage Header Images", "Manage top header images and banner copy.", ["Header Image", "Line One", "Line Two", "Status", "Action"], [["Image", "Search any Business Details here", "Local Search Engine", "Active", "View Actual Image"]], ["Add Header Image", "Activate", "Deactivate", "Delete"], ["Status", "Records Per Page"]),
-  testimonials: tablePage("Other Management", "Manage Testimonials", "Publish, edit, activate, and delete client testimonials.", ["Poster", "Description", "Current Status", "Action"], [["Satish", "Write information about our business thank you", "Active", "Edit"], ["Test", "Demo testimonial", "Active", "Edit"]], ["Post Testimonial", "Activate", "Deactivate", "Delete"], ["Name", "Records Per Page"]),
+  testimonials: tablePage("Other Management", "Manage Testimonials", "Publish, edit, activate, and delete client testimonials.", ["Poster", "Description", "Current Status", "Action"], [], ["Post Testimonial", "Activate", "Deactivate", "Delete"], ["Name", "Records Per Page"]),
   faqs: tablePage("Other Management", "Manage FAQs", "Maintain questions, answers, status, and display order.", ["Question / Answer", "Display Order", "Current Status", "Action"], [["How to buy?", "18", "Active", "View"], ["How to list business?", "19", "Active", "View"]], ["Activate", "Deactivate", "Update Order", "Delete"], ["Question", "Records Per Page"]),
   "career-enquiries": enquiryPage("Manage Career Enquiry", "Career applications, resume links, and reply actions."),
   "advertise-enquiries": { ...enquiryPage("Manage Advertise Enquiry", "Advertising requests with banner upload and message details."), columns: ["User Info", "Email", "Banner Picture", "Message Details", "Action"] },

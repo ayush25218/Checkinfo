@@ -63,53 +63,13 @@ type SupportTicket = {
   status: "Open" | "Resolved";
 };
 
-const listingSeed: MemberListing[] = [
-  {
-    id: "list-1",
-    address: "GTB Nagar, New Delhi",
-    category: "Education",
-    contactPerson: "Ayush Kumar",
-    description: "Coaching and institute listing draft.",
-    email: "demo@checkinfo.in",
-    keywords: "coaching, education, training",
-    location: "GTB Nagar",
-    mobile: "98XXXXXX10",
-    name: "Dreamz Institute",
-    status: "Draft",
-    website: "",
-    youtube: "",
-  },
-  {
-    id: "list-2",
-    address: "Bhagalpur, Bihar",
-    category: "Website Developer",
-    contactPerson: "Ayush Kumar",
-    description: "Website development and digital services.",
-    email: "demo@checkinfo.in",
-    keywords: "website, app, seo",
-    location: "Bhagalpur",
-    mobile: "98XXXXXX10",
-    name: "Ayush Digital Services",
-    status: "Pending",
-    website: "https://example.com",
-    youtube: "",
-  },
-];
+const listingSeed: MemberListing[] = [];
 
-const enquirySeed: MemberEnquiry[] = [
-  { id: "enq-1", contact: "98XXXXXX22", date: "Today", email: "buyer@example.com", message: "Need website development quotation.", name: "Business Lead", status: "New" },
-  { id: "enq-2", contact: "88XXXXXX11", date: "Yesterday", email: "demo-user@example.com", message: "Please share package details.", name: "Demo User", status: "Read" },
-];
+const enquirySeed: MemberEnquiry[] = [];
 
-const reviewSeed: MemberReview[] = [
-  { id: "rev-1", author: "Satish Sharma", message: "Write information about our business thank you", rating: 5, status: "Published" },
-  { id: "rev-2", author: "Demo Customer", message: "Good response and clear listing details.", rating: 4, status: "Pending" },
-];
+const reviewSeed: MemberReview[] = [];
 
-const notificationSeed: NotificationRecord[] = [
-  { id: "not-1", text: "Add images and keyword tags to improve listing quality.", time: "Today", title: "Profile reminder", unread: true },
-  { id: "not-2", text: "Featured Boost can move your ad above regular listings.", time: "Yesterday", title: "Package tip", unread: false },
-];
+const notificationSeed: NotificationRecord[] = [];
 
 const packageSeed = [
   ["Free Listing", "Rs 0", "Basic profile, category listing, contact visibility"],
@@ -131,19 +91,33 @@ function writeStored<T>(key: string, value: T) {
   if (typeof window !== "undefined") window.localStorage.setItem(key, JSON.stringify(value));
 }
 
+function getMemberId() {
+  if (typeof window === "undefined") return "member-default";
+  const urlMemberId = new URLSearchParams(window.location.search).get("memberId");
+  const stored = window.localStorage.getItem("checkinfo-member-id");
+  const memberId = urlMemberId || stored || `member-${crypto.randomUUID()}`;
+  window.localStorage.setItem("checkinfo-member-id", memberId);
+  document.cookie = `checkinfo_member_id=${encodeURIComponent(memberId)}; path=/; max-age=31536000; samesite=lax`;
+  return memberId;
+}
+
+function memberStorageKey(key: string) {
+  return `${getMemberId()}-${key}`;
+}
+
 function postMemberAction(resource: string, payload: Record<string, unknown>) {
   return fetch(`/api/member/${resource}`, {
     body: JSON.stringify(payload),
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", "x-checkinfo-member-id": getMemberId() },
     method: "POST",
   }).catch(() => undefined);
 }
 
 function useStoredState<T>(key: string, fallback: T) {
-  const [value, setValue] = useState(() => readStored(key, fallback));
+  const [value, setValue] = useState(() => readStored(memberStorageKey(key), fallback));
   function sync(next: T) {
     setValue(next);
-    writeStored(key, next);
+    writeStored(memberStorageKey(key), next);
   }
   return [value, sync] as const;
 }

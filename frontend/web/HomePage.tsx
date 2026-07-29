@@ -1,46 +1,6 @@
 import { categories } from "@/backend/checkinfo";
 import { LocationSearchForm } from "./LocationSearchForm";
 
-const featuredAds = [
-  {
-    category: "Travel agent, tour operator",
-    location: "Residency Road, Bengaluru",
-    name: "Travelyaari",
-    score: "0 / 5",
-    tone: "red",
-  },
-  {
-    category: "coaching, institute, coaching institute",
-    location: "Near Samrat Restaurant and PNB, GTB Nagar",
-    name: "Dreamz Institute",
-    score: "0 / 5",
-    tone: "violet",
-  },
-  {
-    category: "SMS service provider",
-    location: "Technopolis Knowledge Park, Andheri East, Mumbai",
-    name: "Orbit Communication",
-    score: "0 / 5",
-    tone: "blue",
-  },
-];
-
-const newAds = [
-  ["Zoo Culture Gym & Spa", "Gym in Panchkula", "SCO: 411-412, Sector 8, Panchkula, Haryana 134112"],
-  ["Hotel Sterling Inn Bangalore", "Hotel Sterling Inn Bangalore", "48,49 2nd Cross Chandramouleshwara Layout, Bengaluru"],
-  ["ARN Packers and Movers Surat", "packers and movers in Surat", "Raj Corner Shopping Centre, Pal Rd, Adajan, Surat"],
-  ["Digital Marketing Agency in", "Digital marketing agency", "Kolkata"],
-];
-
-const trendingAds = [
-  ["Sureshchandra Rasiklal Shroff", "No. 309, Vrundavan Shopping Centre, Ratan Pole Ahmedabad"],
-  ["Visishta The Unique Play School k", "15th Main, V-Block, H.B.R. Layout, Banaswadi Bangalore"],
-  ["We Care i", "No. 1568, 3rd Floor, Outer Ring Road, H.S.R. Layout Bangalore"],
-  ["Little Champs Play School", "B Block, Gurudware Gali No.13, Bhajanpura Delhi"],
-  ["Viha Playschool & Daycare", "Cherrydale layout, Whitefield Bangalore"],
-  ["Smart Kidz oi", "House No. 843/8/U/30, Uppal Hyderabad"],
-];
-
 const footerLinks = {
   info: ["How to buy", "FAQs", "Career", "Privacy Policy", "Legal Disclaimer", "Terms And Conditions", "Refer to Friend"],
   quick: ["Home", "About Us", "Business", "Advertise with Us", "Testimonials", "Support", "Contact Us", "Sitemap"],
@@ -68,47 +28,6 @@ function CategoryIcon({ label, index }: { label: string; index: number }) {
     <span className="check-category-icon" aria-hidden="true">
       {label.split(" ").map((word) => word[0]).join("").slice(0, 2) || String(index + 1)}
     </span>
-  );
-}
-
-function AdCard({
-  address,
-  category,
-  name,
-  tone = "plain",
-}: {
-  address: string;
-  category: string;
-  name: string;
-  tone?: string;
-}) {
-  return (
-    <article className="check-ad-card">
-      <div className={`check-ad-image ${tone}`}>
-        <span>{name.slice(0, 2).toUpperCase()}</span>
-        <b>0 / 5</b>
-      </div>
-      <small>{category}</small>
-      <h3>{name}</h3>
-      <p>{address}</p>
-      <a href="#contact">View Detail</a>
-    </article>
-  );
-}
-
-function TrendingCard({ address, name }: { address: string; name: string }) {
-  return (
-    <article className="check-trending-card">
-      <div className="check-no-image">
-        <span>No Image</span>
-        <b>0 / 5</b>
-      </div>
-      <div>
-        <h3>{name}</h3>
-        <p>{address}</p>
-        <a href="#contact">View Detail</a>
-      </div>
-    </article>
   );
 }
 
@@ -176,15 +95,10 @@ export function HomePage() {
           <a href="/members/add_listing">View More</a>
         </div>
         <div className="check-card-row">
-          {featuredAds.map((ad) => (
-            <AdCard
-              address={ad.location}
-              category={ad.category}
-              key={ad.name}
-              name={ad.name}
-              tone={ad.tone}
-            />
-          ))}
+          <article className="check-empty-listing">
+            <strong>No sponsored listings published yet</strong>
+            <span>Approved paid listings from admin will appear here.</span>
+          </article>
         </div>
       </section>
 
@@ -194,9 +108,10 @@ export function HomePage() {
           <p>Freshly submitted business profiles, ready for discovery and enquiries.</p>
         </div>
         <div className="check-new-grid">
-          {newAds.map(([name, category, address]) => (
-            <AdCard address={address} category={category} key={name} name={name} />
-          ))}
+          <article className="check-empty-listing">
+            <strong>No new listings published yet</strong>
+            <span>User submitted listings will show after admin approval.</span>
+          </article>
         </div>
         <a className="check-more-button" href="/members/add_listing">View More</a>
       </section>
@@ -211,9 +126,10 @@ export function HomePage() {
           </p>
         </div>
         <div className="check-trending-grid">
-          {trendingAds.map(([name, address]) => (
-            <TrendingCard address={address} key={name} name={name} />
-          ))}
+          <article className="check-empty-listing">
+            <strong>No trending listings yet</strong>
+            <span>Trending placement will be calculated from real search and enquiry activity.</span>
+          </article>
         </div>
       </section>
 

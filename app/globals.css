@@ -1067,6 +1067,27 @@ cite {
   box-shadow: 0 26px 52px rgba(7, 21, 47, 0.13);
 }
 
+.check-empty-listing {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 240px;
+  grid-column: 1 / -1;
+  border: 1px dashed var(--check-line);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(19, 73, 78, 0.06), rgba(29, 101, 216, 0.06)),
+    #ffffff;
+  color: #4b5563;
+  padding: 24px;
+  text-align: center;
+}
+
+.check-empty-listing strong {
+  color: var(--check-teal);
+  font-size: clamp(20px, 3vw, 28px);
+}
+
 .check-ad-image {
   position: relative;
   display: grid;

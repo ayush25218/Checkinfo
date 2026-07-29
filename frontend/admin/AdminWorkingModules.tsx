@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { categories, listings } from "@/backend/checkinfo";
+import { useEffect, useMemo, useState } from "react";
+import { categories } from "@/backend/checkinfo";
 
 type Status = "Active" | "Inactive" | "Pending" | "Draft" | "Featured";
 
@@ -23,6 +23,9 @@ type BusinessRecord = {
   contact: string;
   details: string;
   name: string;
+  ownerEmail?: string;
+  ownerId?: string;
+  ownerName?: string;
   status: Status;
 };
 
@@ -154,54 +157,11 @@ const categorySeed: CategoryRecord[] = categories.map((name, index) => ({
   homeTop: index < 4,
 }));
 
-const businessSeed: BusinessRecord[] = listings.map((listing, index) => ({
-  id: `biz-${index + 1}`,
-  address: listing.location,
-  badge: listing.badge,
-  category: listing.category,
-  contact: listing.type,
-  details: listing.type,
-  name: listing.name,
-  status: listing.status as Status,
-}));
+const businessSeed: BusinessRecord[] = [];
 
-const memberSeed: MemberRecord[] = [
-  {
-    id: "mem-1",
-    email: "raghavendra@example.com",
-    name: "Raghavendra",
-    phone: "98XXXXXX39",
-    registeredAt: "28 Jul, 2026",
-    status: "Active",
-    username: "member-demo",
-  },
-  {
-    id: "mem-2",
-    email: "ayush@example.com",
-    name: "Ayush Kumar",
-    phone: "98XXXXXX10",
-    registeredAt: "Demo",
-    status: "Active",
-    username: "business-owner",
-  },
-];
+const memberSeed: MemberRecord[] = [];
 
-const newsletterSeed: NewsletterRecord[] = [
-  {
-    id: "news-1",
-    email: "subscriber1@example.com",
-    joinedAt: "28 Jul, 2026",
-    lastSent: "Not sent",
-    status: "Subscribed",
-  },
-  {
-    id: "news-2",
-    email: "subscriber2@example.com",
-    joinedAt: "26 Jul, 2026",
-    lastSent: "Welcome campaign",
-    status: "Subscribed",
-  },
-];
+const newsletterSeed: NewsletterRecord[] = [];
 
 const stateSeed: StateRecord[] = [
   { id: "state-1", country: "India", name: "Delhi", status: "Active" },
@@ -238,26 +198,7 @@ const metaSeed: MetaRecord[] = [
   },
 ];
 
-const subadminSeed: SubadminRecord[] = [
-  {
-    id: "sub-1",
-    email: "admin1@example.com",
-    name: "Support Admin",
-    phone: "98XXXXXX10",
-    registeredAt: "23 Dec, 2024",
-    status: "Active",
-    username: "admin-one",
-  },
-  {
-    id: "sub-2",
-    email: "admin2@example.com",
-    name: "Content Admin",
-    phone: "78XXXXXX38",
-    registeredAt: "23 Dec, 2024",
-    status: "Active",
-    username: "admin-two",
-  },
-];
+const subadminSeed: SubadminRecord[] = [];
 
 const adminSettingsSeed: AdminSettingsRecord = {
   address: "New Delhi, India",
@@ -277,12 +218,7 @@ const staticPageSeed: StaticPageRecord[] = [
   { id: "page-3", content: "Terms and conditions content goes here.", slug: "terms", status: "Active", title: "Terms & Conditions" },
 ];
 
-const enquirySeed: EnquiryRecord[] = [
-  { id: "enq-1", email: "visitor@example.com", message: "Need support contact details.", name: "Demo User", phone: "98XXXXXX10", receivedAt: "Today", status: "New", type: "Contact" },
-  { id: "enq-2", email: "buyer@example.com", message: "Need website developer quotation.", name: "Business Lead", phone: "88XXXXXX22", receivedAt: "Yesterday", status: "New", type: "Business" },
-  { id: "enq-3", email: "candidate@example.com", message: "I want to apply for content role.", name: "Career Candidate", phone: "77XXXXXX33", receivedAt: "26 Jul, 2026", status: "New", type: "Career" },
-  { id: "enq-4", email: "brand@example.com", message: "Need homepage banner advertisement.", name: "Advertiser", phone: "99XXXXXX44", receivedAt: "25 Jul, 2026", status: "New", type: "Advertise" },
-];
+const enquirySeed: EnquiryRecord[] = [];
 
 const bannerSeed: MediaRecord[] = [
   { id: "ban-1", image: "home-middle-small.jpg", lineOne: "Featured local businesses", lineTwo: "Promote your brand", position: "Home Page Middle Small", status: "Active" },
@@ -293,10 +229,7 @@ const headerImageSeed: MediaRecord[] = [
   { id: "head-1", image: "header-search.jpg", lineOne: "Search any Business Details here", lineTwo: "Local Search Engine", position: "Website Header", status: "Active" },
 ];
 
-const testimonialSeed: TestimonialRecord[] = [
-  { id: "test-1", description: "Write information about our business thank you", name: "Satish Sharma", order: 10, status: "Active" },
-  { id: "test-2", description: "Checkinfo helped customers find us quickly.", name: "Demo Business", order: 20, status: "Active" },
-];
+const testimonialSeed: TestimonialRecord[] = [];
 
 const faqSeed: FaqRecord[] = [
   { answer: "Search by service or city and open the business listing.", id: "faq-1", order: 10, question: "How to find a business?", status: "Active" },
@@ -322,6 +255,29 @@ function writeStored<T>(key: string, value: T) {
 
 function toggleSelection(selected: string[], id: string, checked: boolean) {
   return checked ? [...selected, id] : selected.filter((selectedId) => selectedId !== id);
+}
+
+async function getAdminData<T>(resource: string, fallback: T): Promise<T> {
+  try {
+    const response = await fetch(`/api/admin/${resource}`, { cache: "no-store" });
+    const payload = await response.json() as { data?: T };
+    return payload.data ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+async function postAdminAction(resource: string, payload: Record<string, unknown>) {
+  try {
+    const response = await fetch(`/api/admin/${resource}`, {
+      body: JSON.stringify(payload),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+    return await response.json() as { data?: { business?: BusinessRecord[]; members?: MemberRecord[] } };
+  } catch {
+    return {};
+  }
 }
 
 export function ManageCategoriesModule() {
@@ -500,9 +456,7 @@ export function ManageCategoriesModule() {
 }
 
 export function ManageBusinessModule() {
-  const [records, setRecords] = useState(() =>
-    readStored("checkinfo-admin-business", businessSeed),
-  );
+  const [records, setRecords] = useState<BusinessRecord[]>(businessSeed);
   const [selected, setSelected] = useState<string[]>([]);
   const [filters, setFilters] = useState({ category: "All", name: "", status: "All", type: "" });
   const [editing, setEditing] = useState<BusinessRecord | null>(null);
@@ -524,9 +478,12 @@ export function ManageBusinessModule() {
       .filter((record) => filters.status === "All" || record.status === filters.status);
   }, [filters, records]);
 
+  useEffect(() => {
+    void getAdminData<BusinessRecord[]>("business", businessSeed).then(setRecords);
+  }, []);
+
   function sync(next: BusinessRecord[]) {
     setRecords(next);
-    writeStored("checkinfo-admin-business", next);
   }
 
   function resetForm() {
@@ -579,6 +536,10 @@ export function ManageBusinessModule() {
 
   function bulkStatus(nextStatus: Status) {
     sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
+    selected.forEach((id) => {
+      const record = records.find((item) => item.id === id);
+      if (record?.ownerId) void postAdminAction("business", { action: nextStatus, id: record.id, ownerId: record.ownerId });
+    });
     setSelected([]);
   }
 
@@ -685,7 +646,7 @@ export function ManageBusinessModule() {
         {filtered.map((record) => (
           <div className="admin-real-row" key={record.id}>
             <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
-            <span>{record.name}<small>{record.category}</small></span>
+            <span>{record.name}<small>{record.category}{record.ownerName ? ` / ${record.ownerName}` : ""}</small></span>
             <span>{record.address}</span>
             <span>{record.contact}</span>
             <span>{record.badge} / {record.details}</span>
@@ -699,7 +660,7 @@ export function ManageBusinessModule() {
 }
 
 export function ManageMembersModule() {
-  const [records, setRecords] = useState(() => readStored("checkinfo-admin-members", memberSeed));
+  const [records, setRecords] = useState<MemberRecord[]>(memberSeed);
   const [selected, setSelected] = useState<string[]>([]);
   const [filters, setFilters] = useState({ keyword: "", status: "All" });
   const [editing, setEditing] = useState<MemberRecord | null>(null);
@@ -722,9 +683,12 @@ export function ManageMembersModule() {
     [filters, records],
   );
 
+  useEffect(() => {
+    void getAdminData<MemberRecord[]>("members", memberSeed).then(setRecords);
+  }, []);
+
   function sync(next: MemberRecord[]) {
     setRecords(next);
-    writeStored("checkinfo-admin-members", next);
   }
 
   function resetForm() {
@@ -763,6 +727,7 @@ export function ManageMembersModule() {
 
   function bulkStatus(nextStatus: "Active" | "Inactive") {
     sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
+    selected.forEach((id) => void postAdminAction("members", { action: nextStatus, id }));
     setSelected([]);
   }
 
