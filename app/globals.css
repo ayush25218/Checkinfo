@@ -1065,6 +1065,83 @@ cite {
   color: #08715f;
 }
 
+.status-pill.active,
+.status-pill.published {
+  background: #e7fbf6;
+  color: #08715f;
+}
+
+.status-pill.hidden,
+.status-pill.closed {
+  background: #edf1f7;
+  color: #526070;
+}
+
+.status-pill.read {
+  background: #eef5f7;
+  color: #315165;
+}
+
+.member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.member-actions button,
+.row-actions button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--brand);
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 8px 12px;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.row-actions button:last-child {
+  background: var(--brand-dark);
+}
+
+.member-notice {
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f6fbfb;
+  color: var(--brand-dark);
+  font-weight: 800;
+  padding: 12px 14px;
+}
+
+.member-filter {
+  margin-bottom: 14px;
+}
+
+.data-row small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.member-table-enquiries .data-row,
+.member-table-reviews .data-row {
+  grid-template-columns: 1fr 1fr 0.8fr 1.4fr 1fr;
+}
+
+.member-table-support .data-row {
+  grid-template-columns: 1fr 1fr 1.6fr 0.7fr;
+}
+
 .package-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -1,8 +1,8 @@
 import {
   createResponse,
   formDataToObject,
-  getMemberResource,
 } from "@/backend/checkinfo";
+import { getMemberState, handleMemberAction } from "@/backend/member";
 
 type RouteContext = {
   params: Promise<{ resource?: string[] }>;
@@ -13,7 +13,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const active = resource?.[0] ?? "dashboard";
 
   return Response.json({
-    data: getMemberResource(active),
+    data: getMemberState(active),
     ok: true,
     resource: active,
   });
@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   return Response.json(
     createResponse("Member request processed", {
-      payload,
+      data: handleMemberAction(active, payload),
       resource: active,
     }),
   );
