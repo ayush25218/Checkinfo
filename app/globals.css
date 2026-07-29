@@ -11,9 +11,11 @@
   --accent: #d59b2f;
   --soft: #e9f4f2;
   --glow: rgba(34, 211, 238, 0.22);
-  --check-blue: #1551c5;
-  --check-blue-2: #1f6fff;
-  --check-navy: #07152f;
+  --check-blue: #1d65d8;
+  --check-blue-2: #2f75e8;
+  --check-teal: #13494e;
+  --check-teal-2: #1d776b;
+  --check-navy: #071225;
   --check-ink: #0b1220;
   --check-surface: #f7faff;
   --check-line: #dbe7fb;
@@ -41,7 +43,7 @@ body {
     linear-gradient(180deg, rgba(246, 248, 251, 0.92), rgba(232, 240, 248, 0.92)),
     repeating-linear-gradient(90deg, rgba(15, 107, 99, 0.04) 0 1px, transparent 1px 96px);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, "Segoe UI", Roboto, Arial, Helvetica, sans-serif;
 }
 
 a {
@@ -637,7 +639,9 @@ nav {
   grid-template-columns: minmax(0, 0.9fr) minmax(300px, 0.55fr);
   gap: clamp(24px, 4vw, 54px);
   align-items: center;
-  background: var(--brand-dark);
+  background:
+    radial-gradient(circle at 85% 18%, rgba(29, 119, 107, 0.24), transparent 26%),
+    linear-gradient(135deg, var(--check-teal), #103f45);
   color: #ffffff;
 }
 
@@ -660,7 +664,8 @@ nav {
 .lead-form {
   padding: 18px;
   border-radius: 8px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 60px rgba(5, 14, 30, 0.22);
 }
 
 .lead-form input,
@@ -736,8 +741,8 @@ cite {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(circle at 16% 0%, rgba(31, 111, 255, 0.13), transparent 30%),
-    radial-gradient(circle at 88% 12%, rgba(21, 81, 197, 0.12), transparent 28%),
+    radial-gradient(circle at 16% 0%, rgba(19, 73, 78, 0.12), transparent 30%),
+    radial-gradient(circle at 88% 12%, rgba(29, 101, 216, 0.1), transparent 28%),
     linear-gradient(180deg, #ffffff 0%, var(--check-surface) 46%, #ffffff 100%);
   color: var(--check-ink);
 }
@@ -750,7 +755,7 @@ cite {
   pointer-events: none;
   background-image:
     linear-gradient(rgba(21, 81, 197, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(21, 81, 197, 0.035) 1px, transparent 1px);
+    linear-gradient(90deg, rgba(19, 73, 78, 0.035) 1px, transparent 1px);
   background-size: 54px 54px;
   mask-image: linear-gradient(180deg, #000, transparent 78%);
 }
@@ -835,14 +840,14 @@ cite {
   min-height: 42px;
   border: 0;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--check-blue), var(--check-blue-2));
+  background: linear-gradient(135deg, var(--check-teal), var(--check-teal-2));
   color: #ffffff;
   cursor: pointer;
   font-size: 14px;
   font-weight: 900;
   padding: 10px 18px;
   text-transform: uppercase;
-  box-shadow: 0 16px 34px var(--check-glow);
+  box-shadow: 0 16px 34px rgba(19, 73, 78, 0.24);
   transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
 }
 
@@ -854,7 +859,7 @@ cite {
 .check-hero-panel a:hover {
   transform: translateY(-2px);
   filter: saturate(1.08);
-  box-shadow: 0 22px 44px var(--check-glow);
+  box-shadow: 0 22px 44px rgba(19, 73, 78, 0.28);
 }
 
 .check-post-button {
@@ -874,7 +879,7 @@ cite {
   align-items: center;
   padding: clamp(48px, 7vw, 86px) clamp(18px, 4vw, 64px);
   background:
-    linear-gradient(135deg, rgba(3, 12, 31, 0.96), rgba(7, 21, 47, 0.9) 48%, rgba(21, 81, 197, 0.74)),
+    linear-gradient(135deg, rgba(5, 14, 30, 0.96), rgba(19, 73, 78, 0.96) 54%, rgba(29, 119, 107, 0.82)),
     url("https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1800&q=80");
   background-position: center;
   background-size: cover;
@@ -887,7 +892,7 @@ cite {
   inset: -40% -10%;
   pointer-events: none;
   background:
-    radial-gradient(circle at 72% 28%, rgba(31, 111, 255, 0.34), transparent 24%),
+    radial-gradient(circle at 72% 28%, rgba(29, 119, 107, 0.34), transparent 24%),
     linear-gradient(100deg, transparent 0 42%, rgba(255, 255, 255, 0.08) 44%, transparent 48%);
   animation: checkSweep 8s linear infinite;
 }
@@ -999,7 +1004,7 @@ cite {
   width: 56px;
   height: 56px;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--check-blue), var(--check-blue-2));
+  background: linear-gradient(135deg, var(--check-teal), var(--check-blue));
   color: #ffffff;
   font-weight: 900;
 }
@@ -1020,7 +1025,7 @@ cite {
 }
 
 .check-featured-copy span {
-  color: var(--check-blue);
+  color: var(--check-teal-2);
   font-style: italic;
 }
 
@@ -1139,7 +1144,7 @@ cite {
   border-top: 1px solid #edf3ff;
   border-bottom: 1px solid #edf3ff;
   background:
-    radial-gradient(circle at 10% 0%, rgba(31, 111, 255, 0.08), transparent 26%),
+    radial-gradient(circle at 10% 0%, rgba(19, 73, 78, 0.08), transparent 26%),
     #fbfdff;
 }
 
@@ -1190,8 +1195,8 @@ cite {
   gap: 28px;
   padding: clamp(48px, 7vw, 76px) clamp(18px, 8vw, 220px) 28px;
   background:
-    radial-gradient(circle at 80% 0%, rgba(31, 111, 255, 0.22), transparent 28%),
-    linear-gradient(135deg, #050b1c, var(--check-navy));
+    radial-gradient(circle at 80% 0%, rgba(19, 73, 78, 0.36), transparent 28%),
+    linear-gradient(135deg, #050b1c, #071225 56%, #0d2a42);
   color: #ffffff;
 }
 
@@ -1225,7 +1230,7 @@ cite {
   width: 36px;
   height: 36px;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--check-blue), var(--check-blue-2));
+  background: linear-gradient(135deg, var(--check-blue), var(--check-teal-2));
 }
 
 .check-floating-actions {
@@ -1250,7 +1255,7 @@ cite {
 }
 
 .check-floating-actions a:last-child {
-  background: linear-gradient(135deg, var(--check-blue), var(--check-blue-2));
+  background: linear-gradient(135deg, var(--check-blue), #1d58c6);
 }
 
 @keyframes checkSweep {
