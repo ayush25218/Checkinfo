@@ -1211,47 +1211,149 @@ cite {
 }
 
 .check-footer {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: grid;
   grid-template-columns: 0.85fr 0.85fr 2fr 1.1fr;
-  gap: 28px;
-  padding: clamp(48px, 7vw, 76px) clamp(18px, 8vw, 220px) 28px;
+  gap: 18px;
+  padding: clamp(54px, 7vw, 84px) clamp(18px, 6vw, 128px) 28px;
   background:
-    radial-gradient(circle at 80% 0%, rgba(19, 73, 78, 0.36), transparent 28%),
-    linear-gradient(135deg, #050b1c, #071225 56%, #0d2a42);
+    radial-gradient(circle at 10% 0%, rgba(29, 101, 216, 0.2), transparent 30%),
+    radial-gradient(circle at 86% 18%, rgba(29, 119, 107, 0.34), transparent 28%),
+    linear-gradient(135deg, #050b1c, #071225 50%, #0b2f40);
   color: #ffffff;
+  border-top: 1px solid rgba(34, 211, 238, 0.22);
+}
+
+.check-footer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+  background-size: 58px 58px;
+  mask-image: linear-gradient(180deg, #000, transparent 84%);
+}
+
+.check-footer::after {
+  content: "";
+  position: absolute;
+  inset: auto 8% 0;
+  z-index: -1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.72), transparent);
+  box-shadow: 0 0 30px rgba(34, 211, 238, 0.38);
+}
+
+.check-footer > div {
+  position: relative;
+  min-height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035));
+  padding: clamp(18px, 2vw, 24px);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.11),
+    0 24px 70px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(16px);
+}
+
+.check-footer > div:nth-child(3) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 18px;
+  align-content: start;
+}
+
+.check-footer > div:nth-child(3) h3 {
+  grid-column: 1 / -1;
+}
+
+.check-footer > div:nth-child(4) {
+  background:
+    linear-gradient(150deg, rgba(29, 101, 216, 0.18), rgba(29, 119, 107, 0.1)),
+    rgba(255, 255, 255, 0.05);
 }
 
 .check-footer h3 {
+  position: relative;
   margin: 0 0 18px;
-  font-size: 20px;
+  color: #ffffff;
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.check-footer h3::after {
+  content: "";
+  display: block;
+  width: 42px;
+  height: 3px;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--check-blue), var(--check-teal-2));
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.28);
 }
 
 .check-footer a,
 .check-footer p {
   display: block;
-  margin: 0 0 12px;
-  color: #ffffff;
+  margin: 0 0 10px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 14px;
   font-weight: 800;
+  line-height: 1.45;
+}
+
+.check-footer a {
+  width: fit-content;
+  transition: color 160ms ease, transform 160ms ease, text-shadow 160ms ease;
+}
+
+.check-footer a:hover {
+  color: #ffffff;
+  text-shadow: 0 0 18px rgba(34, 211, 238, 0.45);
+  transform: translateX(4px);
+}
+
+.check-footer p strong {
+  color: #ffffff;
 }
 
 .check-footer small {
   grid-column: 1 / -1;
-  color: rgba(255, 255, 255, 0.75);
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.62);
+  padding-top: 22px;
   text-align: right;
 }
 
 .check-socials {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   margin-top: 24px;
 }
 
 .check-socials span {
-  width: 36px;
-  height: 36px;
+  position: relative;
+  width: 38px;
+  height: 38px;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--check-blue), var(--check-teal-2));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.28), transparent 28%),
+    linear-gradient(135deg, var(--check-blue), var(--check-teal-2));
+  box-shadow: 0 12px 26px rgba(29, 101, 216, 0.26);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.check-socials span:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 34px rgba(34, 211, 238, 0.24);
 }
 
 .check-floating-actions {
@@ -2752,6 +2854,10 @@ cite {
 
   .check-footer small {
     text-align: left;
+  }
+
+  .check-footer > div:nth-child(3) {
+    grid-template-columns: 1fr;
   }
 
   .check-floating-actions {
