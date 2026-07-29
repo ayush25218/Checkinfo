@@ -11,6 +11,13 @@
   --accent: #d59b2f;
   --soft: #e9f4f2;
   --glow: rgba(34, 211, 238, 0.22);
+  --check-blue: #1551c5;
+  --check-blue-2: #1f6fff;
+  --check-navy: #07152f;
+  --check-ink: #0b1220;
+  --check-surface: #f7faff;
+  --check-line: #dbe7fb;
+  --check-glow: rgba(31, 111, 255, 0.26);
 }
 
 @theme inline {
@@ -726,8 +733,26 @@ cite {
 }
 
 .check-home {
-  background: #ffffff;
-  color: #111827;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 16% 0%, rgba(31, 111, 255, 0.13), transparent 30%),
+    radial-gradient(circle at 88% 12%, rgba(21, 81, 197, 0.12), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, var(--check-surface) 46%, #ffffff 100%);
+  color: var(--check-ink);
+}
+
+.check-home::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(21, 81, 197, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(21, 81, 197, 0.035) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: linear-gradient(180deg, #000, transparent 78%);
 }
 
 .check-header {
@@ -738,11 +763,12 @@ cite {
   grid-template-columns: auto minmax(260px, 1fr) auto auto;
   gap: 22px;
   align-items: center;
-  min-height: 92px;
+  min-height: 88px;
   padding: 16px clamp(18px, 4vw, 56px);
-  border-bottom: 1px solid #e8eef7;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(219, 231, 251, 0.82);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 16px 50px rgba(7, 21, 47, 0.08);
 }
 
 .check-logo {
@@ -750,12 +776,12 @@ cite {
   grid-template-columns: 34px auto;
   align-items: center;
   column-gap: 8px;
-  color: #1551c5;
+  color: var(--check-blue);
 }
 
 .check-logo span {
   grid-row: span 2;
-  color: #1551c5;
+  color: var(--check-blue);
   font-family: Georgia, serif;
   font-size: 54px;
   font-style: italic;
@@ -768,7 +794,7 @@ cite {
 }
 
 .check-logo small {
-  color: #0b45ad;
+  color: var(--check-blue);
   font-size: 12px;
   font-weight: 900;
   line-height: 1;
@@ -781,11 +807,11 @@ cite {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   min-width: 0;
-  border: 1px solid #dce5ef;
-  border-radius: 8px;
-  background: #ffffff;
+  border: 1px solid rgba(219, 231, 251, 0.95);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
   padding: 8px;
-  box-shadow: 0 12px 34px rgba(17, 24, 39, 0.08);
+  box-shadow: 0 18px 46px rgba(7, 21, 47, 0.1);
 }
 
 .check-top-search input,
@@ -808,15 +834,27 @@ cite {
   place-items: center;
   min-height: 42px;
   border: 0;
-  border-radius: 8px;
-  background: #1155cc;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--check-blue), var(--check-blue-2));
   color: #ffffff;
   cursor: pointer;
   font-size: 14px;
   font-weight: 900;
   padding: 10px 18px;
   text-transform: uppercase;
-  box-shadow: 0 14px 30px rgba(17, 85, 204, 0.2);
+  box-shadow: 0 16px 34px var(--check-glow);
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.check-top-search button:hover,
+.check-hero-search button:hover,
+.check-post-button:hover,
+.check-more-button:hover,
+.check-featured-copy a:hover,
+.check-hero-panel a:hover {
+  transform: translateY(-2px);
+  filter: saturate(1.08);
+  box-shadow: 0 22px 44px var(--check-glow);
 }
 
 .check-post-button {
@@ -828,17 +866,35 @@ cite {
 }
 
 .check-hero {
+  position: relative;
+  overflow: hidden;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: clamp(22px, 4vw, 58px);
   align-items: center;
   padding: clamp(48px, 7vw, 86px) clamp(18px, 4vw, 64px);
   background:
-    linear-gradient(135deg, rgba(7, 19, 55, 0.9), rgba(17, 85, 204, 0.72)),
+    linear-gradient(135deg, rgba(3, 12, 31, 0.96), rgba(7, 21, 47, 0.9) 48%, rgba(21, 81, 197, 0.74)),
     url("https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1800&q=80");
   background-position: center;
   background-size: cover;
   color: #ffffff;
+}
+
+.check-hero::before {
+  content: "";
+  position: absolute;
+  inset: -40% -10%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 72% 28%, rgba(31, 111, 255, 0.34), transparent 24%),
+    linear-gradient(100deg, transparent 0 42%, rgba(255, 255, 255, 0.08) 44%, transparent 48%);
+  animation: checkSweep 8s linear infinite;
+}
+
+.check-hero > * {
+  position: relative;
+  z-index: 1;
 }
 
 .check-hero h1 {
@@ -846,6 +902,7 @@ cite {
   margin: 0;
   font-size: clamp(42px, 6vw, 74px);
   line-height: 1;
+  text-wrap: balance;
 }
 
 .check-hero p {
@@ -865,10 +922,12 @@ cite {
   display: grid;
   gap: 14px;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
   padding: 24px;
   backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.16), 0 28px 70px rgba(0, 0, 0, 0.22);
 }
 
 .check-hero-panel strong {
@@ -893,7 +952,7 @@ cite {
 .check-section-title h2,
 .check-featured-copy h2 {
   margin: 0;
-  color: #000000;
+  color: var(--check-ink);
   font-size: clamp(32px, 4vw, 44px);
   line-height: 1.1;
 }
@@ -917,20 +976,21 @@ cite {
   display: grid;
   justify-items: center;
   gap: 12px;
-  min-height: 126px;
-  border: 1px solid #9bc7f2;
-  border-bottom: 4px solid #0b63c7;
-  border-radius: 8px;
-  background: #c9e8ff;
-  color: #000000;
+  min-height: 132px;
+  border: 1px solid rgba(219, 231, 251, 0.96);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 250, 255, 0.96));
+  color: var(--check-ink);
   padding: 16px;
-  box-shadow: 0 14px 28px rgba(17, 24, 39, 0.16);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  box-shadow: 0 16px 34px rgba(7, 21, 47, 0.08);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .check-category-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 20px 36px rgba(17, 24, 39, 0.18);
+  border-color: rgba(31, 111, 255, 0.35);
+  box-shadow: 0 22px 46px rgba(7, 21, 47, 0.13), 0 0 0 4px rgba(31, 111, 255, 0.06);
 }
 
 .check-category-icon {
@@ -939,7 +999,7 @@ cite {
   width: 56px;
   height: 56px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #ffffff, #1551c5);
+  background: linear-gradient(135deg, var(--check-blue), var(--check-blue-2));
   color: #ffffff;
   font-weight: 900;
 }
@@ -955,11 +1015,12 @@ cite {
   gap: clamp(24px, 5vw, 60px);
   align-items: center;
   padding: clamp(54px, 8vw, 92px) clamp(18px, 4vw, 64px);
-  background: #ffffff;
+  background:
+    linear-gradient(180deg, #ffffff, #f8fbff);
 }
 
 .check-featured-copy span {
-  color: #1155cc;
+  color: var(--check-blue);
   font-style: italic;
 }
 
@@ -985,18 +1046,20 @@ cite {
   display: grid;
   gap: 12px;
   min-height: 360px;
-  border: 1px solid #e1e6ee;
-  border-radius: 8px;
-  background: #ffffff;
+  border: 1px solid rgba(219, 231, 251, 0.94);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, #ffffff, #fbfdff);
   padding: 16px;
-  box-shadow: 0 14px 30px rgba(17, 24, 39, 0.08);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  box-shadow: 0 18px 40px rgba(7, 21, 47, 0.08);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .check-ad-card:hover,
 .check-trending-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 22px 40px rgba(17, 24, 39, 0.12);
+  border-color: rgba(31, 111, 255, 0.28);
+  box-shadow: 0 26px 52px rgba(7, 21, 47, 0.13);
 }
 
 .check-ad-image {
@@ -1004,7 +1067,7 @@ cite {
   display: grid;
   place-items: center;
   min-height: 178px;
-  border-radius: 8px;
+  border-radius: 14px;
   background: #f2f5f8;
   color: #ffffff;
   overflow: hidden;
@@ -1047,7 +1110,7 @@ cite {
 .check-ad-card h3,
 .check-trending-card h3 {
   margin: 0;
-  color: #000000;
+  color: var(--check-ink);
   font-size: 17px;
 }
 
@@ -1066,16 +1129,18 @@ cite {
   align-self: end;
   min-height: 42px;
   border: 1px solid #ccd3dd;
-  border-radius: 8px;
-  color: #1155cc;
+  border-radius: 10px;
+  color: var(--check-blue);
   font-weight: 900;
   text-transform: uppercase;
 }
 
 .check-new-ads {
-  border-top: 1px solid #edf1f5;
-  border-bottom: 1px solid #edf1f5;
-  background: #fbfcfe;
+  border-top: 1px solid #edf3ff;
+  border-bottom: 1px solid #edf3ff;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(31, 111, 255, 0.08), transparent 26%),
+    #fbfdff;
 }
 
 .check-more-button {
@@ -1096,11 +1161,11 @@ cite {
   grid-template-columns: 180px minmax(0, 1fr);
   gap: 28px;
   align-items: center;
-  border: 1px solid #e1e6ee;
-  border-radius: 8px;
+  border: 1px solid rgba(219, 231, 251, 0.94);
+  border-radius: 16px;
   background: #ffffff;
   padding: 16px;
-  box-shadow: 0 14px 30px rgba(17, 24, 39, 0.08);
+  box-shadow: 0 18px 40px rgba(7, 21, 47, 0.08);
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
@@ -1109,8 +1174,11 @@ cite {
   display: grid;
   place-items: center;
   min-height: 178px;
-  background: repeating-linear-gradient(45deg, #f4f4f4, #f4f4f4 8px, #eeeeee 8px, #eeeeee 16px);
-  color: #b0b0b0;
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(21, 81, 197, 0.08), rgba(31, 111, 255, 0.04)),
+    repeating-linear-gradient(45deg, #f7faff, #f7faff 8px, #edf3ff 8px, #edf3ff 16px);
+  color: rgba(21, 81, 197, 0.32);
   font-size: 28px;
   font-weight: 900;
   text-transform: uppercase;
@@ -1121,7 +1189,9 @@ cite {
   grid-template-columns: 0.85fr 0.85fr 2fr 1.1fr;
   gap: 28px;
   padding: clamp(48px, 7vw, 76px) clamp(18px, 8vw, 220px) 28px;
-  background: #090126;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(31, 111, 255, 0.22), transparent 28%),
+    linear-gradient(135deg, #050b1c, var(--check-navy));
   color: #ffffff;
 }
 
@@ -1155,7 +1225,7 @@ cite {
   width: 36px;
   height: 36px;
   border-radius: 999px;
-  background: #1551c5;
+  background: linear-gradient(135deg, var(--check-blue), var(--check-blue-2));
 }
 
 .check-floating-actions {
@@ -1171,8 +1241,8 @@ cite {
 .check-floating-actions a {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  border-radius: 8px 0 0 8px;
-  background: #21b348;
+  border-radius: 10px 0 0 10px;
+  background: linear-gradient(135deg, #0ea75a, #16c784);
   color: #ffffff;
   font-weight: 900;
   padding: 16px 10px;
@@ -1180,7 +1250,16 @@ cite {
 }
 
 .check-floating-actions a:last-child {
-  background: #1551c5;
+  background: linear-gradient(135deg, var(--check-blue), var(--check-blue-2));
+}
+
+@keyframes checkSweep {
+  from {
+    transform: translateX(-8%);
+  }
+  to {
+    transform: translateX(8%);
+  }
 }
 
 .account-shell {

@@ -138,9 +138,9 @@ export function HomePage() {
           <p className="eyebrow">India local search engine</p>
           <h1>Search any business details here.</h1>
           <p>
-            Find verified businesses, featured ads, trending ads, new ads,
-            categories, customer care, and free listing tools in one modern
-            Checkinfo experience.
+            A faster corporate directory for verified businesses, promoted ads,
+            new listings, trending searches, customer care, and free business
+            onboarding.
           </p>
           <form className="check-hero-search" action="/api/web/search" method="get">
             <input name="q" placeholder="What are you looking for?" />
@@ -160,7 +160,7 @@ export function HomePage() {
       <section className="check-section" id="categories">
         <div className="check-section-title">
           <h2>Top Categories by Ads</h2>
-          <p>All major Checkinfo categories, polished for quick browsing.</p>
+          <p>Explore business categories through a clean, high-speed discovery grid.</p>
         </div>
         <div className="check-category-strip">
           {categories.concat(["Fruits", "Bank", "Rent Services"]).map((category, index) => (
@@ -176,9 +176,8 @@ export function HomePage() {
         <div className="check-featured-copy">
           <h2>Find Your Needs In Our Best <span>Featured Ads</span></h2>
           <p>
-            Displayed your ads in top of the search results page and category
-            listing. Featured ads help businesses stand out and attract more
-            attention.
+            Featured placements keep premium businesses visible across search,
+            category, and buyer-intent journeys with a sharper profile card.
           </p>
           <a href="/members/add_listing">View More</a>
         </div>
@@ -198,7 +197,7 @@ export function HomePage() {
       <section className="check-section check-new-ads">
         <div className="check-section-title centered">
           <h2>Our New Ads</h2>
-          <p>New Ads refers to recently added listings displayed prominently on the website.</p>
+          <p>Freshly submitted business profiles, ready for discovery and enquiries.</p>
         </div>
         <div className="check-new-grid">
           {newAds.map(([name, category, address]) => (
@@ -214,8 +213,7 @@ export function HomePage() {
         <div className="check-section-title centered">
           <h2>Popular Trending Ads</h2>
           <p>
-            Trending ads are advertisements that are currently popular or
-            generating attention among website users.
+            High-interest listings surfaced for faster comparison and customer action.
           </p>
         </div>
         <div className="check-trending-grid">
