@@ -134,15 +134,21 @@ export function HomePage() {
       </section>
 
       <section className="advertise" id="advertise">
-        <div>
+        <div className="advertise-copy">
           <p className="eyebrow">Advertise with us</p>
           <h2>List your business and stand out where customers search.</h2>
           <p>
             Add your profile, publish contact details, highlight services, and
             upgrade to featured placement for stronger visibility.
           </p>
+          <div className="advertise-points" aria-label="Advertising benefits">
+            <span>Search priority</span>
+            <span>Verified enquiries</span>
+            <span>Featured placement</span>
+          </div>
         </div>
         <form className="lead-form" action="/api/web/lead" method="post">
+          <strong>Get a callback</strong>
           <input name="business_name" placeholder="Business name" aria-label="Business name" />
           <input name="phone" placeholder="Phone number" aria-label="Phone number" />
           <input name="email" placeholder="Email address" aria-label="Email address" />
