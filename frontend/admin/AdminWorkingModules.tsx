@@ -100,6 +100,50 @@ type AdminSettingsRecord = {
   youtube: string;
 };
 
+type StaticPageRecord = {
+  id: string;
+  content: string;
+  slug: string;
+  status: "Active" | "Inactive";
+  title: string;
+};
+
+type EnquiryRecord = {
+  id: string;
+  email: string;
+  message: string;
+  name: string;
+  phone: string;
+  receivedAt: string;
+  status: "New" | "Replied" | "Closed";
+  type: "Contact" | "Business" | "Career" | "Advertise";
+};
+
+type MediaRecord = {
+  id: string;
+  image: string;
+  lineOne: string;
+  lineTwo: string;
+  position: string;
+  status: "Active" | "Inactive";
+};
+
+type TestimonialRecord = {
+  id: string;
+  description: string;
+  name: string;
+  order: number;
+  status: "Active" | "Inactive";
+};
+
+type FaqRecord = {
+  answer: string;
+  id: string;
+  order: number;
+  question: string;
+  status: "Active" | "Inactive";
+};
+
 const categorySeed: CategoryRecord[] = categories.map((name, index) => ({
   id: `cat-${index + 1}`,
   image: "Image",
@@ -226,6 +270,38 @@ const adminSettingsSeed: AdminSettingsRecord = {
   webCode: "",
   youtube: "",
 };
+
+const staticPageSeed: StaticPageRecord[] = [
+  { id: "page-1", content: "About Checkinfo business directory.", slug: "about-us", status: "Active", title: "About Us" },
+  { id: "page-2", content: "Privacy policy content goes here.", slug: "privacy-policy", status: "Active", title: "Privacy Policy" },
+  { id: "page-3", content: "Terms and conditions content goes here.", slug: "terms", status: "Active", title: "Terms & Conditions" },
+];
+
+const enquirySeed: EnquiryRecord[] = [
+  { id: "enq-1", email: "visitor@example.com", message: "Need support contact details.", name: "Demo User", phone: "98XXXXXX10", receivedAt: "Today", status: "New", type: "Contact" },
+  { id: "enq-2", email: "buyer@example.com", message: "Need website developer quotation.", name: "Business Lead", phone: "88XXXXXX22", receivedAt: "Yesterday", status: "New", type: "Business" },
+  { id: "enq-3", email: "candidate@example.com", message: "I want to apply for content role.", name: "Career Candidate", phone: "77XXXXXX33", receivedAt: "26 Jul, 2026", status: "New", type: "Career" },
+  { id: "enq-4", email: "brand@example.com", message: "Need homepage banner advertisement.", name: "Advertiser", phone: "99XXXXXX44", receivedAt: "25 Jul, 2026", status: "New", type: "Advertise" },
+];
+
+const bannerSeed: MediaRecord[] = [
+  { id: "ban-1", image: "home-middle-small.jpg", lineOne: "Featured local businesses", lineTwo: "Promote your brand", position: "Home Page Middle Small", status: "Active" },
+  { id: "ban-2", image: "home-middle-big.jpg", lineOne: "Top business ads", lineTwo: "High visibility placement", position: "Home Page Middle Big", status: "Active" },
+];
+
+const headerImageSeed: MediaRecord[] = [
+  { id: "head-1", image: "header-search.jpg", lineOne: "Search any Business Details here", lineTwo: "Local Search Engine", position: "Website Header", status: "Active" },
+];
+
+const testimonialSeed: TestimonialRecord[] = [
+  { id: "test-1", description: "Write information about our business thank you", name: "Satish Sharma", order: 10, status: "Active" },
+  { id: "test-2", description: "Checkinfo helped customers find us quickly.", name: "Demo Business", order: 20, status: "Active" },
+];
+
+const faqSeed: FaqRecord[] = [
+  { answer: "Search by service or city and open the business listing.", id: "faq-1", order: 10, question: "How to find a business?", status: "Active" },
+  { answer: "Business owners can post an ad from the website or member panel.", id: "faq-2", order: 20, question: "How to list my business?", status: "Active" },
+];
 
 function readStored<T>(key: string, fallback: T) {
   if (typeof window === "undefined") return fallback;
@@ -1287,6 +1363,267 @@ export function ChangeAdminPasswordModule() {
       <div className="admin-settings-preview">
         <strong>Password status</strong>
         <span>{message}</span>
+      </div>
+    </section>
+  );
+}
+
+export function ManageStaticPagesModule() {
+  const [records, setRecords] = useState(() => readStored("checkinfo-admin-static-pages", staticPageSeed));
+  const [query, setQuery] = useState("");
+  const [editing, setEditing] = useState<StaticPageRecord | null>(null);
+  const [form, setForm] = useState({ content: "", slug: "", status: "Active" as "Active" | "Inactive", title: "" });
+
+  const filtered = useMemo(
+    () => records.filter((record) => [record.title, record.slug].join(" ").toLowerCase().includes(query.toLowerCase())),
+    [query, records],
+  );
+
+  function sync(next: StaticPageRecord[]) {
+    setRecords(next);
+    writeStored("checkinfo-admin-static-pages", next);
+  }
+
+  function resetForm() {
+    setEditing(null);
+    setForm({ content: "", slug: "", status: "Active", title: "" });
+  }
+
+  function saveRecord() {
+    if (!form.title.trim() || !form.slug.trim()) return;
+    const nextRecord: StaticPageRecord = { id: editing?.id ?? `page-${Date.now()}`, ...form, slug: form.slug.trim(), title: form.title.trim() };
+    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    resetForm();
+  }
+
+  return (
+    <section className="admin-card">
+      <div className="admin-filters">
+        <label><span>Page Name</span><input value={query} onChange={(event) => setQuery(event.target.value)} /></label>
+        <label><span>Records Per Page</span><input value={filtered.length} readOnly /></label>
+        <button type="button" onClick={() => undefined}>Submit</button>
+      </div>
+      <div className="admin-editor admin-editor-content">
+        <label><span>Page Name</span><input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} /></label>
+        <label><span>Slug</span><input value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value })} /></label>
+        <label><span>Status</span><select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as "Active" | "Inactive" })}><option>Active</option><option>Inactive</option></select></label>
+        <label className="admin-wide-field"><span>Page Content</span><textarea value={form.content} onChange={(event) => setForm({ ...form, content: event.target.value })} /></label>
+        <button type="button" onClick={saveRecord}>{editing ? "Update Page" : "Add Page"}</button>
+        {editing ? <button type="button" className="admin-light-button" onClick={resetForm}>Cancel</button> : null}
+      </div>
+      <div className="admin-real-table admin-real-table-static">
+        <div className="admin-real-row admin-real-head"><span>Page Name</span><span>Slug</span><span>Content</span><span>Status</span><span>Action</span></div>
+        {filtered.map((record) => (
+          <div className="admin-real-row" key={record.id}>
+            <span>{record.title}</span><span>{record.slug}</span><span>{record.content}</span>
+            <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
+            <span><button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm(record); }}>View / Edit</button><button type="button" className="admin-link-button" onClick={() => sync(records.filter((item) => item.id !== record.id))}>Delete</button></span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ManageEnquiriesModule({ type }: { type: EnquiryRecord["type"] }) {
+  const storageKey = `checkinfo-admin-${type.toLowerCase()}-enquiries`;
+  const [records, setRecords] = useState(() => readStored(storageKey, enquirySeed.filter((record) => record.type === type)));
+  const [selected, setSelected] = useState<string[]>([]);
+  const [filters, setFilters] = useState({ keyword: "", status: "All" });
+  const [reply, setReply] = useState("");
+
+  const filtered = useMemo(
+    () =>
+      records
+        .filter((record) => [record.name, record.email, record.phone, record.message].join(" ").toLowerCase().includes(filters.keyword.toLowerCase()))
+        .filter((record) => filters.status === "All" || record.status === filters.status),
+    [filters, records],
+  );
+
+  function sync(next: EnquiryRecord[]) {
+    setRecords(next);
+    writeStored(storageKey, next);
+  }
+
+  function markStatus(status: EnquiryRecord["status"]) {
+    sync(records.map((record) => (selected.includes(record.id) ? { ...record, status } : record)));
+    setSelected([]);
+  }
+
+  function deleteSelected() {
+    sync(records.filter((record) => !selected.includes(record.id)));
+    setSelected([]);
+  }
+
+  return (
+    <section className="admin-card">
+      <div className="admin-filters">
+        <label><span>Name, Email</span><input value={filters.keyword} onChange={(event) => setFilters({ ...filters, keyword: event.target.value })} /></label>
+        <label><span>Status</span><select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}><option>All</option><option>New</option><option>Replied</option><option>Closed</option></select></label>
+        <label><span>Records Per Page</span><input value={filtered.length} readOnly /></label>
+        <button type="button" onClick={() => undefined}>Submit</button>
+      </div>
+      <div className="admin-editor admin-editor-content">
+        <label className="admin-wide-field"><span>Reply Message</span><textarea value={reply} onChange={(event) => setReply(event.target.value)} placeholder="Write reply note for selected enquiries" /></label>
+        <button type="button" onClick={() => markStatus("Replied")} disabled={!selected.length || !reply.trim()}>Send Reply</button>
+        <button type="button" className="admin-light-button" onClick={() => markStatus("Closed")} disabled={!selected.length}>Close</button>
+      </div>
+      <div className="admin-actions">
+        <button type="button" onClick={() => markStatus("New")} disabled={!selected.length}>Mark New</button>
+        <button type="button" onClick={deleteSelected} disabled={!selected.length}>Delete</button>
+      </div>
+      <div className="admin-real-table admin-real-table-enquiries">
+        <div className="admin-real-row admin-real-head"><span>Select</span><span>User Info</span><span>Email</span><span>Phone</span><span>Message Details</span><span>Status</span></div>
+        {filtered.map((record) => (
+          <div className="admin-real-row" key={record.id}>
+            <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
+            <span>{record.name}<small>{record.receivedAt}</small></span><span>{record.email}</span><span>{record.phone}</span><span>{record.message}</span>
+            <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ManageMediaModule({ kind }: { kind: "banners" | "header-images" }) {
+  const storageKey = `checkinfo-admin-${kind}`;
+  const [records, setRecords] = useState(() => readStored(storageKey, kind === "banners" ? bannerSeed : headerImageSeed));
+  const [selected, setSelected] = useState<string[]>([]);
+  const [editing, setEditing] = useState<MediaRecord | null>(null);
+  const [form, setForm] = useState({ image: "", lineOne: "", lineTwo: "", position: "", status: "Active" as "Active" | "Inactive" });
+
+  function sync(next: MediaRecord[]) {
+    setRecords(next);
+    writeStored(storageKey, next);
+  }
+
+  function resetForm() {
+    setEditing(null);
+    setForm({ image: "", lineOne: "", lineTwo: "", position: "", status: "Active" });
+  }
+
+  function saveRecord() {
+    if (!form.position.trim()) return;
+    const nextRecord: MediaRecord = { id: editing?.id ?? `${kind}-${Date.now()}`, ...form, image: form.image.trim() || "Image" };
+    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    resetForm();
+  }
+
+  function bulkStatus(status: "Active" | "Inactive") {
+    sync(records.map((record) => (selected.includes(record.id) ? { ...record, status } : record)));
+    setSelected([]);
+  }
+
+  return (
+    <section className="admin-card">
+      <div className="admin-editor admin-editor-content">
+        <label><span>{kind === "banners" ? "Banner Position" : "Header Position"}</span><input value={form.position} onChange={(event) => setForm({ ...form, position: event.target.value })} /></label>
+        <label><span>Image / File Name</span><input value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} /></label>
+        <label><span>Line One</span><input value={form.lineOne} onChange={(event) => setForm({ ...form, lineOne: event.target.value })} /></label>
+        <label><span>Line Two</span><input value={form.lineTwo} onChange={(event) => setForm({ ...form, lineTwo: event.target.value })} /></label>
+        <label><span>Status</span><select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as "Active" | "Inactive" })}><option>Active</option><option>Inactive</option></select></label>
+        <button type="button" onClick={saveRecord}>{editing ? "Update" : kind === "banners" ? "Add Banner" : "Add Header Image"}</button>
+        {editing ? <button type="button" className="admin-light-button" onClick={resetForm}>Cancel</button> : null}
+      </div>
+      <div className="admin-actions">
+        <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Activate</button>
+        <button type="button" onClick={() => bulkStatus("Inactive")} disabled={!selected.length}>Deactivate</button>
+        <button type="button" onClick={() => { sync(records.filter((record) => !selected.includes(record.id))); setSelected([]); }} disabled={!selected.length}>Delete</button>
+      </div>
+      <div className="admin-real-table admin-real-table-media">
+        <div className="admin-real-row admin-real-head"><span>Select</span><span>Position</span><span>Image</span><span>Line One</span><span>Line Two</span><span>Status</span><span>Action</span></div>
+        {records.map((record) => (
+          <div className="admin-real-row" key={record.id}>
+            <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
+            <span>{record.position}</span><span>{record.image}</span><span>{record.lineOne}</span><span>{record.lineTwo}</span>
+            <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
+            <span><button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm(record); }}>View Actual Image</button></span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ManageTestimonialsModule() {
+  const [records, setRecords] = useState(() => readStored("checkinfo-admin-testimonials", testimonialSeed));
+  const [editing, setEditing] = useState<TestimonialRecord | null>(null);
+  const [form, setForm] = useState({ description: "", name: "", order: "", status: "Active" as "Active" | "Inactive" });
+  const sorted = useMemo(() => [...records].sort((a, b) => a.order - b.order), [records]);
+
+  function sync(next: TestimonialRecord[]) {
+    setRecords(next);
+    writeStored("checkinfo-admin-testimonials", next);
+  }
+
+  function saveRecord() {
+    if (!form.name.trim() || !form.description.trim()) return;
+    const nextRecord: TestimonialRecord = { id: editing?.id ?? `test-${Date.now()}`, description: form.description.trim(), name: form.name.trim(), order: Number(form.order) || records.length * 10 + 10, status: form.status };
+    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    setEditing(null);
+    setForm({ description: "", name: "", order: "", status: "Active" });
+  }
+
+  return (
+    <section className="admin-card">
+      <div className="admin-editor admin-editor-content">
+        <label><span>Poster</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
+        <label><span>Display Order</span><input value={form.order} onChange={(event) => setForm({ ...form, order: event.target.value })} /></label>
+        <label><span>Status</span><select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as "Active" | "Inactive" })}><option>Active</option><option>Inactive</option></select></label>
+        <label className="admin-wide-field"><span>Description</span><textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label>
+        <button type="button" onClick={saveRecord}>{editing ? "Update Testimonial" : "Post Testimonial"}</button>
+      </div>
+      <div className="admin-real-table admin-real-table-testimonials">
+        <div className="admin-real-row admin-real-head"><span>Poster</span><span>Description</span><span>Order</span><span>Status</span><span>Action</span></div>
+        {sorted.map((record) => (
+          <div className="admin-real-row" key={record.id}>
+            <span>{record.name}</span><span>{record.description}</span><span>{record.order}</span><span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
+            <span><button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm({ description: record.description, name: record.name, order: String(record.order), status: record.status }); }}>Edit</button><button type="button" className="admin-link-button" onClick={() => sync(records.filter((item) => item.id !== record.id))}>Delete</button></span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ManageFaqsModule() {
+  const [records, setRecords] = useState(() => readStored("checkinfo-admin-faqs", faqSeed));
+  const [editing, setEditing] = useState<FaqRecord | null>(null);
+  const [form, setForm] = useState({ answer: "", order: "", question: "", status: "Active" as "Active" | "Inactive" });
+  const sorted = useMemo(() => [...records].sort((a, b) => a.order - b.order), [records]);
+
+  function sync(next: FaqRecord[]) {
+    setRecords(next);
+    writeStored("checkinfo-admin-faqs", next);
+  }
+
+  function saveRecord() {
+    if (!form.question.trim() || !form.answer.trim()) return;
+    const nextRecord: FaqRecord = { answer: form.answer.trim(), id: editing?.id ?? `faq-${Date.now()}`, order: Number(form.order) || records.length * 10 + 10, question: form.question.trim(), status: form.status };
+    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    setEditing(null);
+    setForm({ answer: "", order: "", question: "", status: "Active" });
+  }
+
+  return (
+    <section className="admin-card">
+      <div className="admin-editor admin-editor-content">
+        <label><span>Question</span><input value={form.question} onChange={(event) => setForm({ ...form, question: event.target.value })} /></label>
+        <label><span>Display Order</span><input value={form.order} onChange={(event) => setForm({ ...form, order: event.target.value })} /></label>
+        <label><span>Status</span><select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as "Active" | "Inactive" })}><option>Active</option><option>Inactive</option></select></label>
+        <label className="admin-wide-field"><span>Answer</span><textarea value={form.answer} onChange={(event) => setForm({ ...form, answer: event.target.value })} /></label>
+        <button type="button" onClick={saveRecord}>{editing ? "Update FAQ" : "Add FAQ"}</button>
+        <button type="button" className="admin-light-button" onClick={() => sync(records.map((record, index) => ({ ...record, order: (index + 1) * 10 })))}>Update Order</button>
+      </div>
+      <div className="admin-real-table admin-real-table-faqs">
+        <div className="admin-real-row admin-real-head"><span>Question</span><span>Answer</span><span>Order</span><span>Status</span><span>Action</span></div>
+        {sorted.map((record) => (
+          <div className="admin-real-row" key={record.id}>
+            <span>{record.question}</span><span>{record.answer}</span><span>{record.order}</span><span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
+            <span><button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm({ answer: record.answer, order: String(record.order), question: record.question, status: record.status }); }}>View</button><button type="button" className="admin-link-button" onClick={() => sync(records.filter((item) => item.id !== record.id))}>Delete</button></span>
+          </div>
+        ))}
       </div>
     </section>
   );

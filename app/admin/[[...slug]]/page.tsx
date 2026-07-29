@@ -7,15 +7,20 @@ import {
 import {
   ChangeAdminPasswordModule,
   ManageAdminSettingsModule,
+  ManageEnquiriesModule,
+  ManageFaqsModule,
   ManageBusinessModule,
   ManageCategoriesModule,
   ManageCitiesModule,
   ManageLocationsModule,
+  ManageMediaModule,
   ManageMembersModule,
   ManageMetaTagsModule,
   ManageNewsletterModule,
   ManageStatesModule,
+  ManageStaticPagesModule,
   ManageSubadminsModule,
+  ManageTestimonialsModule,
 } from "@/frontend/admin/AdminWorkingModules";
 
 export default async function AdminPage({
@@ -52,6 +57,24 @@ export default async function AdminPage({
         <ManageCitiesModule />
       ) : active === "locations" ? (
         <ManageLocationsModule />
+      ) : active === "static-pages" ? (
+        <ManageStaticPagesModule />
+      ) : active === "contact-enquiries" ? (
+        <ManageEnquiriesModule type="Contact" />
+      ) : active === "business-enquiries" ? (
+        <ManageEnquiriesModule type="Business" />
+      ) : active === "career-enquiries" ? (
+        <ManageEnquiriesModule type="Career" />
+      ) : active === "advertise-enquiries" ? (
+        <ManageEnquiriesModule type="Advertise" />
+      ) : active === "banners" ? (
+        <ManageMediaModule kind="banners" />
+      ) : active === "header-images" ? (
+        <ManageMediaModule kind="header-images" />
+      ) : active === "testimonials" ? (
+        <ManageTestimonialsModule />
+      ) : active === "faqs" ? (
+        <ManageFaqsModule />
       ) : (
         <AdminPageBody page={page} resource={active} />
       )}
