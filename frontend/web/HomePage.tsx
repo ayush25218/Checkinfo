@@ -1,29 +1,51 @@
-import { Fragment } from "react";
-import { categories, listings } from "@/backend/checkinfo";
+import { categories } from "@/backend/checkinfo";
 
-const stats = [
-  ["36K+", "active ads"],
-  ["120+", "cities covered"],
-  ["24 hr", "listing review"],
-  ["9718-290-290", "business support"],
+const featuredAds = [
+  {
+    category: "Travel agent, tour operator",
+    location: "Residency Road, Bengaluru",
+    name: "Travelyaari",
+    score: "0 / 5",
+    tone: "red",
+  },
+  {
+    category: "coaching, institute, coaching institute",
+    location: "Near Samrat Restaurant and PNB, GTB Nagar",
+    name: "Dreamz Institute",
+    score: "0 / 5",
+    tone: "violet",
+  },
+  {
+    category: "SMS service provider",
+    location: "Technopolis Knowledge Park, Andheri East, Mumbai",
+    name: "Orbit Communication",
+    score: "0 / 5",
+    tone: "blue",
+  },
 ];
 
-const smartSearches = [
-  "best website developer near me",
-  "family restaurants open today",
-  "school admissions in Delhi",
-  "hotel with banquet hall",
+const newAds = [
+  ["Zoo Culture Gym & Spa", "Gym in Panchkula", "SCO: 411-412, Sector 8, Panchkula, Haryana 134112"],
+  ["Hotel Sterling Inn Bangalore", "Hotel Sterling Inn Bangalore", "48,49 2nd Cross Chandramouleshwara Layout, Bengaluru"],
+  ["ARN Packers and Movers Surat", "packers and movers in Surat", "Raj Corner Shopping Centre, Pal Rd, Adajan, Surat"],
+  ["Digital Marketing Agency in", "Digital marketing agency", "Kolkata"],
 ];
 
-function GoogleAdSlot({
-  label,
-  slot,
-  format = "auto",
-}: {
-  label: string;
-  slot: string;
-  format?: string;
-}) {
+const trendingAds = [
+  ["Sureshchandra Rasiklal Shroff", "No. 309, Vrundavan Shopping Centre, Ratan Pole Ahmedabad"],
+  ["Visishta The Unique Play School k", "15th Main, V-Block, H.B.R. Layout, Banaswadi Bangalore"],
+  ["We Care i", "No. 1568, 3rd Floor, Outer Ring Road, H.S.R. Layout Bangalore"],
+  ["Little Champs Play School", "B Block, Gurudware Gali No.13, Bhajanpura Delhi"],
+  ["Viha Playschool & Daycare", "Cherrydale layout, Whitefield Bangalore"],
+  ["Smart Kidz oi", "House No. 843/8/U/30, Uppal Hyderabad"],
+];
+
+const footerLinks = {
+  info: ["How to buy", "FAQs", "Career", "Privacy Policy", "Legal Disclaimer", "Terms And Conditions", "Refer to Friend"],
+  quick: ["Home", "About Us", "Business", "Advertise with Us", "Testimonials", "Support", "Contact Us", "Sitemap"],
+};
+
+function GoogleAdSlot({ label, slot }: { label: string; slot: string }) {
   return (
     <aside className="ad-slot" aria-label={label}>
       <div className="ad-slot-label">Advertisement</div>
@@ -32,7 +54,7 @@ function GoogleAdSlot({
         style={{ display: "block" }}
         data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
         data-ad-slot={slot}
-        data-ad-format={format}
+        data-ad-format="auto"
         data-full-width-responsive="true"
       />
       <small>Replace client and slot code manually</small>
@@ -40,176 +62,168 @@ function GoogleAdSlot({
   );
 }
 
+function CategoryIcon({ label, index }: { label: string; index: number }) {
+  return (
+    <span className="check-category-icon" aria-hidden="true">
+      {label.split(" ").map((word) => word[0]).join("").slice(0, 2) || String(index + 1)}
+    </span>
+  );
+}
+
+function AdCard({
+  address,
+  category,
+  name,
+  tone = "plain",
+}: {
+  address: string;
+  category: string;
+  name: string;
+  tone?: string;
+}) {
+  return (
+    <article className="check-ad-card">
+      <div className={`check-ad-image ${tone}`}>
+        <span>{name.slice(0, 2).toUpperCase()}</span>
+        <b>0 / 5</b>
+      </div>
+      <small>{category}</small>
+      <h3>{name}</h3>
+      <p>{address}</p>
+      <a href="#contact">View Detail</a>
+    </article>
+  );
+}
+
+function TrendingCard({ address, name }: { address: string; name: string }) {
+  return (
+    <article className="check-trending-card">
+      <div className="check-no-image">
+        <span>No Image</span>
+        <b>0 / 5</b>
+      </div>
+      <div>
+        <h3>{name}</h3>
+        <p>{address}</p>
+        <a href="#contact">View Detail</a>
+      </div>
+    </article>
+  );
+}
+
 export function HomePage() {
   return (
-    <main>
-      <header className="site-header">
-        <a className="brand" href="#top" aria-label="Checkinfo home">
-          <span className="brand-mark">CI</span>
-          <span>
-            <strong>Checkinfo</strong>
-            <small>India business directory</small>
-          </span>
+    <main className="check-home">
+      <header className="check-header">
+        <a className="check-logo" href="#top" aria-label="Checkinfo home">
+          <span>i</span>
+          <strong>Checkinfo</strong>
+          <small>Check kiya kya?</small>
         </a>
+        <form className="check-top-search" action="/api/web/search" method="get">
+          <input name="q" placeholder="Search" />
+          <button type="submit">Search</button>
+        </form>
         <nav aria-label="Primary navigation">
+          <a href="/members/myaccount">My Profile</a>
           <a href="#categories">Business</a>
           <a href="#featured">Featured Ads</a>
-          <a href="#advertise">Advertise</a>
           <a href="#contact">Contact</a>
         </nav>
-        <div className="header-actions">
-          <a className="ghost-button" href="/members/myaccount">My Panel</a>
-          <a className="ghost-button" href="/admin">Admin Panel</a>
-          <a className="primary-button" href="#advertise">Post Your Ad</a>
-        </div>
+        <a className="check-post-button" href="/members/add_listing">Post Your Ad</a>
       </header>
 
-      <section className="hero" id="top">
-        <div className="hero-content">
-          <p className="eyebrow">Local search engine for growing businesses</p>
-          <h1>Find trusted local businesses across India in seconds.</h1>
-          <p className="hero-copy">
-            Search services, compare verified listings, discover featured ads,
-            and connect with shops, schools, hotels, travel agents, clinics,
-            agencies, and service providers near you.
+      <section className="check-hero" id="top">
+        <div>
+          <p className="eyebrow">India local search engine</p>
+          <h1>Search any business details here.</h1>
+          <p>
+            Find verified businesses, featured ads, trending ads, new ads,
+            categories, customer care, and free listing tools in one modern
+            Checkinfo experience.
           </p>
-
-          <form className="search-panel" action="/api/web/search" method="get">
-            <label>
-              <span>What are you looking for?</span>
-              <input name="q" placeholder="Search restaurant, hotel, web developer..." />
-            </label>
-            <label>
-              <span>Location</span>
-              <input name="location" placeholder="Delhi, Bengaluru, Mumbai..." />
-            </label>
+          <form className="check-hero-search" action="/api/web/search" method="get">
+            <input name="q" placeholder="What are you looking for?" />
+            <input name="location" placeholder="City or location" />
             <button type="submit">Search</button>
           </form>
-
-          <div className="quick-tags" aria-label="Popular searches">
-            {["Travels", "Property", "Hotels", "Education", "Events", "Hospitals"].map(
-              (item) => (
-                <a href="#featured" key={item}>
-                  {item}
-                </a>
-              ),
-            )}
-          </div>
         </div>
-
-        <aside className="hero-card" aria-label="Directory highlights">
-          <div className="insight-card active">
-            <span>Live category</span>
-            <strong>Website Developer</strong>
-            <small>290 business ads</small>
-          </div>
-          <div className="insight-card">
-            <span>Top city</span>
-            <strong>New Delhi</strong>
-            <small>Customer care available</small>
-          </div>
-          <div className="insight-card">
-            <span>Business owner</span>
-            <strong>Free listing</strong>
-            <small>Post, promote, and manage ads</small>
-          </div>
-        </aside>
-      </section>
-
-      <section className="smart-search-strip" aria-label="Smart search examples">
-        <div>
-          <p className="eyebrow">Smart Discovery</p>
-          <h2>Search like you think. Find like a pro.</h2>
-        </div>
-        <div className="search-marquee">
-          {smartSearches.map((search) => (
-            <span key={search}>{search}</span>
-          ))}
+        <div className="check-hero-panel">
+          <strong>Checkinfo</strong>
+          <span>Business Owner: Login | Register</span>
+          <a href="/members/add_listing">Start Free Listing</a>
         </div>
       </section>
 
-      <section className="stats-band" aria-label="Checkinfo summary">
-        {stats.map(([value, label]) => (
-          <div key={label}>
-            <strong>{value}</strong>
-            <span>{label}</span>
-          </div>
-        ))}
-      </section>
+      <GoogleAdSlot label="Top homepage advertisement" slot="1111111111" />
 
-      <GoogleAdSlot label="Top leaderboard ad" slot="1111111111" />
-
-      <section className="section" id="categories">
-        <div className="section-heading">
-          <p className="eyebrow">Browse by need</p>
+      <section className="check-section" id="categories">
+        <div className="check-section-title">
           <h2>Top Categories by Ads</h2>
-          <a href="#featured">View all categories</a>
+          <p>All major Checkinfo categories, polished for quick browsing.</p>
         </div>
-        <div className="category-grid">
-          {categories.map((category, index) => (
-            <a className="category-tile" href="#featured" key={category}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
+        <div className="check-category-strip">
+          {categories.concat(["Fruits", "Bank", "Rent Services"]).map((category, index) => (
+            <a className="check-category-card" href="#featured" key={category}>
+              <CategoryIcon label={category} index={index} />
               <strong>{category}</strong>
-              <small>Explore verified providers</small>
             </a>
           ))}
         </div>
       </section>
 
-      <section className="section split-section" id="featured">
-        <div className="feature-intro">
-          <p className="eyebrow">Featured Ads</p>
-          <h2>Make quick, confident decisions with rich business cards.</h2>
+      <section className="check-featured" id="featured">
+        <div className="check-featured-copy">
+          <h2>Find Your Needs In Our Best <span>Featured Ads</span></h2>
           <p>
-            Featured ads stay visible at the top of category and search pages,
-            helping buyers notice reliable businesses faster.
+            Displayed your ads in top of the search results page and category
+            listing. Featured ads help businesses stand out and attract more
+            attention.
           </p>
-          <a className="primary-button" href="#advertise">Promote a listing</a>
+          <a href="/members/add_listing">View More</a>
         </div>
-        <div className="listing-grid">
-          {listings.map((listing, index) => (
-            <Fragment key={listing.name}>
-              <article className="listing-card">
-                <div className="listing-top">
-                  <span>{listing.badge}</span>
-                  <strong>{listing.score} / 5</strong>
-                </div>
-                <h3>{listing.name}</h3>
-                <p>{listing.type}</p>
-                <div className="listing-meta">{listing.location}</div>
-                <a href="#contact">View Detail</a>
-              </article>
-              {index === 1 ? (
-                <GoogleAdSlot
-                  key="featured-feed-ad"
-                  label="Featured listings in-feed ad"
-                  slot="2222222222"
-                />
-              ) : null}
-            </Fragment>
+        <div className="check-card-row">
+          {featuredAds.map((ad) => (
+            <AdCard
+              address={ad.location}
+              category={ad.category}
+              key={ad.name}
+              name={ad.name}
+              tone={ad.tone}
+            />
           ))}
         </div>
       </section>
 
-      <section className="section trending-section">
-        <div className="section-heading">
-          <p className="eyebrow">Popular Trending Ads</p>
-          <h2>Businesses getting attention right now</h2>
-          <a href="#featured">View trending</a>
+      <section className="check-section check-new-ads">
+        <div className="check-section-title centered">
+          <h2>Our New Ads</h2>
+          <p>New Ads refers to recently added listings displayed prominently on the website.</p>
         </div>
-        <div className="trend-row">
-          {["Play schools", "Security services", "Daycare", "Water pumps"].map(
-            (item) => (
-              <div className="trend-pill" key={item}>
-                <strong>{item}</strong>
-                <span>High buyer interest</span>
-              </div>
-            ),
-          )}
+        <div className="check-new-grid">
+          {newAds.map(([name, category, address]) => (
+            <AdCard address={address} category={category} key={name} name={name} />
+          ))}
         </div>
+        <a className="check-more-button" href="/members/add_listing">View More</a>
       </section>
 
-      <GoogleAdSlot label="Trending section banner ad" slot="3333333333" />
+      <GoogleAdSlot label="Middle homepage advertisement" slot="2222222222" />
+
+      <section className="check-section check-trending">
+        <div className="check-section-title centered">
+          <h2>Popular Trending Ads</h2>
+          <p>
+            Trending ads are advertisements that are currently popular or
+            generating attention among website users.
+          </p>
+        </div>
+        <div className="check-trending-grid">
+          {trendingAds.map(([name, address]) => (
+            <TrendingCard address={address} key={name} name={name} />
+          ))}
+        </div>
+      </section>
 
       <section className="advertise" id="advertise">
         <div>
@@ -228,53 +242,39 @@ export function HomePage() {
         </form>
       </section>
 
-      <section className="section testimonial-news">
-        <blockquote>
-          <p>
-            "Write information about our business thank you"
-          </p>
-          <cite>Satish Sharma</cite>
-        </blockquote>
-        <div className="newsletter">
-          <h2>Subscribe to business updates</h2>
-          <p>Get new listings, offers, and promoted ads from Checkinfo.</p>
-          <form action="/api/web/newsletter" method="post">
-            <input name="subscriber_email" placeholder="Enter your email address" aria-label="Email" />
-            <button type="submit">Subscribe</button>
-          </form>
-        </div>
-      </section>
-
-      <GoogleAdSlot label="Bottom responsive ad" slot="4444444444" />
-
-      <footer className="footer" id="contact">
-        <div>
-          <a className="brand footer-brand" href="#top">
-            <span className="brand-mark">CI</span>
-            <span>
-              <strong>Checkinfo</strong>
-              <small>Find local businesses in India</small>
-            </span>
-          </a>
-          <p>
-            A modern local business directory experience for buyers and business
-            owners.
-          </p>
-        </div>
+      <footer className="check-footer" id="contact">
         <div>
           <h3>Quick Links</h3>
-          <a href="#top">Home</a>
-          <a href="#categories">Business</a>
-          <a href="#advertise">Advertise</a>
-          <a href="#contact">Support</a>
+          {footerLinks.quick.map((link) => <a href="#top" key={link}>{link}</a>)}
+          <p><strong>Business Owner :</strong> Login | Register</p>
+        </div>
+        <div>
+          <h3>Info Links</h3>
+          {footerLinks.info.map((link) => <a href="#top" key={link}>{link}</a>)}
+        </div>
+        <div>
+          <h3>Our Categories</h3>
+          {categories.concat(["Fruits", "Bank", "Rent Services"]).map((category) => (
+            <a href="#categories" key={category}>{category}</a>
+          ))}
+          <a href="#categories">View All</a>
         </div>
         <div>
           <h3>Contact Detail</h3>
           <p>New Delhi</p>
           <a href="tel:9718290290">9718-290-290</a>
           <a href="mailto:info@checkinfo.in">info@checkinfo.in</a>
+          <div className="check-socials" aria-label="Social links">
+            <span /><span /><span /><span /><span /><span />
+          </div>
         </div>
+        <small>Copyright © 2026, Checkinfo. All rights reserved.</small>
       </footer>
+
+      <div className="check-floating-actions">
+        <a href="/members/add_listing">Free Listing</a>
+        <a href="#contact">Customer Care</a>
+      </div>
     </main>
   );
 }
