@@ -161,7 +161,7 @@ function parseAdmin1Names(text) {
       .split("\n")
       .map((line) => line.split("\t"))
       .filter((cols) => cols[0]?.startsWith("IN."))
-      .map((cols) => [cols[0].replace("IN.", ""), cleanName(cols[1])]),
+      .map((cols) => [cols[0].replace("IN.", ""), cleanName(cols[2] || cols[1])]),
   );
 }
 

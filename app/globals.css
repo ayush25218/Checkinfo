@@ -3439,6 +3439,89 @@ cite {
   padding: 10px 12px;
 }
 
+.admin-location-tree {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-state-box-grid,
+.admin-district-grid,
+.admin-subdistrict-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-state-box-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.admin-district-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.admin-subdistrict-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.admin-state-box,
+.admin-district-box {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #d9e4f5;
+  border-radius: 8px;
+  color: #0f172a;
+  cursor: pointer;
+  display: flex;
+  font-size: 12px;
+  font-weight: 800;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 9px 11px;
+  text-align: left;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.admin-state-box:hover,
+.admin-district-box:hover,
+.admin-state-box.is-open,
+.admin-district-box.is-open {
+  border-color: #2563eb;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
+  transform: translateY(-1px);
+}
+
+.admin-state-box b,
+.admin-district-box b {
+  align-items: center;
+  background: #eff6ff;
+  border-radius: 999px;
+  color: #1d4ed8;
+  display: inline-flex;
+  font-size: 11px;
+  min-width: 30px;
+  justify-content: center;
+  padding: 4px 7px;
+}
+
+.admin-district-panel {
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  background: #f8fbff;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.admin-subdistrict-grid span {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 10px;
+}
+
 .admin-real-table-meta .admin-real-row {
   grid-template-columns: 1fr 1.3fr 1.3fr 1.6fr 150px;
   min-width: 1080px;
@@ -3978,6 +4061,12 @@ cite {
 
   .admin-stats,
   .admin-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-state-box-grid,
+  .admin-district-grid,
+  .admin-subdistrict-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

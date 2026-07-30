@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { categories } from "@/backend/checkinfo";
 import {
   indiaCities,
+  indiaDistricts,
   indiaLocationSourceNote,
   indiaStates,
+  indiaSubdistricts,
 } from "./indiaLocations";
 
 type Status = "Active" | "Inactive" | "Pending" | "Draft" | "Featured";
@@ -926,15 +928,17 @@ export function ManageLocationsModule() {
 }
 
 function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations" }) {
-  const stateRecords = readStored("checkinfo-admin-states-india-v5", stateSeed);
-  const cityRecords = readStored("checkinfo-admin-cities-india-v5", citySeed);
+  const stateRecords = readStored("checkinfo-admin-states-india-v6", stateSeed);
+  const cityRecords = readStored("checkinfo-admin-cities-india-v6", citySeed);
   const isStates = kind === "states";
   const isCities = kind === "cities";
-  const storageKey = `checkinfo-admin-${kind}-india-v5`;
+  const storageKey = `checkinfo-admin-${kind}-india-v6`;
   const fallback: LocationAdminRecord[] = isStates ? stateSeed : isCities ? citySeed : locationSeed;
   const [records, setRecords] = useState<LocationAdminRecord[]>(() => readStored(storageKey, fallback));
   const [selected, setSelected] = useState<string[]>([]);
   const [filters, setFilters] = useState({ city: "All", district: "All", keyword: "", state: "All", status: "All", type: "All" });
+  const [openState, setOpenState] = useState("");
+  const [openDistrict, setOpenDistrict] = useState("");
   const [editing, setEditing] = useState<StateRecord | CityRecord | LocationRecord | null>(null);
   const [form, setForm] = useState({
     city: cityRecords[0]?.name ?? "",
@@ -971,6 +975,39 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
     () => cityRecords.filter((record) => filters.state === "All" || record.state === filters.state).slice(0, 900),
     [cityRecords, filters.state],
   );
+  const openStateDistricts = useMemo(
+    () => indiaDistricts.filter((record) => record.state === openState),
+    [openState],
+  );
+  const openDistrictSubdistricts = useMemo(
+    () => indiaSubdistricts.filter((record) => record.state === openState && record.district === openDistrict),
+    [openDistrict, openState],
+  );
+  const cityCountByState = useMemo(() => {
+    return cityRecords.reduce<Record<string, number>>((counts, record) => {
+      counts[record.state] = (counts[record.state] ?? 0) + 1;
+      return counts;
+    }, {});
+  }, [cityRecords]);
+  const subdistrictCountByDistrict = useMemo(() => {
+    return indiaSubdistricts.reduce<Record<string, number>>((counts, record) => {
+      const key = `${record.state}::${record.district}`;
+      counts[key] = (counts[key] ?? 0) + 1;
+      return counts;
+    }, {});
+  }, []);
+
+  function toggleStateBox(stateName: string) {
+    const nextState = openState === stateName ? "" : stateName;
+    setOpenState(nextState);
+    setOpenDistrict("");
+    setFilters((current) => ({ ...current, city: "All", district: "All", state: nextState || "All" }));
+    setForm((current) => ({ ...current, state: nextState || (stateRecords[0]?.name ?? "") }));
+  }
+
+  function toggleDistrictBox(districtName: string) {
+    setOpenDistrict((current) => current === districtName ? "" : districtName);
+  }
 
   function sync(next: LocationAdminRecord[]) {
     setRecords(next);
@@ -1088,6 +1125,49 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
           Clear Search
         </button>
       </div>
+
+      {isCities ? (
+        <div className="admin-location-tree">
+          <div className="admin-state-box-grid">
+            {stateRecords.map((record) => (
+              <button
+                className={`admin-state-box ${openState === record.name ? "is-open" : ""}`}
+                key={record.id}
+                type="button"
+                onClick={() => toggleStateBox(record.name)}
+              >
+                <span>{record.name}</span>
+                <b>{(cityCountByState[record.name] ?? 0).toLocaleString()}</b>
+              </button>
+            ))}
+          </div>
+          {openState ? (
+            <div className="admin-district-panel">
+              <div className="admin-district-grid">
+                {openStateDistricts.map((record) => (
+                  <button
+                    className={`admin-district-box ${openDistrict === record.name ? "is-open" : ""}`}
+                    key={record.id}
+                    type="button"
+                    onClick={() => toggleDistrictBox(record.name)}
+                  >
+                    <span>{record.name}</span>
+                    <b>{(subdistrictCountByDistrict[`${openState}::${record.name}`] ?? 0).toLocaleString()}</b>
+                  </button>
+                ))}
+              </div>
+              {openDistrict ? (
+                <div className="admin-subdistrict-grid">
+                  {openDistrictSubdistricts.map((record) => (
+                    <span key={record.id}>{record.name}</span>
+                  ))}
+                  {!openDistrictSubdistricts.length ? <span>No subdistricts</span> : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="admin-editor admin-editor-location">
         {!isStates && !isCities ? (
