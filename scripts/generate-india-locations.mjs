@@ -4,7 +4,7 @@ import zlib from "node:zlib";
 const LEVELS = ["ADM1", "ADM2", "ADM3"];
 const GEONAMES_IN_URL = "https://download.geonames.org/export/dump/IN.zip";
 const GEONAMES_ADMIN1_URL = "https://download.geonames.org/export/dump/admin1CodesASCII.txt";
-const MIN_CITY_POPULATION = 1000;
+const MIN_CITY_POPULATION = 1;
 const ADMIN_SEAT_CODES = new Set(["PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4"]);
 
 function cleanName(value) {
@@ -178,7 +178,7 @@ function parseGeoNamesCities(text, stateCodeToName) {
     if (featureClass !== "P" || !featureCode.startsWith("PPL")) continue;
     if (population < MIN_CITY_POPULATION && !ADMIN_SEAT_CODES.has(featureCode)) continue;
 
-    const name = cleanName(cols[1]);
+    const name = cleanName(cols[2] || cols[1]);
     const state = stateCodeToName.get(cols[10]) ?? cleanName(cols[10]);
     if (!name || !state) continue;
 
@@ -198,7 +198,7 @@ function parseGeoNamesCities(text, stateCodeToName) {
   }
 
   return [...deduped.values()]
-    .map((city, index) => toRecord("city", index, city))
+    .map((city, index) => ({ ...toRecord("city", index, city), id: `city-${city.geonameId}` }))
     .sort((a, b) => a.state.localeCompare(b.state) || a.name.localeCompare(b.name));
 }
 

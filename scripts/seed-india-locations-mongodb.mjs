@@ -22,7 +22,7 @@ function extractArray(source, exportName) {
   return JSON.parse(source.slice(arrayStart, arrayEnd));
 }
 
-async function upsertMany(collection, records, transform = (record) => record) {
+async function upsertMany(collection, records, transform = (record) => record, filterFor = (record) => ({ _id: record._id })) {
   if (!records.length) return;
 
   const batchSize = 800;
@@ -31,10 +31,11 @@ async function upsertMany(collection, records, transform = (record) => record) {
     await collection.bulkWrite(
       batch.map((record) => {
         const next = transform(record);
+        const { _id, ...setFields } = next;
         return {
           updateOne: {
-            filter: { _id: next._id },
-            update: { $set: next },
+            filter: filterFor(next),
+            update: { $set: setFields, $setOnInsert: { _id } },
             upsert: true,
           },
         };
@@ -70,15 +71,21 @@ try {
     locationCollection.createIndex({ kind: 1, state: 1, name: 1 }),
   ]);
 
-  await upsertMany(stateCollection, states, (record) => ({ ...record, _id: record.id }));
-  await upsertMany(districtCollection, districts, (record) => ({ ...record, _id: record.id }));
-  await upsertMany(subdistrictCollection, subdistricts, (record) => ({ ...record, _id: record.id }));
-  await upsertMany(cityCollection, cities, (record) => ({ ...record, _id: record.id }));
+  await upsertMany(stateCollection, states, (record) => ({ ...record, _id: record.id }), (record) => ({ name: record.name }));
+  await upsertMany(districtCollection, districts, (record) => ({ ...record, _id: record.id }), (record) => ({ name: record.name, state: record.state }));
+  await upsertMany(subdistrictCollection, subdistricts, (record) => ({ ...record, _id: record.id }), (record) => ({ district: record.district, name: record.name, state: record.state }));
+  await upsertMany(cityCollection, cities, (record) => ({ ...record, _id: record.id }), (record) => ({ name: record.name, state: record.state }));
   await upsertMany(locationCollection, [
     ...districts.map((record) => ({ ...record, kind: "District" })),
     ...subdistricts.map((record) => ({ ...record, kind: "Sub-district" })),
     ...cities.map((record) => ({ ...record, kind: "City" })),
-  ], (record) => ({ ...record, _id: `${record.kind.toLowerCase().replace(/[^a-z]+/g, "-")}-${record.id}` }));
+  ], (record) => ({ ...record, _id: `${record.kind.toLowerCase().replace(/[^a-z]+/g, "-")}-${record.id}` }), (record) => ({
+    city: record.city,
+    district: record.district,
+    kind: record.kind,
+    name: record.name,
+    state: record.state,
+  }));
 
   console.log(`India locations seeded: ${databaseName}`);
   console.table({
