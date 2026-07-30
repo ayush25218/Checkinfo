@@ -71,12 +71,18 @@ try {
     locationCollection.createIndex({ kind: 1, state: 1, name: 1 }),
   ]);
 
+  await Promise.all([
+    stateCollection.deleteMany({}),
+    districtCollection.deleteMany({}),
+    subdistrictCollection.deleteMany({}),
+    cityCollection.deleteMany({}),
+    locationCollection.deleteMany({ kind: { $in: ["District", "Sub-district", "City"] } }),
+  ]);
+
   await upsertMany(stateCollection, states, (record) => ({ ...record, _id: record.id }), (record) => ({ name: record.name }));
   await upsertMany(districtCollection, districts, (record) => ({ ...record, _id: record.id }), (record) => ({ name: record.name, state: record.state }));
   await upsertMany(subdistrictCollection, subdistricts, (record) => ({ ...record, _id: record.id }), (record) => ({ district: record.district, name: record.name, state: record.state }));
-  await cityCollection.deleteMany({ geonameId: { $exists: true } });
   await upsertMany(cityCollection, cities, (record) => ({ ...record, _id: record.id }), (record) => ({ name: record.name, state: record.state }));
-  await locationCollection.deleteMany({ kind: { $in: ["District", "Sub-district", "City"] } });
 
   console.log(`India locations seeded: ${databaseName}`);
   console.table({

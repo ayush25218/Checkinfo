@@ -6,9 +6,36 @@ const GEONAMES_IN_URL = "https://download.geonames.org/export/dump/IN.zip";
 const GEONAMES_ADMIN1_URL = "https://download.geonames.org/export/dump/admin1CodesASCII.txt";
 const MIN_CITY_POPULATION = 1;
 const ADMIN_SEAT_CODES = new Set(["PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4"]);
+const STATE_NAME_OVERRIDES = new Map([
+  ["Andaman and Nicobar", "Andaman and Nicobar Islands"],
+  ["Arunāchal Pradesh", "Arunachal Pradesh"],
+  ["Bihār", "Bihar"],
+  ["Chandīgarh", "Chandigarh"],
+  ["Chhattīsgarh", "Chhattisgarh"],
+  ["Dādra and Nagar Haveli and Damān and Diu", "Dadra and Nagar Haveli and Daman and Diu"],
+  ["Gujarāt", "Gujarat"],
+  ["Haryāna", "Haryana"],
+  ["Himāchal Pradesh", "Himachal Pradesh"],
+  ["Jammu and Kashmīr", "Jammu and Kashmir"],
+  ["Jhārkhand", "Jharkhand"],
+  ["Karnātaka", "Karnataka"],
+  ["Ladākh", "Ladakh"],
+  ["Mahārāshtra", "Maharashtra"],
+  ["Meghālaya", "Meghalaya"],
+  ["Nāgāland", "Nagaland"],
+  ["Rājasthān", "Rajasthan"],
+  ["Tamil Nādu", "Tamil Nadu"],
+  ["Telangāna", "Telangana"],
+  ["Uttarākhand", "Uttarakhand"],
+]);
 
 function cleanName(value) {
   return String(value ?? "").trim().replace(/\s+/g, " ");
+}
+
+function canonicalStateName(value) {
+  const name = cleanName(value);
+  return STATE_NAME_OVERRIDES.get(name) ?? name;
 }
 
 function flattenRings(geometry) {
@@ -161,7 +188,7 @@ function parseAdmin1Names(text) {
       .split("\n")
       .map((line) => line.split("\t"))
       .filter((cols) => cols[0]?.startsWith("IN."))
-      .map((cols) => [cols[0].replace("IN.", ""), cleanName(cols[2] || cols[1])]),
+      .map((cols) => [cols[0].replace("IN.", ""), canonicalStateName(cols[2] || cols[1])]),
   );
 }
 
@@ -179,7 +206,7 @@ function parseGeoNamesCities(text, stateCodeToName) {
     if (population < MIN_CITY_POPULATION && !ADMIN_SEAT_CODES.has(featureCode)) continue;
 
     const name = cleanName(cols[2] || cols[1]);
-    const state = stateCodeToName.get(cols[10]) ?? cleanName(cols[10]);
+    const state = canonicalStateName(stateCodeToName.get(cols[10]) ?? cols[10]);
     if (!name || !state) continue;
 
     const key = `${state.toLowerCase()}::${slug(name)}`;
@@ -212,7 +239,7 @@ const stateCodeToName = parseAdmin1Names(admin1Text);
 const geonamesText = readZipText(geonamesZip, "IN.txt");
 
 statesRaw.forEach((state) => {
-  state.displayName = stateCodeToName.get(state.iso) ?? state.name;
+  state.displayName = canonicalStateName(stateCodeToName.get(state.iso) ?? state.name);
 });
 
 const states = statesRaw

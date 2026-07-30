@@ -928,11 +928,11 @@ export function ManageLocationsModule() {
 }
 
 function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations" }) {
-  const stateRecords = readStored("checkinfo-admin-states-india-v6", stateSeed);
-  const cityRecords = readStored("checkinfo-admin-cities-india-v6", citySeed);
+  const stateRecords = readStored("checkinfo-admin-states-india-v7", stateSeed);
+  const cityRecords = readStored("checkinfo-admin-cities-india-v7", citySeed);
   const isStates = kind === "states";
   const isCities = kind === "cities";
-  const storageKey = `checkinfo-admin-${kind}-india-v6`;
+  const storageKey = `checkinfo-admin-${kind}-india-v7`;
   const fallback: LocationAdminRecord[] = isStates ? stateSeed : isCities ? citySeed : locationSeed;
   const [records, setRecords] = useState<LocationAdminRecord[]>(() => readStored(storageKey, fallback));
   const [selected, setSelected] = useState<string[]>([]);
