@@ -953,7 +953,9 @@ cite {
 
 .check-top-search .voice-search-button,
 .check-hero-search .voice-search-button {
+  position: relative;
   min-width: 42px;
+  width: 42px;
   padding: 0 12px;
   border: 1px solid rgba(219, 231, 251, 0.95);
   background:
@@ -964,6 +966,27 @@ cite {
   text-transform: none;
 }
 
+.check-top-search .voice-search-button svg,
+.check-hero-search .voice-search-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.check-top-search .voice-search-button span,
+.check-hero-search .voice-search-button span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .check-top-search .voice-search-button:hover,
 .check-hero-search .voice-search-button:hover,
 .check-top-search .voice-search-button.is-listening,
@@ -972,6 +995,16 @@ cite {
   background: linear-gradient(135deg, rgba(34, 211, 238, 0.16), rgba(31, 111, 255, 0.12));
   color: var(--check-teal);
   box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.08);
+}
+
+.check-top-search .voice-search-button.is-listening::after,
+.check-hero-search .voice-search-button.is-listening::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 1px solid rgba(34, 211, 238, 0.42);
+  border-radius: inherit;
+  animation: voicePulse 900ms ease-in-out infinite;
 }
 
 .check-top-search .voice-search-button:disabled,
@@ -2337,6 +2370,18 @@ cite {
   100% {
     opacity: 0;
     transform: translateX(58%);
+  }
+}
+
+@keyframes voicePulse {
+  0%,
+  100% {
+    opacity: 0.38;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
   }
 }
 

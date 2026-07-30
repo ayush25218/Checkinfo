@@ -55,6 +55,7 @@ export function LocationSearchForm({
   defaultQuery = "",
   showSuggestions = false,
 }: LocationSearchFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -100,7 +101,7 @@ export function LocationSearchForm({
     const speechWindow = window as SpeechWindow;
     const SpeechRecognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition || isListening) return;
 
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
@@ -111,6 +112,7 @@ export function LocationSearchForm({
       if (inputRef.current && transcript) {
         inputRef.current.value = transcript;
         inputRef.current.focus();
+        window.setTimeout(() => formRef.current?.requestSubmit(), 180);
       }
     };
     recognition.onerror = () => setIsListening(false);
@@ -120,7 +122,7 @@ export function LocationSearchForm({
   }
 
   return (
-    <form className={className} action="/search" method="get" onSubmit={handleSubmit}>
+    <form ref={formRef} className={className} action="/search" method="get" onSubmit={handleSubmit}>
       <input ref={inputRef} name="q" placeholder={compact ? "Search" : "What are you looking for?"} defaultValue={defaultQuery} />
       {!compact ? <input name="location" placeholder="City or location" defaultValue={defaultLocation} /> : null}
       <button
@@ -130,7 +132,13 @@ export function LocationSearchForm({
         title={voiceSupported ? "Voice search" : "Voice search is not supported in this browser"}
         type="button"
       >
-        {isListening ? "Listening" : "Mic"}
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M12 14.5c1.7 0 3-1.3 3-3V6c0-1.7-1.3-3-3-3S9 4.3 9 6v5.5c0 1.7 1.3 3 3 3Z" />
+          <path d="M18.5 10.5c0 3.6-2.8 6.5-6.5 6.5s-6.5-2.9-6.5-6.5" />
+          <path d="M12 17v4" />
+          <path d="M8.5 21h7" />
+        </svg>
+        <span>{isListening ? "Listening" : "Voice search"}</span>
       </button>
       <button type="submit">{isLocating ? "Locating..." : "Search"}</button>
       {showSuggestions ? (
