@@ -4,7 +4,7 @@ import {
   formDataToObject,
   getAdminPage,
 } from "@/backend/checkinfo";
-import { getAdminResource, handleAdminAction } from "@/backend/directoryStore";
+import { getAdminResourceAsync, handleAdminActionAsync } from "@/backend/directoryStore";
 
 type RouteContext = {
   params: Promise<{ resource?: string[] }>;
@@ -16,7 +16,7 @@ export async function GET(request: Request, { params }: RouteContext) {
   const filters = Object.fromEntries(new URL(request.url).searchParams.entries());
 
   return Response.json({
-    data: getAdminResource(active),
+    data: await getAdminResourceAsync(active),
     filters,
     groups: adminGroups,
     ok: true,
@@ -35,7 +35,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   return Response.json(
     createResponse("Admin action queued", {
-      data: handleAdminAction(active, payload),
+      data: await handleAdminActionAsync(active, payload),
       resource: active,
     }),
   );

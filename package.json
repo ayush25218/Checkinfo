@@ -14,11 +14,13 @@
     "vinext:start": "vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "db:mongo:seed": "node scripts/seed-mongodb.mjs"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
     "framer-motion": "^12.43.0",
+    "mongodb": "^7.5.0",
     "next": "16.2.6",
     "react": "19.2.6",
     "react-dom": "19.2.6"

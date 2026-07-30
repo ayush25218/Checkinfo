@@ -6,30 +6,14 @@ import type {
   MemberReview,
   SupportTicket,
 } from "./member";
-
-type MemberProfile = {
-  email: string;
-  id: string;
-  initials: string;
-  name: string;
-  phone: string;
-  role: string;
-  status: "Active" | "Inactive";
-  username: string;
-};
-
-type MemberAccount = {
-  enquiries: MemberEnquiry[];
-  listings: MemberListing[];
-  loggedOutAt: string | null;
-  notifications: MemberNotification[];
-  packageName: string;
-  passwordUpdatedAt: string | null;
-  profile: MemberProfile;
-  registeredAt: string;
-  reviews: MemberReview[];
-  tickets: SupportTicket[];
-};
+import {
+  getOrCreateMongoMember,
+  isMongoConfigured,
+  listMongoMembers,
+  saveMongoMember,
+  type MemberAccount,
+  type MemberProfile,
+} from "./mongodb";
 
 type DirectoryStore = {
   members: Record<string, MemberAccount>;
@@ -85,8 +69,24 @@ export function getMemberAccount(memberId: string) {
   return store.members[memberId];
 }
 
+async function getMemberAccountForWrite(memberId: string) {
+  if (!isMongoConfigured()) return getMemberAccount(memberId);
+
+  return getOrCreateMongoMember(memberId);
+}
+
+async function commitMemberAccount(account: MemberAccount) {
+  if (!isMongoConfigured()) return;
+
+  await saveMongoMember(account);
+}
+
 export function getMemberState(memberId: string, resource = "dashboard") {
   const account = getMemberAccount(memberId);
+  return getMemberStateFromAccount(account, resource);
+}
+
+function getMemberStateFromAccount(account: MemberAccount, resource = "dashboard") {
 
   if (resource === "dashboard") {
     const activeListings = account.listings.filter((listing) => listing.status === "Active" || listing.status === "Featured").length;
@@ -113,8 +113,19 @@ export function getMemberState(memberId: string, resource = "dashboard") {
   }[resource] ?? account;
 }
 
+export async function getMemberStateAsync(memberId: string, resource = "dashboard") {
+  if (!isMongoConfigured()) return getMemberState(memberId, resource);
+
+  const account = await getOrCreateMongoMember(memberId);
+  return getMemberStateFromAccount(account, resource);
+}
+
 export function handleMemberAction(memberId: string, resource: string, payload: Record<string, unknown>) {
   const account = getMemberAccount(memberId);
+  return mutateMemberAction(account, resource, payload);
+}
+
+function mutateMemberAction(account: MemberAccount, resource: string, payload: Record<string, unknown>) {
   const action = String(payload.action ?? "");
 
   if (resource === "listing") {
@@ -192,10 +203,17 @@ export function handleMemberAction(memberId: string, resource: string, payload: 
   return { account };
 }
 
-export function getAdminResource(resource = "dashboard") {
-  const store = getStore();
-  const members = Object.values(store.members);
-  const business = members.flatMap((member) =>
+export async function handleMemberActionAsync(memberId: string, resource: string, payload: Record<string, unknown>) {
+  if (!isMongoConfigured()) return handleMemberAction(memberId, resource, payload);
+
+  const account = await getMemberAccountForWrite(memberId);
+  const result = mutateMemberAction(account, resource, payload);
+  await commitMemberAccount(account);
+  return result;
+}
+
+function buildBusinessFromMembers(members: MemberAccount[]) {
+  return members.flatMap((member) =>
     member.listings.map((listing) => ({
       address: listing.address || listing.location,
       badge: listing.status === "Featured" ? "Featured" : "Verified",
@@ -212,6 +230,46 @@ export function getAdminResource(resource = "dashboard") {
       website: listing.website,
     })),
   );
+}
+
+export function getAdminResource(resource = "dashboard") {
+  const store = getStore();
+  const members = Object.values(store.members);
+  const business = buildBusinessFromMembers(members);
+
+  if (resource === "dashboard") {
+    return {
+      activeMembers: members.filter((member) => member.profile.status === "Active").length,
+      categories: categories.length,
+      members: members.length,
+      pendingBusiness: business.filter((listing) => listing.status === "Pending").length,
+      totalBusiness: business.length,
+    };
+  }
+
+  if (resource === "business") return business;
+
+  if (resource === "members") {
+    return members.map((member) => ({
+      email: member.profile.email,
+      id: member.profile.id,
+      listingCount: member.listings.length,
+      name: member.profile.name,
+      phone: member.profile.phone,
+      registeredAt: member.registeredAt,
+      status: member.profile.status,
+      username: member.profile.username,
+    }));
+  }
+
+  return null;
+}
+
+export async function getAdminResourceAsync(resource = "dashboard") {
+  if (!isMongoConfigured()) return getAdminResource(resource);
+
+  const members = await listMongoMembers();
+  const business = buildBusinessFromMembers(members);
 
   if (resource === "dashboard") {
     return {
@@ -268,4 +326,37 @@ export function handleAdminAction(resource: string, payload: Record<string, unkn
   }
 
   return { data: getAdminResource(resource) };
+}
+
+export async function handleAdminActionAsync(resource: string, payload: Record<string, unknown>) {
+  if (!isMongoConfigured()) return handleAdminAction(resource, payload);
+
+  if (resource === "business") {
+    const action = String(payload.action ?? "");
+    const ownerId = String(payload.ownerId ?? "");
+    const id = String(payload.id ?? "");
+    const account = ownerId ? await getOrCreateMongoMember(ownerId) : null;
+
+    if (account && ["Active", "Inactive", "Pending", "Draft", "Featured"].includes(action)) {
+      account.listings = account.listings.map((listing) =>
+        listing.id === id ? { ...listing, status: action as MemberListing["status"] } : listing,
+      );
+      await saveMongoMember(account);
+      return { business: await getAdminResourceAsync("business") };
+    }
+  }
+
+  if (resource === "members") {
+    const action = String(payload.action ?? "");
+    const id = String(payload.id ?? "");
+    const account = id ? await getOrCreateMongoMember(id) : null;
+
+    if (account && ["Active", "Inactive"].includes(action)) {
+      account.profile.status = action as MemberProfile["status"];
+      await saveMongoMember(account);
+      return { members: await getAdminResourceAsync("members") };
+    }
+  }
+
+  return { data: await getAdminResourceAsync(resource) };
 }

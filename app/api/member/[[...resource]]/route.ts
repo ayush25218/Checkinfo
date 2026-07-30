@@ -2,7 +2,7 @@ import {
   createResponse,
   formDataToObject,
 } from "@/backend/checkinfo";
-import { getMemberId, getMemberState, handleMemberAction } from "@/backend/directoryStore";
+import { getMemberId, getMemberStateAsync, handleMemberActionAsync } from "@/backend/directoryStore";
 
 type RouteContext = {
   params: Promise<{ resource?: string[] }>;
@@ -14,7 +14,7 @@ export async function GET(request: Request, { params }: RouteContext) {
   const memberId = getMemberId(request);
 
   return Response.json({
-    data: getMemberState(memberId, active),
+    data: await getMemberStateAsync(memberId, active),
     memberId,
     ok: true,
     resource: active,
@@ -32,7 +32,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   return Response.json(
     createResponse("Member request processed", {
-      data: handleMemberAction(memberId, active, payload),
+      data: await handleMemberActionAsync(memberId, active, payload),
       memberId,
       resource: active,
     }),

@@ -1,5 +1,5 @@
 import { categories } from "./checkinfo";
-import { getAdminResource } from "./directoryStore";
+import { getAdminResourceAsync } from "./directoryStore";
 import type { MemberListing } from "./member";
 
 type PlaceLocation = {
@@ -105,16 +105,16 @@ function listingToResult(listing: SearchableListing, source: "sponsored" | "loca
   };
 }
 
-function getSponsoredListings(query = "", location = "") {
-  const business = (getAdminResource("business") ?? []) as SearchableListing[];
+async function getSponsoredListings(query = "", location = "") {
+  const business = ((await getAdminResourceAsync("business")) ?? []) as SearchableListing[];
   return business
     .filter((listing) => listing.status === "Featured")
     .filter((listing) => listingMatches(listing, query, location))
     .map((listing) => listingToResult(listing, "sponsored"));
 }
 
-function getFallbackLocalListings(query = "", location = "") {
-  const business = (getAdminResource("business") ?? []) as SearchableListing[];
+async function getFallbackLocalListings(query = "", location = "") {
+  const business = ((await getAdminResourceAsync("business")) ?? []) as SearchableListing[];
   return business
     .filter((listing) => listing.status === "Active")
     .filter((listing) => listingMatches(listing, query, location))
@@ -220,9 +220,9 @@ function dedupeResults(priorityResults: DirectorySearchResult[], results: Direct
 export async function searchDirectory(params: DirectorySearchParams) {
   const q = params.q?.trim() ?? "";
   const location = params.location?.trim() ?? "";
-  const sponsored = getSponsoredListings(q, location);
+  const sponsored = await getSponsoredListings(q, location);
   const googleResponse = await fetchGooglePlaces(params);
-  const localFallback = googleResponse.places.length ? [] : getFallbackLocalListings(q, location);
+  const localFallback = googleResponse.places.length ? [] : await getFallbackLocalListings(q, location);
   const organic = dedupeResults(sponsored, [...googleResponse.places, ...localFallback]);
   const results = [...sponsored, ...organic];
 
