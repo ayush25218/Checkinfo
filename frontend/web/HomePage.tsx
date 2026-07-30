@@ -73,7 +73,7 @@ export async function HomePage() {
         <LocationSearchForm className="check-top-search" compact />
         <nav aria-label="Primary navigation">
           <a href="#top">Home</a>
-          <a href="#about">About Us</a>
+          <a href="/about">About Us</a>
           <a href="#categories">Business</a>
           <a href="#categories">Categories</a>
           <a href="#featured">Featured Ads</a>
@@ -111,16 +111,6 @@ export async function HomePage() {
       </section>
 
       <GoogleAdSlot label="Top homepage advertisement" slot="1111111111" />
-
-      <section className="check-about" id="about">
-        <div>
-          <p className="eyebrow">About Checkinfo</p>
-          <h2>Verified local discovery for business owners and customers.</h2>
-        </div>
-        <p>
-          Search categories, compare listings, and connect with businesses faster through a clean local directory built for high-intent enquiries.
-        </p>
-      </section>
 
       <section className="check-section" id="categories">
         <div className="check-section-title">
@@ -215,7 +205,7 @@ export async function HomePage() {
           <span className="check-footer-rod check-footer-rod-left-bottom" aria-hidden="true" />
           <span className="check-footer-rod check-footer-rod-right-bottom" aria-hidden="true" />
           <h3>Quick Links</h3>
-          {footerLinks.quick.map((link) => <a href="#top" key={link}>{link}</a>)}
+          {footerLinks.quick.map((link) => <a href={link === "About Us" ? "/about" : "#top"} key={link}>{link}</a>)}
           <p><strong>Business Owner :</strong> Login | Register</p>
         </div>
         <div className="check-footer-card">
