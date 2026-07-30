@@ -14,6 +14,7 @@ import {
   type MemberAccount,
   type MemberProfile,
 } from "./mongodb";
+import { listingLocationText, listingPublicPath } from "./listingSeo";
 
 type DirectoryStore = {
   members: Record<string, MemberAccount>;
@@ -215,18 +216,24 @@ export async function handleMemberActionAsync(memberId: string, resource: string
 function buildBusinessFromMembers(members: MemberAccount[]) {
   return members.flatMap((member) =>
     member.listings.map((listing) => ({
-      address: listing.address || listing.location,
+      address: listing.address || listingLocationText(listing),
+      addressProofName: listing.addressProofName,
       badge: listing.status === "Featured" ? "Featured" : "Verified",
       category: listing.category,
+      city: listing.city,
       contact: listing.mobile || listing.email,
       details: listing.description || listing.keywords,
       id: listing.id,
+      location: listingLocationText(listing),
       mobile: listing.mobile,
       name: listing.name,
       ownerEmail: member.profile.email,
       ownerId: member.profile.id,
       ownerName: member.profile.name,
+      publicPath: listingPublicPath(listing),
+      state: listing.state,
       status: listing.status,
+      subcity: listing.subcity,
       website: listing.website,
     })),
   );

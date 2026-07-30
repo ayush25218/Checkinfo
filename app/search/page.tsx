@@ -73,6 +73,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 {result.rating ? <strong>{result.rating} / 5</strong> : <strong>New</strong>}
                 {result.reviewCount ? <span>{result.reviewCount} reviews</span> : null}
                 {result.phone ? <a href={`tel:${result.phone}`}>{result.phone}</a> : null}
+                {result.url ? <a href={result.url}>View Checkinfo Page</a> : null}
                 {result.website ? <a href={result.website} target="_blank" rel="noreferrer">Website</a> : null}
                 {result.mapUrl ? <a href={result.mapUrl} target="_blank" rel="noreferrer">Google Map</a> : null}
               </div>

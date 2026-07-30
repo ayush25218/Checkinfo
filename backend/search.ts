@@ -1,5 +1,6 @@
 import { categories } from "./checkinfo";
 import { getAdminResourceAsync } from "./directoryStore";
+import { listingLocationText, listingPublicPath } from "./listingSeo";
 import type { MemberListing } from "./member";
 
 type PlaceLocation = {
@@ -43,6 +44,7 @@ export type DirectorySearchResult = {
   reviewCount?: number;
   source: "sponsored" | "google" | "local";
   sponsored: boolean;
+  url?: string;
   website?: string;
 };
 
@@ -81,7 +83,7 @@ type SearchableListing = Partial<MemberListing> & {
 };
 
 function listingMatches(listing: SearchableListing, query = "", location = "") {
-  const haystack = normalizeText([listing.name, listing.description, listing.keywords, listing.details, listing.location, listing.address, listing.category].join(" "));
+  const haystack = normalizeText([listing.name, listing.description, listing.keywords, listing.details, listing.location, listing.address, listing.category, listing.city, listing.subcity, listing.state].join(" "));
   const tokens = queryTokens(query);
   const locationTokens = queryTokens(location);
 
@@ -93,7 +95,7 @@ function listingMatches(listing: SearchableListing, query = "", location = "") {
 
 function listingToResult(listing: SearchableListing, source: "sponsored" | "local"): DirectorySearchResult {
   return {
-    address: listing.address || listing.location || "Address not available",
+    address: listing.address || listingLocationText(listing) || "Address not available",
     badge: listing.status === "Featured" ? "Featured" : "Verified",
     category: listing.category ?? "Business",
     id: `${source}-${normalizeText(listing.name || listing.id || "business").replaceAll(" ", "-")}`,
@@ -101,6 +103,7 @@ function listingToResult(listing: SearchableListing, source: "sponsored" | "loca
     phone: listing.mobile || listing.contact,
     source,
     sponsored: source === "sponsored",
+    url: listingPublicPath(listing),
     website: listing.website,
   };
 }

@@ -6,10 +6,14 @@ export type MemberListing = {
   description: string;
   email: string;
   keywords: string;
+  addressProofName?: string;
+  city: string;
   location: string;
   mobile: string;
   name: string;
+  state: string;
   status: "Draft" | "Pending" | "Active" | "Featured" | "Inactive";
+  subcity: string;
   website: string;
   youtube: string;
 };

@@ -1,4 +1,6 @@
 import { categories } from "@/backend/checkinfo";
+import { getAdminResourceAsync } from "@/backend/directoryStore";
+import { listingLocationText, listingPublicPath, type PublicBusinessListing } from "@/backend/listingSeo";
 import { CategoryTransitionGrid } from "./CategoryTransitionGrid";
 import { getAllCategoryExperiences } from "./categoryExperience";
 import { LocationSearchForm } from "./LocationSearchForm";
@@ -9,6 +11,32 @@ const footerLinks = {
 };
 
 const trendingSearches = ["Website Developer", "Restaurants near me", "Hospitals", "Hotels", "Schools", "Bank"];
+
+function BusinessCard({ listing }: { listing: PublicBusinessListing }) {
+  const location = listingLocationText(listing);
+
+  return (
+    <article className="check-ad-card">
+      <div className="check-ad-image blue">
+        <span>{(listing.name || "CI").slice(0, 2).toUpperCase()}</span>
+        <b>{listing.badge || "Verified"}</b>
+      </div>
+      <small>{listing.category || "Business"}{location ? ` / ${location}` : ""}</small>
+      <h3>{listing.name}</h3>
+      <p>{listing.details || listing.description || listing.address || "Approved Checkinfo business listing."}</p>
+      <a href={listingPublicPath(listing)}>View Details</a>
+    </article>
+  );
+}
+
+async function getApprovedHomeListings() {
+  try {
+    const business = (((await getAdminResourceAsync("business")) ?? []) as PublicBusinessListing[]);
+    return business.filter((listing) => listing.status === "Active" || listing.status === "Featured");
+  } catch {
+    return [];
+  }
+}
 
 function GoogleAdSlot({ label, slot }: { label: string; slot: string }) {
   return (
@@ -27,8 +55,12 @@ function GoogleAdSlot({ label, slot }: { label: string; slot: string }) {
   );
 }
 
-export function HomePage() {
+export async function HomePage() {
   const categoryExperiences = getAllCategoryExperiences();
+  const business = await getApprovedHomeListings();
+  const featured = business.filter((listing) => listing.status === "Featured").slice(0, 3);
+  const newest = business.slice(0, 8);
+  const trending = business.slice(0, 4);
 
   return (
     <main className="check-home">
@@ -108,10 +140,12 @@ export function HomePage() {
           <a href="/members/add_listing">View More</a>
         </div>
         <div className="check-card-row">
-          <article className="check-empty-listing">
-            <strong>No sponsored listings published yet</strong>
-            <span>Approved paid listings from admin will appear here.</span>
-          </article>
+          {featured.length ? featured.map((listing) => <BusinessCard listing={listing} key={listing.id} />) : (
+            <article className="check-empty-listing">
+              <strong>No sponsored listings published yet</strong>
+              <span>Approved paid listings from admin will appear here.</span>
+            </article>
+          )}
         </div>
       </section>
 
@@ -121,10 +155,12 @@ export function HomePage() {
           <p>Freshly submitted business profiles, ready for discovery and enquiries.</p>
         </div>
         <div className="check-new-grid">
-          <article className="check-empty-listing">
-            <strong>No new listings published yet</strong>
-            <span>User submitted listings will show after admin approval.</span>
-          </article>
+          {newest.length ? newest.map((listing) => <BusinessCard listing={listing} key={listing.id} />) : (
+            <article className="check-empty-listing">
+              <strong>No new listings published yet</strong>
+              <span>User submitted listings will show after admin approval.</span>
+            </article>
+          )}
         </div>
         <a className="check-more-button" href="/members/add_listing">View More</a>
       </section>
@@ -139,10 +175,12 @@ export function HomePage() {
           </p>
         </div>
         <div className="check-trending-grid">
-          <article className="check-empty-listing">
-            <strong>No trending listings yet</strong>
-            <span>Trending placement will be calculated from real search and enquiry activity.</span>
-          </article>
+          {trending.length ? trending.map((listing) => <BusinessCard listing={listing} key={listing.id} />) : (
+            <article className="check-empty-listing">
+              <strong>No trending listings yet</strong>
+              <span>Trending placement will be calculated from real search and enquiry activity.</span>
+            </article>
+          )}
         </div>
       </section>
 

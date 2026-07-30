@@ -25,15 +25,21 @@ type CategoryRecord = {
 type BusinessRecord = {
   id: string;
   address: string;
+  addressProofName?: string;
   badge: string;
   category: string;
+  city?: string;
   contact: string;
   details: string;
+  location?: string;
   name: string;
   ownerEmail?: string;
   ownerId?: string;
   ownerName?: string;
+  publicPath?: string;
+  state?: string;
   status: Status;
+  subcity?: string;
 };
 
 type MemberRecord = {
@@ -494,10 +500,14 @@ export function ManageBusinessModule() {
     address: "",
     badge: "Verified",
     category: categories[0] ?? "General",
+    city: "",
     contact: "",
     details: "",
+    proof: "",
     name: "",
+    state: "",
     status: "Pending" as Status,
+    subcity: "",
   });
 
   const filtered = useMemo(() => {
@@ -522,10 +532,14 @@ export function ManageBusinessModule() {
       address: "",
       badge: "Verified",
       category: categories[0] ?? "General",
+      city: "",
       contact: "",
       details: "",
+      proof: "",
       name: "",
+      state: "",
       status: "Pending",
+      subcity: "",
     });
   }
 
@@ -535,12 +549,16 @@ export function ManageBusinessModule() {
     const nextRecord: BusinessRecord = {
       id: editing?.id ?? `biz-${Date.now()}`,
       address: form.address.trim(),
+      addressProofName: form.proof.trim(),
       badge: form.badge,
       category: form.category,
+      city: form.city.trim(),
       contact: form.contact.trim(),
       details: form.details.trim(),
       name: form.name.trim(),
+      state: form.state.trim(),
       status: form.status,
+      subcity: form.subcity.trim(),
     };
 
     sync(
@@ -557,10 +575,14 @@ export function ManageBusinessModule() {
       address: record.address,
       badge: record.badge,
       category: record.category,
+      city: record.city ?? "",
       contact: record.contact,
       details: record.details,
+      proof: record.addressProofName ?? "",
       name: record.name,
+      state: record.state ?? "",
       status: record.status,
+      subcity: record.subcity ?? "",
     });
   }
 
@@ -571,6 +593,11 @@ export function ManageBusinessModule() {
       if (record?.ownerId) void postAdminAction("business", { action: nextStatus, id: record.id, ownerId: record.ownerId });
     });
     setSelected([]);
+  }
+
+  function setRecordStatus(record: BusinessRecord, nextStatus: Status) {
+    sync(records.map((item) => (item.id === record.id ? { ...item, status: nextStatus } : item)));
+    if (record.ownerId) void postAdminAction("business", { action: nextStatus, id: record.id, ownerId: record.ownerId });
   }
 
   function deleteSelected() {
@@ -624,6 +651,18 @@ export function ManageBusinessModule() {
           <input value={form.contact} onChange={(event) => setForm({ ...form, contact: event.target.value })} />
         </label>
         <label>
+          <span>State</span>
+          <input value={form.state} onChange={(event) => setForm({ ...form, state: event.target.value })} />
+        </label>
+        <label>
+          <span>City / District</span>
+          <input value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} />
+        </label>
+        <label>
+          <span>Subcity / Area</span>
+          <input value={form.subcity} onChange={(event) => setForm({ ...form, subcity: event.target.value })} />
+        </label>
+        <label>
           <span>Category</span>
           <select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}>
             {categories.map((category) => <option key={category}>{category}</option>)}
@@ -632,6 +671,10 @@ export function ManageBusinessModule() {
         <label>
           <span>Details</span>
           <input value={form.details} onChange={(event) => setForm({ ...form, details: event.target.value })} />
+        </label>
+        <label>
+          <span>Address Proof</span>
+          <input value={form.proof} onChange={(event) => setForm({ ...form, proof: event.target.value })} placeholder="Optional filename" />
         </label>
         <label>
           <span>Badge</span>
@@ -677,11 +720,16 @@ export function ManageBusinessModule() {
           <div className="admin-real-row" key={record.id}>
             <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
             <span>{record.name}<small>{record.category}{record.ownerName ? ` / ${record.ownerName}` : ""}</small></span>
-            <span>{record.address}</span>
-            <span>{record.contact}</span>
-            <span>{record.badge} / {record.details}</span>
+            <span>{record.address}<small>{record.subcity || record.city || record.state ? [record.subcity, record.city, record.state].filter(Boolean).join(", ") : record.location}</small></span>
+            <span>{record.contact}<small>{record.ownerEmail || ""}</small></span>
+            <span>{record.badge} / {record.details}<small>{record.addressProofName ? `Proof: ${record.addressProofName}` : "Address proof optional"}</small>{record.publicPath ? <a className="admin-mini-link" href={record.publicPath} target="_blank" rel="noreferrer">SEO page</a> : null}</span>
             <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
-            <span><button type="button" className="admin-link-button" onClick={() => editRecord(record)}>Manage</button></span>
+            <span className="admin-business-actions">
+              <button type="button" className="admin-link-button" onClick={() => editRecord(record)}>Manage</button>
+              {record.status !== "Active" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Active")}>Approve</button> : null}
+              {record.status !== "Featured" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Featured")}>Feature</button> : null}
+              {record.status !== "Inactive" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Inactive")}>Hide</button> : null}
+            </span>
           </div>
         ))}
       </div>

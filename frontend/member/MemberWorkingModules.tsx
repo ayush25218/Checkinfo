@@ -8,6 +8,7 @@ import {
   MemberShell,
   PanelSection,
 } from "@/frontend/member/MemberPanel";
+import { indiaDistricts, indiaStates, indiaSubdistricts } from "@/frontend/admin/indiaLocations";
 
 type ListingStatus = "Draft" | "Pending" | "Active" | "Featured";
 
@@ -19,10 +20,14 @@ type MemberListing = {
   description: string;
   email: string;
   keywords: string;
+  addressProofName?: string;
+  city: string;
   location: string;
   mobile: string;
   name: string;
+  state: string;
   status: ListingStatus;
+  subcity: string;
   website: string;
   youtube: string;
 };
@@ -130,9 +135,13 @@ function initialListing(): Omit<MemberListing, "id" | "status"> {
     description: "",
     email: "",
     keywords: "",
+    addressProofName: "",
+    city: "",
     location: "",
     mobile: "",
     name: "",
+    state: "Delhi",
+    subcity: "",
     website: "",
     youtube: "",
   };
@@ -148,19 +157,31 @@ function ListingForm({
   onSave: (record: Omit<MemberListing, "id" | "status">) => void;
 }) {
   const [form, setForm] = useState({ ...initialListing(), ...initial });
+  const cityOptions = useMemo(
+    () => indiaDistricts.filter((city) => city.state === form.state).slice(0, 1200),
+    [form.state],
+  );
+  const subcityOptions = useMemo(
+    () => indiaSubdistricts.filter((subcity) => subcity.state === form.state && (!form.city || subcity.district === form.city)).slice(0, 900),
+    [form.city, form.state],
+  );
 
   function submit() {
-    if (!form.name.trim() || !form.mobile.trim()) return;
+    if (!form.name.trim() || !form.mobile.trim() || !form.email.trim() || !form.address.trim() || !form.city.trim()) return;
     onSave({
       address: form.address.trim(),
+      addressProofName: form.addressProofName?.trim(),
       category: form.category,
+      city: form.city.trim(),
       contactPerson: form.contactPerson.trim(),
       description: form.description.trim(),
       email: form.email.trim(),
       keywords: form.keywords.trim(),
-      location: form.location.trim(),
+      location: [form.subcity, form.city, form.state].filter(Boolean).join(", "),
       mobile: form.mobile.trim(),
       name: form.name.trim(),
+      state: form.state.trim(),
+      subcity: form.subcity.trim(),
       website: form.website.trim(),
       youtube: form.youtube.trim(),
     });
@@ -172,14 +193,25 @@ function ListingForm({
         <label className="panel-field"><span>Business Name *</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
         <label className="panel-field"><span>Contact Person *</span><input value={form.contactPerson} onChange={(event) => setForm({ ...form, contactPerson: event.target.value })} /></label>
         <label className="panel-field"><span>Mobile Number *</span><input value={form.mobile} onChange={(event) => setForm({ ...form, mobile: event.target.value })} /></label>
-        <label className="panel-field"><span>Email ID</span><input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
+        <label className="panel-field"><span>Email ID *</span><input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
         <label className="panel-field"><span>Website</span><input value={form.website} onChange={(event) => setForm({ ...form, website: event.target.value })} /></label>
         <label className="panel-field"><span>YouTube Video</span><input value={form.youtube} onChange={(event) => setForm({ ...form, youtube: event.target.value })} /></label>
         <label className="panel-field wide"><span>Address *</span><textarea value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} /></label>
         <label className="panel-field"><span>Category *</span><select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
-        <label className="panel-field"><span>Location *</span><input value={form.location} onChange={(event) => setForm({ ...form, location: event.target.value })} /></label>
+        <label className="panel-field"><span>State *</span><select value={form.state} onChange={(event) => setForm({ ...form, city: "", state: event.target.value, subcity: "" })}>{indiaStates.map((state) => <option key={state.id}>{state.name}</option>)}</select></label>
+        <label className="panel-field"><span>City / District *</span><select value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value, subcity: "" })}><option value="">Select city</option>{cityOptions.map((city) => <option key={city.id}>{city.name}</option>)}</select></label>
+        <label className="panel-field"><span>Subcity / Area</span><select value={form.subcity} onChange={(event) => setForm({ ...form, subcity: event.target.value })}><option value="">Optional area</option>{subcityOptions.map((subcity) => <option key={subcity.id}>{subcity.name}</option>)}</select></label>
         <label className="panel-field"><span>Service Keywords</span><input value={form.keywords} onChange={(event) => setForm({ ...form, keywords: event.target.value })} /></label>
         <label className="panel-field wide"><span>Description</span><textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label>
+      </div>
+      <h3>Optional Verification</h3>
+      <div className="upload-grid optional-proof-grid" aria-label="Optional address proof upload">
+        <label className="upload-card">
+          <span>Business address proof</span>
+          <input type="file" accept="image/*,.pdf" onChange={(event) => setForm({ ...form, addressProofName: event.target.files?.[0]?.name ?? "" })} />
+          <small>Optional only. No document is required to submit.</small>
+          {form.addressProofName ? <b>{form.addressProofName}</b> : null}
+        </label>
       </div>
       <h3>Upload Images</h3>
       <div className="upload-grid" aria-label="Upload listing images">
