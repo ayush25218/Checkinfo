@@ -1467,8 +1467,8 @@ cite {
   position: absolute;
   top: 50%;
   z-index: -1;
-  width: clamp(74px, 7.2vw, 132px);
-  height: 18px;
+  width: clamp(64px, 6.6vw, 116px);
+  height: 14px;
   border-radius: 999px;
   opacity: 0;
   pointer-events: none;
@@ -1476,8 +1476,8 @@ cite {
     linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92)),
     linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0));
   box-shadow:
-    inset 0 2px 4px rgba(255, 255, 255, 0.82),
-    inset 0 -3px 6px rgba(0, 0, 0, 0.42),
+    inset 0 1px 3px rgba(255, 255, 255, 0.82),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.42),
     0 0 0 1px rgba(255, 255, 255, 0.18),
     0 0 18px rgba(0, 180, 255, 0.2);
   transition:
@@ -1491,7 +1491,7 @@ cite {
 .check-footer-card::before {
   left: 0;
   background:
-    radial-gradient(circle at calc(100% - 8px) 50%, rgba(199, 239, 255, 0.98) 0 5px, rgba(0, 180, 255, 0.92) 6px 9px, rgba(0, 180, 255, 0.18) 10px 16px, transparent 17px),
+    radial-gradient(circle at calc(100% - 6px) 50%, rgba(199, 239, 255, 0.96) 0 3px, rgba(0, 180, 255, 0.86) 4px 7px, rgba(0, 180, 255, 0.14) 8px 13px, transparent 14px),
     linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92)),
     linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0));
   transform-origin: right center;
@@ -1500,7 +1500,7 @@ cite {
 .check-footer-card::after {
   right: 0;
   background:
-    radial-gradient(circle at 8px 50%, rgba(199, 239, 255, 0.98) 0 5px, rgba(0, 180, 255, 0.92) 6px 9px, rgba(0, 180, 255, 0.18) 10px 16px, transparent 17px),
+    radial-gradient(circle at 6px 50%, rgba(199, 239, 255, 0.96) 0 3px, rgba(0, 180, 255, 0.86) 4px 7px, rgba(0, 180, 255, 0.14) 8px 13px, transparent 14px),
     linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92)),
     linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0));
   transform-origin: left center;
@@ -1547,24 +1547,24 @@ cite {
 
 .check-footer-card:hover::before {
   opacity: 1;
-  transform: translateX(calc(-100% + 3px)) translateY(-50%) scaleX(1) translateZ(-65px);
+  transform: translateX(calc(-100% + 2px)) translateY(-50%) scaleX(1) translateZ(-65px);
   box-shadow:
-    inset 0 2px 4px rgba(255, 255, 255, 0.9),
-    inset 0 -3px 7px rgba(0, 0, 0, 0.48),
-    0 0 0 1px rgba(255, 255, 255, 0.22),
-    12px 0 18px rgba(0, 180, 255, 0.42),
-    0 0 34px rgba(0, 116, 255, 0.32);
+    inset 0 1px 3px rgba(255, 255, 255, 0.9),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.48),
+    0 0 0 1px rgba(255, 255, 255, 0.18),
+    7px 0 12px rgba(0, 180, 255, 0.32),
+    0 0 22px rgba(0, 116, 255, 0.22);
 }
 
 .check-footer-card:hover::after {
   opacity: 1;
-  transform: translateX(calc(100% - 3px)) translateY(-50%) scaleX(1) translateZ(-65px);
+  transform: translateX(calc(100% - 2px)) translateY(-50%) scaleX(1) translateZ(-65px);
   box-shadow:
-    inset 0 2px 4px rgba(255, 255, 255, 0.9),
-    inset 0 -3px 7px rgba(0, 0, 0, 0.48),
-    0 0 0 1px rgba(255, 255, 255, 0.22),
-    -12px 0 18px rgba(0, 180, 255, 0.42),
-    0 0 34px rgba(0, 116, 255, 0.32);
+    inset 0 1px 3px rgba(255, 255, 255, 0.9),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.48),
+    0 0 0 1px rgba(255, 255, 255, 0.18),
+    -7px 0 12px rgba(0, 180, 255, 0.32),
+    0 0 22px rgba(0, 116, 255, 0.22);
 }
 
 .check-footer-card:hover .check-footer-card-sheen::before {
