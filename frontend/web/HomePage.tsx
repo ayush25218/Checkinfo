@@ -40,10 +40,14 @@ export function HomePage() {
         </a>
         <LocationSearchForm className="check-top-search" compact />
         <nav aria-label="Primary navigation">
-          <a href="/members/myaccount">My Profile</a>
+          <a href="#top">Home</a>
+          <a href="#about">About Us</a>
           <a href="#categories">Business</a>
+          <a href="#categories">Categories</a>
           <a href="#featured">Featured Ads</a>
+          <a href="#advertise">Advertise</a>
           <a href="#contact">Contact</a>
+          <a href="/members/myaccount">My Profile</a>
         </nav>
         <a className="check-post-button" href="/members/add_listing">Post Your Ad</a>
       </header>
@@ -75,6 +79,16 @@ export function HomePage() {
       </section>
 
       <GoogleAdSlot label="Top homepage advertisement" slot="1111111111" />
+
+      <section className="check-about" id="about">
+        <div>
+          <p className="eyebrow">About Checkinfo</p>
+          <h2>Verified local discovery for business owners and customers.</h2>
+        </div>
+        <p>
+          Search categories, compare listings, and connect with businesses faster through a clean local directory built for high-intent enquiries.
+        </p>
+      </section>
 
       <section className="check-section" id="categories">
         <div className="check-section-title">

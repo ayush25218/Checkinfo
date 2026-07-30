@@ -854,15 +854,14 @@ cite {
   top: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: auto minmax(260px, 440px) minmax(320px, 1fr) auto;
-  gap: clamp(12px, 1.4vw, 20px);
+  grid-template-columns: auto minmax(240px, 440px) minmax(360px, 1fr) auto;
+  gap: clamp(10px, 1.2vw, 18px);
   align-items: center;
-  min-height: 78px;
-  padding: 12px clamp(18px, 4vw, 52px);
-  border-bottom: 1px solid rgba(219, 231, 251, 0.82);
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(22px);
-  box-shadow: 0 16px 50px rgba(7, 21, 47, 0.08);
+  min-height: 66px;
+  padding: 8px clamp(18px, 4vw, 52px);
+  border-bottom: 1px solid rgba(219, 231, 251, 0.95);
+  background: #ffffff;
+  box-shadow: 0 10px 34px rgba(7, 21, 47, 0.08);
   transition: min-height 220ms ease, box-shadow 220ms ease, background 220ms ease;
 }
 
@@ -878,7 +877,7 @@ cite {
   grid-row: span 2;
   color: var(--check-blue);
   font-family: Georgia, serif;
-  font-size: 48px;
+  font-size: 42px;
   font-style: italic;
   line-height: 0.75;
   transition: transform 220ms ease, filter 220ms ease;
@@ -890,13 +889,13 @@ cite {
 }
 
 .check-logo strong {
-  font-size: 26px;
+  font-size: 24px;
   line-height: 0.95;
 }
 
 .check-logo small {
   color: var(--check-blue);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
   line-height: 1;
   text-transform: uppercase;
@@ -905,14 +904,14 @@ cite {
 .check-top-search,
 .check-hero-search {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
   min-width: 0;
   border: 1px solid rgba(219, 231, 251, 0.95);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.94);
-  padding: 8px;
-  box-shadow: 0 18px 46px rgba(7, 21, 47, 0.1);
+  padding: 6px;
+  box-shadow: 0 14px 38px rgba(7, 21, 47, 0.09);
 }
 
 .check-top-search {
@@ -923,7 +922,7 @@ cite {
 .check-top-search input,
 .check-hero-search input {
   min-width: 0;
-  min-height: 38px;
+  min-height: 36px;
   border: 0;
   color: #111827;
   outline: 0;
@@ -938,7 +937,7 @@ cite {
 .check-hero-panel a {
   display: inline-grid;
   place-items: center;
-  min-height: 42px;
+  min-height: 38px;
   border: 0;
   border-radius: 10px;
   background: linear-gradient(135deg, var(--check-teal), var(--check-teal-2));
@@ -950,6 +949,35 @@ cite {
   text-transform: uppercase;
   box-shadow: 0 16px 34px rgba(19, 73, 78, 0.24);
   transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.check-top-search .voice-search-button,
+.check-hero-search .voice-search-button {
+  min-width: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(219, 231, 251, 0.95);
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.55), transparent 30%),
+    linear-gradient(135deg, #f8fbff, #eef5ff);
+  color: var(--check-blue);
+  box-shadow: none;
+  text-transform: none;
+}
+
+.check-top-search .voice-search-button:hover,
+.check-hero-search .voice-search-button:hover,
+.check-top-search .voice-search-button.is-listening,
+.check-hero-search .voice-search-button.is-listening {
+  border-color: rgba(34, 211, 238, 0.5);
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.16), rgba(31, 111, 255, 0.12));
+  color: var(--check-teal);
+  box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.08);
+}
+
+.check-top-search .voice-search-button:disabled,
+.check-hero-search .voice-search-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .check-top-search button:hover,
@@ -969,14 +997,17 @@ cite {
 
 .check-header nav {
   justify-content: flex-end;
-  gap: clamp(12px, 1.3vw, 22px);
+  gap: clamp(10px, 1vw, 18px);
   min-width: 0;
   white-space: nowrap;
+  color: #344257;
+  font-size: 13px;
 }
 
 .check-header nav a {
   position: relative;
   padding: 8px 0;
+  transition: color 180ms ease, filter 180ms ease;
 }
 
 .check-header nav a::after {
@@ -995,6 +1026,13 @@ cite {
 
 .check-header nav a:hover::after {
   transform: scaleX(1);
+}
+
+.check-header nav a:hover {
+  background: linear-gradient(90deg, var(--check-teal), var(--check-blue), #745cff);
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 8px 14px rgba(31, 111, 255, 0.12));
 }
 
 .check-hero {
@@ -1073,7 +1111,7 @@ cite {
 }
 
 .check-hero-search {
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.55fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.55fr) auto auto;
   max-width: 860px;
   margin-top: 28px;
   border-color: rgba(255, 255, 255, 0.52);
@@ -1176,6 +1214,33 @@ cite {
 
 .check-hero-panel strong {
   font-size: 34px;
+}
+
+.check-about {
+  display: grid;
+  grid-template-columns: minmax(0, 0.48fr) minmax(0, 0.52fr);
+  gap: clamp(18px, 4vw, 54px);
+  align-items: center;
+  padding: clamp(32px, 5vw, 56px) clamp(18px, 4vw, 64px);
+  border-bottom: 1px solid rgba(219, 231, 251, 0.9);
+  background:
+    radial-gradient(circle at 18% 10%, rgba(31, 111, 255, 0.08), transparent 26%),
+    linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.check-about h2 {
+  margin: 0;
+  color: var(--check-ink);
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1.12;
+}
+
+.check-about p:last-child {
+  margin: 0;
+  color: #4b5563;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.7;
 }
 
 .check-section {
@@ -3654,6 +3719,7 @@ cite {
   .footer,
   .check-header,
   .check-hero,
+  .check-about,
   .check-featured,
   .check-footer,
   .category-hero,
