@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { categories } from "@/backend/checkinfo";
+import { businessTaxonomy } from "@/backend/businessTaxonomy";
 import {
   indiaCities,
   indiaDistricts,
@@ -296,9 +297,11 @@ async function postAdminAction(resource: string, payload: Record<string, unknown
 
 export function ManageCategoriesModule() {
   const [records, setRecords] = useState(() =>
-    readStored("checkinfo-admin-categories", categorySeed),
+    readStored("checkinfo-admin-categories-v2", categorySeed),
   );
   const [selected, setSelected] = useState<string[]>([]);
+  const [selectedMain, setSelectedMain] = useState<string>(businessTaxonomy[0]?.slug ?? "");
+  const [openSubcategories, setOpenSubcategories] = useState<Record<string, boolean>>({});
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All");
   const [editing, setEditing] = useState<CategoryRecord | null>(null);
@@ -317,9 +320,34 @@ export function ManageCategoriesModule() {
       .filter((record) => status === "All" || record.status === status)
       .sort((a, b) => a.order - b.order);
   }, [query, records, status]);
+  const visibleTaxonomy = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    const recordByName = new Map(records.map((record) => [record.name, record]));
+
+    return businessTaxonomy
+      .map((category) => ({ category, record: recordByName.get(category.name) }))
+      .filter(({ category, record }) => {
+        const statusMatch = status === "All" || (record?.status ?? "Active") === status;
+        if (!statusMatch) return false;
+        if (!term) return true;
+
+        return [
+          category.name,
+          ...category.subcategories.map((subcategory) => subcategory.name),
+          ...category.subcategories.flatMap((subcategory) => subcategory.businessTypes.map((businessType) => businessType.name)),
+        ].join(" ").toLowerCase().includes(term);
+      });
+  }, [query, records, status]);
+  const activeMain = visibleTaxonomy.find((item) => item.category.slug === selectedMain)?.category ?? visibleTaxonomy[0]?.category ?? businessTaxonomy[0];
+  const categoryStats = {
+    main: businessTaxonomy.length,
+    subcategories: businessTaxonomy.reduce((total, category) => total + category.subcategories.length, 0),
+    types: businessTaxonomy.reduce((total, category) => total + category.subcategories.reduce((sum, subcategory) => sum + subcategory.businessTypes.length, 0), 0),
+  };
 
   function sync(next: CategoryRecord[]) {
     setRecords(next);
+    writeStored("checkinfo-admin-categories-v2", next);
     writeStored("checkinfo-admin-categories", next);
   }
 
@@ -394,6 +422,10 @@ export function ManageCategoriesModule() {
     reader.readAsDataURL(file);
   }
 
+  function toggleSubcategory(slug: string) {
+    setOpenSubcategories((current) => ({ ...current, [slug]: !current[slug] }));
+  }
+
   return (
     <section className="admin-card">
       <div className="admin-filters">
@@ -414,6 +446,74 @@ export function ManageCategoriesModule() {
           <input value={filtered.length} readOnly />
         </label>
         <button type="button" onClick={() => undefined}>Submit</button>
+      </div>
+
+      <div className="admin-category-browser">
+        <div className="admin-location-tree-head">
+          <div>
+            <span>India Business Taxonomy</span>
+            <strong>Manage category hierarchy</strong>
+          </div>
+          <div className="admin-location-tree-stats">
+            <span>Main</span><b>{categoryStats.main}</b>
+            <span>Sub</span><b>{categoryStats.subcategories}</b>
+            <span>Types</span><b>{categoryStats.types}</b>
+            <span>Shown</span><b>{visibleTaxonomy.length}</b>
+          </div>
+        </div>
+        <div className="admin-category-browser-grid">
+          <div className="admin-category-main-list">
+            {visibleTaxonomy.map(({ category, record }) => (
+              <button
+                className={category.slug === activeMain?.slug ? "active" : ""}
+                key={category.slug}
+                onClick={() => setSelectedMain(category.slug)}
+                type="button"
+              >
+                <span>{category.name}</span>
+                <b>{category.subcategories.length * 4}</b>
+                <small>{record?.status ?? "Active"}</small>
+              </button>
+            ))}
+          </div>
+          <div className="admin-category-detail">
+            {activeMain ? (
+              <>
+                <div className="admin-category-detail-head">
+                  <div>
+                    <span>Main Category</span>
+                    <strong>{activeMain.name}</strong>
+                    <p>{activeMain.description}</p>
+                  </div>
+                  <a href={`/category/${activeMain.slug}`} target="_blank" rel="noreferrer">Open Page</a>
+                </div>
+                <div className="admin-category-sub-list">
+                  {activeMain.subcategories.map((subcategory) => {
+                    const isOpen = openSubcategories[subcategory.slug] ?? false;
+                    return (
+                      <div className="admin-category-sub-card" key={subcategory.slug}>
+                        <button type="button" onClick={() => toggleSubcategory(subcategory.slug)}>
+                          <span>{subcategory.name}</span>
+                          <b>{subcategory.businessTypes.length} types</b>
+                        </button>
+                        {isOpen ? (
+                          <div className="admin-category-type-grid">
+                            {subcategory.businessTypes.map((businessType) => <span key={businessType.slug}>{businessType.name}</span>)}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="admin-location-empty">
+                <strong>No category found</strong>
+                <span>Try clearing the search filter.</span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="admin-editor">
