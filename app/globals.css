@@ -3215,6 +3215,10 @@ cite {
   gap: 5px;
 }
 
+.admin-filters .admin-search-filter {
+  position: relative;
+}
+
 .admin-filters span {
   color: #111111;
   font-weight: 700;
@@ -3227,6 +3231,17 @@ cite {
   color: #111111;
   font-size: 12px;
   padding: 0 10px;
+}
+
+.admin-filters .admin-search-filter input {
+  border-color: #9fb7d8;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.admin-filters .admin-search-filter input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+  outline: none;
 }
 
 .admin-filters select,

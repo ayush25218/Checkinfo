@@ -963,6 +963,12 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
   }, [filters, isCities, isStates, records]);
 
   const visibleRecords = filtered.slice(0, 300);
+  const searchLabel = isStates ? "Search State / UT" : isCities ? "Search City" : "Search Location";
+  const searchPlaceholder = isStates
+    ? "Type state or UT name..."
+    : isCities
+      ? "Type city name, for example Delhi, Jaipur, Patna..."
+      : "Type district, sub-district, or city name...";
   const districtOptions = useMemo(
     () => locationSeed.filter((record) => record.kind === "District" && (filters.state === "All" || record.state === filters.state)).slice(0, 900),
     [filters.state],
@@ -1030,7 +1036,16 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
   return (
     <section className="admin-card">
       <div className="admin-filters">
-        <label><span>{isStates ? "State / UT Name" : isCities ? "City Name" : "District / Sub-district / City"}</span><input value={filters.keyword} onChange={(event) => setFilters({ ...filters, keyword: event.target.value })} /></label>
+        <label className="admin-search-filter">
+          <span>{searchLabel}</span>
+          <input
+            aria-label={searchLabel}
+            placeholder={searchPlaceholder}
+            type="search"
+            value={filters.keyword}
+            onChange={(event) => setFilters({ ...filters, keyword: event.target.value })}
+          />
+        </label>
         <label>
           <span>Status</span>
           <select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
@@ -1072,7 +1087,12 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
             </select>
           </label>
         ) : null}
-        <button type="button" onClick={() => undefined}>Submit</button>
+        <button
+          type="button"
+          onClick={() => setFilters({ city: "All", district: "All", keyword: "", state: "All", status: "All", type: "All" })}
+        >
+          Clear Search
+        </button>
       </div>
 
       <div className="admin-editor admin-editor-location">
