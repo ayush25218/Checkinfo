@@ -1465,10 +1465,9 @@ cite {
 .check-footer-card::after {
   content: "";
   position: absolute;
-  top: auto;
-  bottom: clamp(18px, 8%, 30px);
+  top: 50%;
   z-index: -1;
-  width: clamp(64px, 6.6vw, 116px);
+  width: clamp(48px, 5vw, 86px);
   height: 14px;
   border-radius: 999px;
   opacity: 0;
@@ -1485,7 +1484,7 @@ cite {
     opacity 2s cubic-bezier(0.16, 0.84, 0.22, 1),
     transform 2s cubic-bezier(0.16, 0.84, 0.22, 1),
     box-shadow 2s cubic-bezier(0.16, 0.84, 0.22, 1);
-  transform: scaleX(0.08) translateZ(-60px);
+  transform: translateY(-50%) scaleX(0.08) translateZ(-60px);
   will-change: transform, opacity;
 }
 
@@ -1548,7 +1547,7 @@ cite {
 
 .check-footer-card:hover::before {
   opacity: 1;
-  transform: translateX(calc(-100% + 2px)) scaleX(1) translateZ(-65px);
+  transform: translateX(calc(-100% + 2px)) translateY(-50%) scaleX(1) translateZ(-65px);
   box-shadow:
     inset 0 1px 3px rgba(255, 255, 255, 0.9),
     inset 0 -2px 5px rgba(0, 0, 0, 0.48),
@@ -1559,7 +1558,7 @@ cite {
 
 .check-footer-card:hover::after {
   opacity: 1;
-  transform: translateX(calc(100% - 2px)) scaleX(1) translateZ(-65px);
+  transform: translateX(calc(100% - 2px)) translateY(-50%) scaleX(1) translateZ(-65px);
   box-shadow:
     inset 0 1px 3px rgba(255, 255, 255, 0.9),
     inset 0 -2px 5px rgba(0, 0, 0, 0.48),
