@@ -1827,7 +1827,7 @@ cite {
   perspective: 1200px;
   transform-style: preserve-3d;
   background:
-    linear-gradient(135deg, rgba(5, 11, 28, 0.94), rgba(7, 18, 37, 0.88) 52%, rgba(11, 47, 64, 0.9)),
+    linear-gradient(135deg, rgba(2, 8, 22, 0.96), rgba(5, 15, 32, 0.92) 48%, rgba(5, 22, 42, 0.94)),
     url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1800&q=80");
   background-position: center;
   background-size: cover;
@@ -1841,10 +1841,11 @@ cite {
   inset: 0;
   z-index: -2;
   background-image:
+    radial-gradient(circle at 50% 56%, rgba(0, 118, 255, 0.2), transparent 28%),
     radial-gradient(circle at 12% 8%, rgba(29, 101, 216, 0.16), transparent 24%),
-    radial-gradient(circle at 88% 18%, rgba(29, 119, 107, 0.24), transparent 28%),
-    linear-gradient(rgba(255, 255, 255, 0.042) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.042) 1px, transparent 1px);
+    radial-gradient(circle at 88% 18%, rgba(29, 119, 107, 0.18), transparent 28%),
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 58px 58px;
   mask-image: linear-gradient(180deg, #000, transparent 84%);
 }
@@ -1863,15 +1864,17 @@ cite {
   position: relative;
   z-index: 1;
   min-height: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
+  border: 1px solid rgba(83, 147, 222, 0.24);
+  border-radius: 14px;
   background:
-    linear-gradient(180deg, rgba(7, 18, 37, 0.58), rgba(7, 18, 37, 0.34));
+    radial-gradient(circle at 82% 12%, rgba(56, 139, 255, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(10, 25, 49, 0.76), rgba(5, 15, 32, 0.62));
   padding: clamp(18px, 2vw, 24px);
   box-shadow:
-    inset 0 1px rgba(255, 255, 255, 0.11),
-    0 24px 70px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(16px);
+    inset 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 0 44px rgba(42, 128, 255, 0.04),
+    0 24px 70px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(18px);
   filter: brightness(1);
   transform: translateZ(0) translateY(0) scale(1) rotateX(0deg) rotateY(0deg);
   transform-style: preserve-3d;
@@ -1888,19 +1891,19 @@ cite {
 .check-footer-rod {
   position: absolute;
   z-index: -1;
-  width: clamp(42px, 4.4vw, 74px);
-  height: 11px;
+  width: clamp(70px, 7vw, 128px);
+  height: 16px;
   border-radius: 999px;
   opacity: 0;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92)),
-    linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(194, 217, 236, 0.94) 24%, rgba(71, 90, 111, 0.9) 50%, rgba(238, 249, 255, 0.96) 74%, rgba(116, 139, 166, 0.92)),
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
   box-shadow:
     inset 0 1px 3px rgba(255, 255, 255, 0.82),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.42),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.48),
     0 0 0 1px rgba(255, 255, 255, 0.16),
-    0 0 14px rgba(0, 180, 255, 0.18);
+    0 0 18px rgba(0, 180, 255, 0.22);
   transition:
     opacity 2s cubic-bezier(0.16, 0.84, 0.22, 1),
     transform 2s cubic-bezier(0.16, 0.84, 0.22, 1),
@@ -1914,8 +1917,8 @@ cite {
   transform: scaleX(0.08) translateZ(-65px);
   transform-origin: right center;
   background:
-    radial-gradient(circle at calc(100% - 5px) 50%, rgba(199, 239, 255, 0.94) 0 2px, rgba(0, 180, 255, 0.84) 3px 6px, rgba(0, 180, 255, 0.12) 7px 11px, transparent 12px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92));
+    radial-gradient(circle at calc(100% - 7px) 50%, rgba(218, 248, 255, 1) 0 3px, rgba(0, 191, 255, 0.96) 4px 8px, rgba(0, 118, 255, 0.2) 9px 18px, transparent 19px),
+    linear-gradient(90deg, rgba(0, 107, 255, 0.08), rgba(255, 255, 255, 0.92) 42%, rgba(66, 82, 101, 0.9) 58%, rgba(236, 248, 255, 0.96));
 }
 
 .check-footer-rod-right-top,
@@ -1924,18 +1927,18 @@ cite {
   transform: scaleX(0.08) translateZ(-65px);
   transform-origin: left center;
   background:
-    radial-gradient(circle at 5px 50%, rgba(199, 239, 255, 0.94) 0 2px, rgba(0, 180, 255, 0.84) 3px 6px, rgba(0, 180, 255, 0.12) 7px 11px, transparent 12px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92));
+    radial-gradient(circle at 7px 50%, rgba(218, 248, 255, 1) 0 3px, rgba(0, 191, 255, 0.96) 4px 8px, rgba(0, 118, 255, 0.2) 9px 18px, transparent 19px),
+    linear-gradient(90deg, rgba(236, 248, 255, 0.96), rgba(66, 82, 101, 0.9) 42%, rgba(255, 255, 255, 0.92) 58%, rgba(0, 107, 255, 0.08));
 }
 
 .check-footer-rod-left-top,
 .check-footer-rod-right-top {
-  top: clamp(14px, 6%, 24px);
+  top: 23%;
 }
 
 .check-footer-rod-left-bottom,
 .check-footer-rod-right-bottom {
-  bottom: clamp(14px, 6%, 24px);
+  bottom: 23%;
 }
 
 .check-footer-card-sheen {
@@ -1968,37 +1971,42 @@ cite {
 
 .check-footer-card:hover {
   z-index: 5;
-  border-color: rgba(91, 174, 255, 0.78);
-  filter: brightness(1.13);
-  transform: translateZ(50px) translateY(-8px) scale(1.05) rotateX(2deg) rotateY(0deg);
+  border-color: rgba(102, 190, 255, 0.92);
+  filter: brightness(1.18) saturate(1.12);
+  transform: translateZ(54px) translateY(-8px) scale(1.045) rotateX(2deg) rotateY(0deg);
   box-shadow:
-    inset 0 1px rgba(255, 255, 255, 0.2),
-    0 35px 70px rgba(0, 0, 0, 0.45),
-    0 0 25px rgba(0, 180, 255, 0.35);
+    inset 0 1px rgba(255, 255, 255, 0.24),
+    inset 0 0 72px rgba(0, 118, 255, 0.16),
+    0 35px 78px rgba(0, 0, 0, 0.48),
+    0 0 0 1px rgba(105, 190, 255, 0.34),
+    0 0 34px rgba(0, 180, 255, 0.5),
+    0 0 88px rgba(0, 88, 255, 0.26);
 }
 
 .check-footer-card:hover .check-footer-rod-left-top,
 .check-footer-card:hover .check-footer-rod-left-bottom {
   opacity: 1;
-  transform: translateX(calc(-100% + 2px)) scaleX(1) translateZ(-65px);
+  transform: translateX(calc(-100% + 8px)) scaleX(1) translateZ(-70px);
   box-shadow:
-    inset 0 1px 3px rgba(255, 255, 255, 0.9),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.48),
-    0 0 0 1px rgba(255, 255, 255, 0.16),
-    6px 0 10px rgba(0, 180, 255, 0.3),
-    0 0 18px rgba(0, 116, 255, 0.2);
+    inset 0 1px 4px rgba(255, 255, 255, 0.94),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.2),
+    18px 0 18px rgba(0, 205, 255, 0.55),
+    44px 0 46px rgba(0, 118, 255, 0.34),
+    0 0 34px rgba(0, 180, 255, 0.38);
 }
 
 .check-footer-card:hover .check-footer-rod-right-top,
 .check-footer-card:hover .check-footer-rod-right-bottom {
   opacity: 1;
-  transform: translateX(calc(100% - 2px)) scaleX(1) translateZ(-65px);
+  transform: translateX(calc(100% - 8px)) scaleX(1) translateZ(-70px);
   box-shadow:
-    inset 0 1px 3px rgba(255, 255, 255, 0.9),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.48),
-    0 0 0 1px rgba(255, 255, 255, 0.16),
-    -6px 0 10px rgba(0, 180, 255, 0.3),
-    0 0 18px rgba(0, 116, 255, 0.2);
+    inset 0 1px 4px rgba(255, 255, 255, 0.94),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.2),
+    -18px 0 18px rgba(0, 205, 255, 0.55),
+    -44px 0 46px rgba(0, 118, 255, 0.34),
+    0 0 34px rgba(0, 180, 255, 0.38);
 }
 
 .check-footer-card:hover .check-footer-card-sheen::before {
@@ -2007,8 +2015,8 @@ cite {
 }
 
 .check-footer:has(.check-footer-card:hover) .check-footer-card:not(:hover) {
-  opacity: 0.76;
-  filter: brightness(0.72) saturate(0.82);
+  opacity: 0.66;
+  filter: brightness(0.68) saturate(0.78) blur(0.6px);
 }
 
 .check-footer-card:nth-child(3) {
@@ -2024,8 +2032,8 @@ cite {
 
 .check-footer-card:nth-child(4) {
   background:
-    linear-gradient(150deg, rgba(29, 101, 216, 0.18), rgba(29, 119, 107, 0.1)),
-    rgba(255, 255, 255, 0.05);
+    radial-gradient(circle at 82% 12%, rgba(56, 139, 255, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(10, 25, 49, 0.76), rgba(5, 15, 32, 0.62));
 }
 
 .check-footer h3 {
