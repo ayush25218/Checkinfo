@@ -8,6 +8,8 @@ const footerLinks = {
   quick: ["Home", "About Us", "Business", "Advertise with Us", "Testimonials", "Support", "Contact Us", "Sitemap"],
 };
 
+const trendingSearches = ["Website Developer", "Restaurants near me", "Hospitals", "Hotels", "Schools", "Bank"];
+
 function GoogleAdSlot({ label, slot }: { label: string; slot: string }) {
   return (
     <aside className="ad-slot" aria-label={label}>
@@ -47,6 +49,8 @@ export function HomePage() {
       </header>
 
       <section className="check-hero" id="top">
+        <span className="check-hero-aurora" aria-hidden="true" />
+        <span className="check-hero-grid" aria-hidden="true" />
         <div>
           <p className="eyebrow">India local search engine</p>
           <h1>Search any business details here.</h1>
@@ -55,9 +59,15 @@ export function HomePage() {
             new listings, trending searches, customer care, and free business
             onboarding.
           </p>
-          <LocationSearchForm className="check-hero-search" />
+          <LocationSearchForm className="check-hero-search" showSuggestions />
+          <div className="check-trending-searches" aria-label="Trending searches">
+            {trendingSearches.map((search) => (
+              <a href={`/search?q=${encodeURIComponent(search)}`} key={search}>{search}</a>
+            ))}
+          </div>
         </div>
         <div className="check-hero-panel">
+          <span className="check-hero-panel-light" aria-hidden="true" />
           <strong>Checkinfo</strong>
           <span>Business Owner: Login | Register</span>
           <a href="/members/add_listing">Start Free Listing</a>

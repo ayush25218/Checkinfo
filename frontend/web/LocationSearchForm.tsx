@@ -7,7 +7,15 @@ type LocationSearchFormProps = {
   compact?: boolean;
   defaultLocation?: string;
   defaultQuery?: string;
+  showSuggestions?: boolean;
 };
+
+const suggestions = [
+  ["Website Developer", "New Delhi"],
+  ["Restaurants", "near me"],
+  ["Hospitals", "Dwarka"],
+  ["Hotels", "New Delhi"],
+];
 
 function isNearMeSearch(query: string, location: string) {
   return /\bnear\s+me\b/i.test(query) || (!location.trim() && /\bnearby\b/i.test(query));
@@ -18,6 +26,7 @@ export function LocationSearchForm({
   compact = false,
   defaultLocation = "",
   defaultQuery = "",
+  showSuggestions = false,
 }: LocationSearchFormProps) {
   const [isLocating, setIsLocating] = useState(false);
 
@@ -57,6 +66,16 @@ export function LocationSearchForm({
       <input name="q" placeholder={compact ? "Search" : "What are you looking for?"} defaultValue={defaultQuery} />
       {!compact ? <input name="location" placeholder="City or location" defaultValue={defaultLocation} /> : null}
       <button type="submit">{isLocating ? "Locating..." : "Search"}</button>
+      {showSuggestions ? (
+        <div className="check-search-suggestions" aria-label="Popular searches">
+          {suggestions.map(([query, location]) => (
+            <a href={`/search?q=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}`} key={`${query}-${location}`}>
+              <span>{query.charAt(0)}</span>
+              {query}
+            </a>
+          ))}
+        </div>
+      ) : null}
     </form>
   );
 }

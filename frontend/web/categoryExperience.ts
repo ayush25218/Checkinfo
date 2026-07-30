@@ -1,6 +1,7 @@
 import { categories } from "@/backend/checkinfo";
 
 export type CategoryExperience = {
+  accent: string;
   count: number;
   description: string;
   icon?: string;
@@ -12,6 +13,7 @@ export type CategoryExperience = {
 
 const counts = [248, 214, 192, 185, 176, 164, 151, 143, 137, 126, 118, 104, 92, 86, 74];
 const extraCategories = ["Fruits", "Bank", "Rent Services"];
+const accents = ["#1d65d8", "#00a8ff", "#1d776b", "#745cff", "#d59b2f", "#0ea75a"];
 
 export function slugifyCategory(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -27,6 +29,7 @@ export function titleFromSlug(slug: string) {
 
 export function createCategoryExperience(name: string, index = 0, icon?: string, count = counts[index] ?? 64): CategoryExperience {
   return {
+    accent: accents[index % accents.length],
     count,
     description: `Explore trusted ${name.toLowerCase()} listings, compare contact details, and discover businesses with premium Checkinfo visibility.`,
     icon: icon && icon !== "Image" ? icon : undefined,

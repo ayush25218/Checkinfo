@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { CategoryIconVisual } from "./CategoryIconVisual";
 import { createCategoryExperience, type CategoryExperience } from "./categoryExperience";
@@ -40,7 +41,13 @@ export function CategoryTransitionGrid({ categories }: CategoryTransitionGridPro
     <div className="check-category-stage">
       <div className="check-category-strip">
         {visibleCategories.map((category) => (
-          <a className="check-category-card" href={`/category/${category.slug}`} key={category.slug} onClick={() => rememberCategory(category)}>
+          <a
+            className="check-category-card"
+            href={`/category/${category.slug}`}
+            key={category.slug}
+            onClick={() => rememberCategory(category)}
+            style={{ "--category-accent": category.accent } as CSSProperties}
+          >
             <span className="check-category-topline" />
             <span className="check-category-main">
               <span className="check-category-icon-shell">

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { CategoryIconVisual } from "./CategoryIconVisual";
 import type { CategoryExperience } from "./categoryExperience";
@@ -27,7 +28,7 @@ export function CategoryLandingPage({ category }: CategoryLandingPageProps) {
   }, [category]);
 
   return (
-    <main className="category-world is-landed">
+    <main className="category-world is-landed" style={{ "--category-accent": activeCategory.accent } as CSSProperties}>
       <header className="category-world-header">
         <Link className="check-logo" href="/" aria-label="Checkinfo home">
           <span>i</span>
