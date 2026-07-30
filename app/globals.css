@@ -1400,6 +1400,8 @@ cite {
   grid-template-columns: 0.85fr 0.85fr 2fr 1.1fr;
   gap: 18px;
   padding: clamp(54px, 7vw, 84px) clamp(18px, 6vw, 128px) 28px;
+  perspective: 1200px;
+  transform-style: preserve-3d;
   background:
     linear-gradient(135deg, rgba(5, 11, 28, 0.94), rgba(7, 18, 37, 0.88) 52%, rgba(11, 47, 64, 0.9)),
     url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1800&q=80");
@@ -1433,8 +1435,9 @@ cite {
   box-shadow: 0 0 30px rgba(34, 211, 238, 0.38);
 }
 
-.check-footer > div {
+.check-footer-card {
   position: relative;
+  z-index: 1;
   min-height: 100%;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 18px;
@@ -1445,20 +1448,147 @@ cite {
     inset 0 1px rgba(255, 255, 255, 0.11),
     0 24px 70px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(16px);
+  filter: brightness(1);
+  transform: translateZ(0) translateY(0) scale(1) rotateX(0deg) rotateY(0deg);
+  transform-style: preserve-3d;
+  transition:
+    transform 2s cubic-bezier(0.16, 0.84, 0.22, 1),
+    box-shadow 2s cubic-bezier(0.16, 0.84, 0.22, 1),
+    border-color 2s cubic-bezier(0.16, 0.84, 0.22, 1),
+    filter 2s cubic-bezier(0.16, 0.84, 0.22, 1),
+    opacity 2s cubic-bezier(0.16, 0.84, 0.22, 1);
+  transition-delay: 0.18s, 0.18s, 0.18s, 0.18s, 0s;
+  will-change: transform, box-shadow, filter;
 }
 
-.check-footer > div:nth-child(3) {
+.check-footer-card::before,
+.check-footer-card::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  z-index: -1;
+  width: clamp(74px, 7.2vw, 132px);
+  height: 18px;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0));
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.82),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 0 18px rgba(0, 180, 255, 0.2);
+  transition:
+    opacity 2s cubic-bezier(0.16, 0.84, 0.22, 1),
+    transform 2s cubic-bezier(0.16, 0.84, 0.22, 1),
+    box-shadow 2s cubic-bezier(0.16, 0.84, 0.22, 1);
+  transform: translateY(-50%) scaleX(0.08) translateZ(-60px);
+  will-change: transform, opacity;
+}
+
+.check-footer-card::before {
+  left: 0;
+  background:
+    radial-gradient(circle at calc(100% - 8px) 50%, rgba(199, 239, 255, 0.98) 0 5px, rgba(0, 180, 255, 0.92) 6px 9px, rgba(0, 180, 255, 0.18) 10px 16px, transparent 17px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0));
+  transform-origin: right center;
+}
+
+.check-footer-card::after {
+  right: 0;
+  background:
+    radial-gradient(circle at 8px 50%, rgba(199, 239, 255, 0.98) 0 5px, rgba(0, 180, 255, 0.92) 6px 9px, rgba(0, 180, 255, 0.18) 10px 16px, transparent 17px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0));
+  transform-origin: left center;
+}
+
+.check-footer-card-sheen {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  transform: translateZ(1px);
+}
+
+.check-footer-card-sheen::before {
+  content: "";
+  position: absolute;
+  inset: -30% auto -30% -70%;
+  width: 42%;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.24), transparent);
+  filter: blur(1px);
+  transform: skewX(-16deg);
+  transition: opacity 0.4s ease;
+}
+
+.check-footer-card > :not(.check-footer-card-sheen) {
+  position: relative;
+  z-index: 2;
+  transform: translateZ(18px);
+}
+
+.check-footer-card:hover {
+  z-index: 5;
+  border-color: rgba(91, 174, 255, 0.78);
+  filter: brightness(1.13);
+  transform: translateZ(50px) translateY(-8px) scale(1.05) rotateX(2deg) rotateY(0deg);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.2),
+    0 35px 70px rgba(0, 0, 0, 0.45),
+    0 0 25px rgba(0, 180, 255, 0.35);
+}
+
+.check-footer-card:hover::before {
+  opacity: 1;
+  transform: translateX(calc(-100% + 3px)) translateY(-50%) scaleX(1) translateZ(-65px);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.9),
+    inset 0 -3px 7px rgba(0, 0, 0, 0.48),
+    0 0 0 1px rgba(255, 255, 255, 0.22),
+    12px 0 18px rgba(0, 180, 255, 0.42),
+    0 0 34px rgba(0, 116, 255, 0.32);
+}
+
+.check-footer-card:hover::after {
+  opacity: 1;
+  transform: translateX(calc(100% - 3px)) translateY(-50%) scaleX(1) translateZ(-65px);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.9),
+    inset 0 -3px 7px rgba(0, 0, 0, 0.48),
+    0 0 0 1px rgba(255, 255, 255, 0.22),
+    -12px 0 18px rgba(0, 180, 255, 0.42),
+    0 0 34px rgba(0, 116, 255, 0.32);
+}
+
+.check-footer-card:hover .check-footer-card-sheen::before {
+  opacity: 1;
+  animation: checkFooterLightSweep 2s cubic-bezier(0.16, 0.84, 0.22, 1) both;
+}
+
+.check-footer:has(.check-footer-card:hover) .check-footer-card:not(:hover) {
+  opacity: 0.76;
+  filter: brightness(0.72) saturate(0.82);
+}
+
+.check-footer-card:nth-child(3) {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 18px;
   align-content: start;
 }
 
-.check-footer > div:nth-child(3) h3 {
+.check-footer-card:nth-child(3) h3 {
   grid-column: 1 / -1;
 }
 
-.check-footer > div:nth-child(4) {
+.check-footer-card:nth-child(4) {
   background:
     linear-gradient(150deg, rgba(29, 101, 216, 0.18), rgba(29, 119, 107, 0.1)),
     rgba(255, 255, 255, 0.05);
@@ -1575,6 +1705,23 @@ cite {
   }
   to {
     transform: translateX(8%);
+  }
+}
+
+@keyframes checkFooterLightSweep {
+  0% {
+    left: -70%;
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.18;
+  }
+  55% {
+    opacity: 0.34;
+  }
+  100% {
+    left: 128%;
+    opacity: 0;
   }
 }
 
@@ -3044,7 +3191,7 @@ cite {
     text-align: left;
   }
 
-  .check-footer > div:nth-child(3) {
+  .check-footer-card:nth-child(3) {
     grid-template-columns: 1fr;
   }
 

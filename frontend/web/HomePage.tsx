@@ -168,23 +168,27 @@ export function HomePage() {
       </section>
 
       <footer className="check-footer" id="contact">
-        <div>
+        <div className="check-footer-card">
+          <span className="check-footer-card-sheen" aria-hidden="true" />
           <h3>Quick Links</h3>
           {footerLinks.quick.map((link) => <a href="#top" key={link}>{link}</a>)}
           <p><strong>Business Owner :</strong> Login | Register</p>
         </div>
-        <div>
+        <div className="check-footer-card">
+          <span className="check-footer-card-sheen" aria-hidden="true" />
           <h3>Info Links</h3>
           {footerLinks.info.map((link) => <a href="#top" key={link}>{link}</a>)}
         </div>
-        <div>
+        <div className="check-footer-card">
+          <span className="check-footer-card-sheen" aria-hidden="true" />
           <h3>Our Categories</h3>
           {categories.concat(["Fruits", "Bank", "Rent Services"]).map((category) => (
             <a href="#categories" key={category}>{category}</a>
           ))}
           <a href="#categories">View All</a>
         </div>
-        <div>
+        <div className="check-footer-card">
+          <span className="check-footer-card-sheen" aria-hidden="true" />
           <h3>Contact Detail</h3>
           <p>New Delhi</p>
           <a href="tel:9718290290">9718-290-290</a>
