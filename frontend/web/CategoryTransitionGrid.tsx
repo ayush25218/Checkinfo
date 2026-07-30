@@ -3,7 +3,7 @@
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { CategoryIconVisual } from "./CategoryIconVisual";
-import { createCategoryExperience, type CategoryExperience } from "./categoryExperience";
+import { createCategoryExperience, slugifyCategory, type CategoryExperience } from "./categoryExperience";
 
 type CategoryTransitionGridProps = {
   categories: CategoryExperience[];
@@ -11,11 +11,14 @@ type CategoryTransitionGridProps = {
 
 export function CategoryTransitionGrid({ categories }: CategoryTransitionGridProps) {
   const [adminCategories, setAdminCategories] = useState<CategoryExperience[]>([]);
+  const allowedCategorySlugs = useMemo(() => new Set(categories.map((category) => category.slug)), [categories]);
   const visibleCategories = useMemo(() => {
     const merged = new Map(categories.map((category) => [category.slug, category]));
-    adminCategories.forEach((category) => merged.set(category.slug, category));
+    adminCategories.forEach((category) => {
+      if (allowedCategorySlugs.has(category.slug)) merged.set(category.slug, category);
+    });
     return [...merged.values()];
-  }, [adminCategories, categories]);
+  }, [adminCategories, allowedCategorySlugs, categories]);
 
   useEffect(() => {
     try {
@@ -24,14 +27,14 @@ export function CategoryTransitionGrid({ categories }: CategoryTransitionGridPro
 
       const records = JSON.parse(raw) as Array<{ image?: string; name?: string; order?: number; status?: string }>;
       const next = records
-        .filter((record) => record.name && record.status !== "Inactive")
+        .filter((record) => record.name && record.status !== "Inactive" && allowedCategorySlugs.has(slugifyCategory(record.name)))
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
         .map((record, index) => createCategoryExperience(record.name ?? "", index, record.image));
       window.setTimeout(() => setAdminCategories(next), 0);
     } catch {
       window.setTimeout(() => setAdminCategories([]), 0);
     }
-  }, []);
+  }, [allowedCategorySlugs]);
 
   function rememberCategory(category: CategoryExperience) {
     window.sessionStorage.setItem("checkinfo:lastCategory", JSON.stringify(category));
