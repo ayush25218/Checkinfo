@@ -3440,8 +3440,88 @@ cite {
 }
 
 .admin-location-tree {
+  border: 1px solid #dbe7f6;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.admin-location-tree-head {
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 12px;
+}
+
+.admin-location-tree-head div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.admin-location-tree-head span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-location-tree-head strong {
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.admin-location-tree-stats {
+  align-items: center;
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  gap: 6px 10px;
+}
+
+.admin-location-tree-stats b {
+  color: #1d4ed8;
+  font-size: 18px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.admin-location-browser {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.35fr);
+}
+
+.admin-state-panel,
+.admin-district-panel,
+.admin-subdistrict-panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
   display: grid;
   gap: 12px;
+  padding: 12px;
+}
+
+.admin-panel-mini-head {
+  align-items: end;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-panel-mini-head strong {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.admin-panel-mini-head span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .admin-state-box-grid,
@@ -3452,15 +3532,21 @@ cite {
 }
 
 .admin-state-box-grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 460px;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .admin-district-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-height: 300px;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .admin-subdistrict-grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .admin-state-box,
@@ -3475,16 +3561,21 @@ cite {
   font-size: 12px;
   font-weight: 800;
   justify-content: space-between;
-  min-height: 44px;
-  padding: 9px 11px;
+  min-height: 42px;
+  padding: 9px 10px;
   text-align: left;
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.admin-district-box {
+  background: #f8fafc;
 }
 
 .admin-state-box:hover,
 .admin-district-box:hover,
 .admin-state-box.is-open,
 .admin-district-box.is-open {
+  background: #eff6ff;
   border-color: #2563eb;
   box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
   transform: translateY(-1px);
@@ -3503,13 +3594,10 @@ cite {
   padding: 4px 7px;
 }
 
-.admin-district-panel {
-  border: 1px solid #dbeafe;
-  border-radius: 10px;
-  background: #f8fbff;
-  display: grid;
-  gap: 12px;
-  padding: 12px;
+.admin-state-box.is-open b,
+.admin-district-box.is-open b {
+  background: #2563eb;
+  color: #ffffff;
 }
 
 .admin-subdistrict-grid span {
@@ -3520,6 +3608,24 @@ cite {
   font-size: 12px;
   font-weight: 700;
   padding: 7px 10px;
+}
+
+.admin-location-empty {
+  align-content: center;
+  border: 1px dashed #bfdbfe;
+  border-radius: 10px;
+  color: #64748b;
+  display: grid;
+  gap: 8px;
+  min-height: 220px;
+  padding: 22px;
+  text-align: center;
+}
+
+.admin-location-empty strong {
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 900;
 }
 
 .admin-real-table-meta .admin-real-row {
@@ -4068,6 +4174,16 @@ cite {
   .admin-district-grid,
   .admin-subdistrict-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-location-browser {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-location-tree-head,
+  .admin-panel-mini-head {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .hero {

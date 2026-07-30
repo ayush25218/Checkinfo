@@ -983,6 +983,7 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
     () => indiaSubdistricts.filter((record) => record.state === openState && record.district === openDistrict),
     [openDistrict, openState],
   );
+  const cityCount = cityRecords.length;
   const cityCountByState = useMemo(() => {
     return cityRecords.reduce<Record<string, number>>((counts, record) => {
       counts[record.state] = (counts[record.state] ?? 0) + 1;
@@ -1128,44 +1129,79 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
 
       {isCities ? (
         <div className="admin-location-tree">
-          <div className="admin-state-box-grid">
-            {stateRecords.map((record) => (
-              <button
-                className={`admin-state-box ${openState === record.name ? "is-open" : ""}`}
-                key={record.id}
-                type="button"
-                onClick={() => toggleStateBox(record.name)}
-              >
-                <span>{record.name}</span>
-                <b>{(cityCountByState[record.name] ?? 0).toLocaleString()}</b>
-              </button>
-            ))}
+          <div className="admin-location-tree-head">
+            <div>
+              <span>India City Browser</span>
+              <strong>{openState || "Select a state"}</strong>
+            </div>
+            <div className="admin-location-tree-stats">
+              <b>{stateRecords.length}</b><span>States</span>
+              <b>{cityCount.toLocaleString()}</b><span>Cities</span>
+            </div>
           </div>
-          {openState ? (
-            <div className="admin-district-panel">
-              <div className="admin-district-grid">
-                {openStateDistricts.map((record) => (
+          <div className="admin-location-browser">
+            <aside className="admin-state-panel">
+              <div className="admin-panel-mini-head">
+                <strong>States</strong>
+                <span>Click to filter cities</span>
+              </div>
+              <div className="admin-state-box-grid">
+                {stateRecords.map((record) => (
                   <button
-                    className={`admin-district-box ${openDistrict === record.name ? "is-open" : ""}`}
+                    className={`admin-state-box ${openState === record.name ? "is-open" : ""}`}
                     key={record.id}
                     type="button"
-                    onClick={() => toggleDistrictBox(record.name)}
+                    onClick={() => toggleStateBox(record.name)}
                   >
                     <span>{record.name}</span>
-                    <b>{(subdistrictCountByDistrict[`${openState}::${record.name}`] ?? 0).toLocaleString()}</b>
+                    <b>{(cityCountByState[record.name] ?? 0).toLocaleString()}</b>
                   </button>
                 ))}
               </div>
-              {openDistrict ? (
-                <div className="admin-subdistrict-grid">
-                  {openDistrictSubdistricts.map((record) => (
-                    <span key={record.id}>{record.name}</span>
-                  ))}
-                  {!openDistrictSubdistricts.length ? <span>No subdistricts</span> : null}
+            </aside>
+            <section className="admin-district-panel">
+              {openState ? (
+                <>
+                  <div className="admin-panel-mini-head">
+                    <strong>{openState}</strong>
+                    <span>{openStateDistricts.length.toLocaleString()} districts, {(cityCountByState[openState] ?? 0).toLocaleString()} cities</span>
+                  </div>
+                  <div className="admin-district-grid">
+                    {openStateDistricts.map((record) => (
+                      <button
+                        className={`admin-district-box ${openDistrict === record.name ? "is-open" : ""}`}
+                        key={record.id}
+                        type="button"
+                        onClick={() => toggleDistrictBox(record.name)}
+                      >
+                        <span>{record.name}</span>
+                        <b>{(subdistrictCountByDistrict[`${openState}::${record.name}`] ?? 0).toLocaleString()}</b>
+                      </button>
+                    ))}
+                  </div>
+                  {openDistrict ? (
+                    <div className="admin-subdistrict-panel">
+                      <div className="admin-panel-mini-head">
+                        <strong>{openDistrict}</strong>
+                        <span>{openDistrictSubdistricts.length.toLocaleString()} subdistricts</span>
+                      </div>
+                      <div className="admin-subdistrict-grid">
+                        {openDistrictSubdistricts.map((record) => (
+                          <span key={record.id}>{record.name}</span>
+                        ))}
+                        {!openDistrictSubdistricts.length ? <span>No subdistricts</span> : null}
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <div className="admin-location-empty">
+                  <strong>Select any state</strong>
+                  <span>Districts and subdistricts will open here. Click the same item again to hide it.</span>
                 </div>
-              ) : null}
-            </div>
-          ) : null}
+              )}
+            </section>
+          </div>
         </div>
       ) : null}
 
