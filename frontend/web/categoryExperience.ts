@@ -13,7 +13,7 @@ export type CategoryExperience = {
 };
 
 const counts = [248, 214, 192, 185, 176, 164, 151, 143, 137, 126, 118, 104, 92, 86, 74];
-const accents = ["#1d65d8", "#00a8ff", "#1d776b", "#745cff", "#d59b2f", "#0ea75a"];
+const accents = ["#1d65d8", "#2f75e8", "#4a8cff", "#1d4ed8", "#315eea", "#5b7cff"];
 const categoryBackgroundImages: Record<string, string> = {
   "agriculture-fisheries-and-animal-husbandry": "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=70",
   "mining-quarrying-and-raw-materials": "https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=70",
