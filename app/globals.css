@@ -3061,10 +3061,49 @@ cite {
   width: 100%;
 }
 
-.admin-nav-group h2 {
-  margin: 0 0 5px;
+.admin-nav-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  background: #f5f5f5;
   color: #111111;
+  cursor: pointer;
   font-size: 14px;
+  font-weight: 800;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.admin-nav-toggle b {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: 15px;
+  line-height: 1;
+  transition: transform 180ms ease;
+}
+
+.admin-nav-group.is-open .admin-nav-toggle {
+  background: #111111;
+  color: #ffffff;
+}
+
+.admin-nav-group.is-open .admin-nav-toggle b {
+  color: #111111;
+  transform: rotate(45deg);
+}
+
+.admin-submenu {
+  display: grid;
+  gap: 4px;
+  padding-top: 6px;
 }
 
 .admin-nav-group a {

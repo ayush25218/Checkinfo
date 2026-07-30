@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { adminGroups, adminPages, type AdminPageConfig } from "@/backend/checkinfo";
+import { AdminSidebarNav } from "./AdminSidebarNav";
 
 export { adminPages };
 
@@ -17,22 +18,7 @@ export function AdminShell({
           <strong>Checkinfo</strong>
           <span>Administrator Area</span>
         </a>
-        <nav aria-label="Admin navigation">
-          {adminGroups.map(([group, items]) => (
-            <section className="admin-nav-group" key={group}>
-              <h2>{group}</h2>
-              {items.map(([label, slug]) => (
-                <a
-                  aria-current={active === slug ? "page" : undefined}
-                  href={`/admin/${slug}`}
-                  key={slug}
-                >
-                  {label}
-                </a>
-              ))}
-            </section>
-          ))}
-        </nav>
+        <AdminSidebarNav active={active} groups={adminGroups} />
       </aside>
       <section className="admin-main">{children}</section>
     </main>
