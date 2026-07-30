@@ -3049,6 +3049,37 @@ cite {
   height: 14px;
 }
 
+.admin-category-preview {
+  display: grid;
+  gap: 5px;
+}
+
+.admin-category-preview span {
+  color: #111111;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-category-preview strong,
+.admin-category-image-cell img {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111111;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.admin-category-preview img,
+.admin-category-image-cell img {
+  object-fit: contain;
+  padding: 5px;
+}
+
 .admin-real-table {
   overflow-x: auto;
   border: 1px solid #e5e5e5;

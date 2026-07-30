@@ -253,6 +253,15 @@ function writeStored<T>(key: string, value: T) {
   }
 }
 
+function isImageValue(value: string) {
+  return /^(data:image\/|https?:\/\/|\/)/i.test(value) || /\.(svg|png|jpe?g|webp|gif)$/i.test(value);
+}
+
+function categoryImageSource(value: string) {
+  if (/^(data:image\/|https?:\/\/|\/)/i.test(value)) return value;
+  return `/uploads/${value}`;
+}
+
 function toggleSelection(selected: string[], id: string, checked: boolean) {
   return checked ? [...selected, id] : selected.filter((selectedId) => selectedId !== id);
 }
@@ -368,6 +377,18 @@ export function ManageCategoriesModule() {
     sync(records.map((record, index) => ({ ...record, order: (index + 1) * 10 })));
   }
 
+  function uploadCategoryImage(file?: File) {
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setForm((current) => ({ ...current, image: reader.result as string }));
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
   return (
     <section className="admin-card">
       <div className="admin-filters">
@@ -397,8 +418,18 @@ export function ManageCategoriesModule() {
         </label>
         <label>
           <span>Image</span>
-          <input value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} />
+          <input value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} placeholder="Emoji, icon text, image URL, or file name" />
         </label>
+        <label>
+          <span>Upload Icon</span>
+          <input accept="image/*" type="file" onChange={(event) => uploadCategoryImage(event.target.files?.[0])} />
+        </label>
+        <div className="admin-category-preview">
+          <span>Preview</span>
+          <strong>
+            {isImageValue(form.image) ? <img alt="" src={categoryImageSource(form.image)} /> : form.image && form.image !== "Image" ? form.image.slice(0, 3) : "Icon"}
+          </strong>
+        </div>
         <label>
           <span>Display Order</span>
           <input value={form.order} onChange={(event) => setForm({ ...form, order: event.target.value })} />
@@ -443,7 +474,9 @@ export function ManageCategoriesModule() {
           <div className="admin-real-row" key={record.id}>
             <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
             <span>{record.name}</span>
-            <span>{record.image}</span>
+            <span className="admin-category-image-cell">
+              {isImageValue(record.image) ? <img alt="" src={categoryImageSource(record.image)} /> : record.image}
+            </span>
             <span>{record.order}</span>
             <span>{record.homeTop ? "Top" : ""}{record.homeTop && record.homeBottom ? " / " : ""}{record.homeBottom ? "Bottom" : ""}</span>
             <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
