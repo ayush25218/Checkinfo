@@ -58,9 +58,9 @@ function GoogleAdSlot({ label, slot }: { label: string; slot: string }) {
 export async function HomePage() {
   const categoryExperiences = getAllCategoryExperiences();
   const business = await getApprovedHomeListings();
-  const featured = business.filter((listing) => listing.status === "Featured").slice(0, 3);
-  const newest = business.slice(0, 8);
-  const trending = business.slice(0, 4);
+  const featured = business.filter((listing) => listing.status === "Featured");
+  const newest = business;
+  const trending = business;
 
   return (
     <main className="check-home">
