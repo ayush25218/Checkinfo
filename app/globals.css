@@ -854,11 +854,11 @@ cite {
   top: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: auto minmax(260px, 1fr) auto auto;
-  gap: 22px;
+  grid-template-columns: auto minmax(260px, 440px) minmax(320px, 1fr) auto;
+  gap: clamp(12px, 1.4vw, 20px);
   align-items: center;
-  min-height: 88px;
-  padding: 16px clamp(18px, 4vw, 56px);
+  min-height: 78px;
+  padding: 12px clamp(18px, 4vw, 52px);
   border-bottom: 1px solid rgba(219, 231, 251, 0.82);
   background: rgba(255, 255, 255, 0.78);
   backdrop-filter: blur(22px);
@@ -878,7 +878,7 @@ cite {
   grid-row: span 2;
   color: var(--check-blue);
   font-family: Georgia, serif;
-  font-size: 54px;
+  font-size: 48px;
   font-style: italic;
   line-height: 0.75;
   transition: transform 220ms ease, filter 220ms ease;
@@ -890,7 +890,7 @@ cite {
 }
 
 .check-logo strong {
-  font-size: 30px;
+  font-size: 26px;
   line-height: 0.95;
 }
 
@@ -913,6 +913,11 @@ cite {
   background: rgba(255, 255, 255, 0.94);
   padding: 8px;
   box-shadow: 0 18px 46px rgba(7, 21, 47, 0.1);
+}
+
+.check-top-search {
+  max-width: 440px;
+  justify-self: stretch;
 }
 
 .check-top-search input,
@@ -964,6 +969,9 @@ cite {
 
 .check-header nav {
   justify-content: flex-end;
+  gap: clamp(12px, 1.3vw, 22px);
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .check-header nav a {
@@ -1107,8 +1115,7 @@ cite {
   font-size: 10px;
 }
 
-.check-search-suggestions a:hover,
-.check-trending-searches a:hover {
+.check-search-suggestions a:hover {
   transform: translateY(-2px);
   border-color: rgba(31, 111, 255, 0.4);
   background: #ffffff;
@@ -1127,6 +1134,14 @@ cite {
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(14px);
+}
+
+.check-trending-searches a:hover {
+  transform: translateY(-2px);
+  border-color: rgba(34, 211, 238, 0.48);
+  background: rgba(34, 211, 238, 0.18);
+  color: #ffffff;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16), 0 0 18px rgba(34, 211, 238, 0.16);
 }
 
 .check-hero-panel {
@@ -3694,6 +3709,12 @@ cite {
 
   .check-header nav {
     justify-content: flex-start;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .check-top-search {
+    max-width: none;
   }
 
   .search-page-form {
