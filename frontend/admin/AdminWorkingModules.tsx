@@ -27,6 +27,7 @@ type BusinessRecord = {
   address: string;
   addressProofName?: string;
   badge: string;
+  businessType?: string;
   category: string;
   city?: string;
   contact: string;
@@ -39,6 +40,7 @@ type BusinessRecord = {
   publicPath?: string;
   state?: string;
   status: Status;
+  subcategory?: string;
   subcity?: string;
 };
 
@@ -499,6 +501,7 @@ export function ManageBusinessModule() {
   const [form, setForm] = useState({
     address: "",
     badge: "Verified",
+    businessType: "",
     category: categories[0] ?? "General",
     city: "",
     contact: "",
@@ -507,6 +510,7 @@ export function ManageBusinessModule() {
     name: "",
     state: "",
     status: "Pending" as Status,
+    subcategory: "",
     subcity: "",
   });
 
@@ -531,6 +535,7 @@ export function ManageBusinessModule() {
     setForm({
       address: "",
       badge: "Verified",
+      businessType: "",
       category: categories[0] ?? "General",
       city: "",
       contact: "",
@@ -539,6 +544,7 @@ export function ManageBusinessModule() {
       name: "",
       state: "",
       status: "Pending",
+      subcategory: "",
       subcity: "",
     });
   }
@@ -551,6 +557,7 @@ export function ManageBusinessModule() {
       address: form.address.trim(),
       addressProofName: form.proof.trim(),
       badge: form.badge,
+      businessType: form.businessType.trim(),
       category: form.category,
       city: form.city.trim(),
       contact: form.contact.trim(),
@@ -558,6 +565,7 @@ export function ManageBusinessModule() {
       name: form.name.trim(),
       state: form.state.trim(),
       status: form.status,
+      subcategory: form.subcategory.trim(),
       subcity: form.subcity.trim(),
     };
 
@@ -574,6 +582,7 @@ export function ManageBusinessModule() {
     setForm({
       address: record.address,
       badge: record.badge,
+      businessType: record.businessType ?? "",
       category: record.category,
       city: record.city ?? "",
       contact: record.contact,
@@ -582,6 +591,7 @@ export function ManageBusinessModule() {
       name: record.name,
       state: record.state ?? "",
       status: record.status,
+      subcategory: record.subcategory ?? "",
       subcity: record.subcity ?? "",
     });
   }
@@ -633,6 +643,14 @@ export function ManageBusinessModule() {
             <option>All</option>
             {categories.map((category) => <option key={category}>{category}</option>)}
           </select>
+        </label>
+        <label>
+          <span>Subcategory</span>
+          <input value={form.subcategory} onChange={(event) => setForm({ ...form, subcategory: event.target.value })} />
+        </label>
+        <label>
+          <span>Business Type</span>
+          <input value={form.businessType} onChange={(event) => setForm({ ...form, businessType: event.target.value })} />
         </label>
         <button type="button" onClick={() => undefined}>Submit</button>
       </div>
@@ -719,7 +737,7 @@ export function ManageBusinessModule() {
         {filtered.map((record) => (
           <div className="admin-real-row" key={record.id}>
             <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
-            <span>{record.name}<small>{record.category}{record.ownerName ? ` / ${record.ownerName}` : ""}</small></span>
+            <span>{record.name}<small>{[record.category, record.subcategory, record.businessType].filter(Boolean).join(" / ")}{record.ownerName ? ` / ${record.ownerName}` : ""}</small></span>
             <span>{record.address}<small>{record.subcity || record.city || record.state ? [record.subcity, record.city, record.state].filter(Boolean).join(", ") : record.location}</small></span>
             <span>{record.contact}<small>{record.ownerEmail || ""}</small></span>
             <span>{record.badge} / {record.details}<small>{record.addressProofName ? `Proof: ${record.addressProofName}` : "Address proof optional"}</small>{record.publicPath ? <a className="admin-mini-link" href={record.publicPath} target="_blank" rel="noreferrer">SEO page</a> : null}</span>

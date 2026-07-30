@@ -1,4 +1,5 @@
 import { MongoClient } from "mongodb";
+import fs from "node:fs/promises";
 
 const uri = process.env.MONGODB_URI || process.env.MONGO_URL;
 const databaseName = process.env.MONGODB_DB || "checkinfo";
@@ -8,20 +9,16 @@ if (!uri) {
   process.exit(1);
 }
 
-const defaultCategories = [
-  "Website Developer",
-  "Advertising",
-  "Animation Institute",
-  "Food",
-  "Restaurants",
-  "Hotels",
-  "Schools",
-  "Hospitals",
-  "Automobile",
-  "Home Decor",
-  "Education",
-  "PG/Hostels",
-];
+async function readDefaultCategories() {
+  const source = await fs.readFile("backend/businessTaxonomy.ts", "utf8");
+  const marker = "export const businessTaxonomy = ";
+  const start = source.indexOf(marker);
+  const end = source.indexOf(" as const", start);
+  if (start === -1 || end === -1) throw new Error("Unable to read business taxonomy.");
+
+  const taxonomy = JSON.parse(source.slice(start + marker.length, end));
+  return taxonomy.map((category) => category.name);
+}
 
 function slugify(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -30,6 +27,7 @@ function slugify(value) {
 const client = new MongoClient(uri);
 
 try {
+  const defaultCategories = await readDefaultCategories();
   await client.connect();
   const db = client.db(databaseName);
   const categories = db.collection("categories");
@@ -46,21 +44,25 @@ try {
     leads.createIndex({ createdAt: -1 }),
   ]);
 
-  const categoryCount = await categories.countDocuments();
-
-  if (categoryCount === 0) {
-    await categories.insertMany(
-      defaultCategories.map((name, index) => ({
-        _id: slugify(name),
-        displayOrder: (index + 1) * 10,
-        homePlacement: index < 4 ? "Top" : "Bottom",
-        image: "Image",
-        name,
-        slug: slugify(name),
-        status: "Active",
-      })),
-    );
-  }
+  const categorySlugs = defaultCategories.map(slugify);
+  await categories.deleteMany({ slug: { $nin: categorySlugs } });
+  await Promise.all(
+    defaultCategories.map((name, index) => categories.updateOne(
+      { slug: slugify(name) },
+      {
+        $set: {
+          displayOrder: (index + 1) * 10,
+          homePlacement: index < 8 ? "Top" : "Bottom",
+          image: "Image",
+          name,
+          slug: slugify(name),
+          status: "Active",
+        },
+        $setOnInsert: { _id: slugify(name) },
+      },
+      { upsert: true },
+    )),
+  );
 
   await settings.updateOne(
     { _id: "site" },

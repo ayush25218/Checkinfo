@@ -21,7 +21,7 @@ function BusinessCard({ listing }: { listing: PublicBusinessListing }) {
         <span>{(listing.name || "CI").slice(0, 2).toUpperCase()}</span>
         <b>{listing.badge || "Verified"}</b>
       </div>
-      <small>{listing.category || "Business"}{location ? ` / ${location}` : ""}</small>
+      <small>{listing.businessType || listing.subcategory || listing.category || "Business"}{location ? ` / ${location}` : ""}</small>
       <h3>{listing.name}</h3>
       <p>{listing.details || listing.description || listing.address || "Approved Checkinfo business listing."}</p>
       <a href={listingPublicPath(listing)}>View Details</a>
@@ -234,7 +234,7 @@ export async function HomePage() {
           <span className="check-footer-rod check-footer-rod-left-bottom" aria-hidden="true" />
           <span className="check-footer-rod check-footer-rod-right-bottom" aria-hidden="true" />
           <h3>Our Categories</h3>
-          {categories.concat(["Fruits", "Bank", "Rent Services"]).map((category) => (
+          {categories.map((category) => (
             <a href="#categories" key={category}>{category}</a>
           ))}
           <a href="#categories">View All</a>

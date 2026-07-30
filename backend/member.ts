@@ -7,12 +7,14 @@ export type MemberListing = {
   email: string;
   keywords: string;
   addressProofName?: string;
+  businessType: string;
   city: string;
   location: string;
   mobile: string;
   name: string;
   state: string;
   status: "Draft" | "Pending" | "Active" | "Featured" | "Inactive";
+  subcategory: string;
   subcity: string;
   website: string;
   youtube: string;

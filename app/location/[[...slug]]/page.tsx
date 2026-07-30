@@ -77,7 +77,7 @@ export default async function LocationListingPage({ params }: LocationPageProps)
             <div>
               <span className="search-badge">{listing.status === "Featured" ? "Featured" : "Verified"}</span>
               <h2>{listing.name}</h2>
-              <p>{listing.category || "Business"}</p>
+              <p>{[listing.category, listing.subcategory, listing.businessType].filter(Boolean).join(" / ") || "Business"}</p>
               <address>{listing.address || listingLocationText(listing)}</address>
               {listing.details || listing.description ? <p>{listing.details || listing.description}</p> : null}
             </div>

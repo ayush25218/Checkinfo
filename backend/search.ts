@@ -83,7 +83,7 @@ type SearchableListing = Partial<MemberListing> & {
 };
 
 function listingMatches(listing: SearchableListing, query = "", location = "") {
-  const haystack = normalizeText([listing.name, listing.description, listing.keywords, listing.details, listing.location, listing.address, listing.category, listing.city, listing.subcity, listing.state].join(" "));
+  const haystack = normalizeText([listing.name, listing.description, listing.keywords, listing.details, listing.location, listing.address, listing.category, listing.subcategory, listing.businessType, listing.city, listing.subcity, listing.state].join(" "));
   const tokens = queryTokens(query);
   const locationTokens = queryTokens(location);
 

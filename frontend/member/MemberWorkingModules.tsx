@@ -9,6 +9,7 @@ import {
   PanelSection,
 } from "@/frontend/member/MemberPanel";
 import { indiaDistricts, indiaStates, indiaSubdistricts } from "@/frontend/admin/indiaLocations";
+import { businessTaxonomy } from "@/backend/businessTaxonomy";
 
 type ListingStatus = "Draft" | "Pending" | "Active" | "Featured";
 
@@ -21,12 +22,14 @@ type MemberListing = {
   email: string;
   keywords: string;
   addressProofName?: string;
+  businessType: string;
   city: string;
   location: string;
   mobile: string;
   name: string;
   state: string;
   status: ListingStatus;
+  subcategory: string;
   subcity: string;
   website: string;
   youtube: string;
@@ -136,11 +139,13 @@ function initialListing(): Omit<MemberListing, "id" | "status"> {
     email: "",
     keywords: "",
     addressProofName: "",
+    businessType: businessTaxonomy[0]?.subcategories[0]?.businessTypes[0]?.name ?? "",
     city: "",
     location: "",
     mobile: "",
     name: "",
     state: "Delhi",
+    subcategory: businessTaxonomy[0]?.subcategories[0]?.name ?? "",
     subcity: "",
     website: "",
     youtube: "",
@@ -157,6 +162,14 @@ function ListingForm({
   onSave: (record: Omit<MemberListing, "id" | "status">) => void;
 }) {
   const [form, setForm] = useState({ ...initialListing(), ...initial });
+  const selectedTaxonomy = useMemo(
+    () => businessTaxonomy.find((category) => category.name === form.category) ?? businessTaxonomy[0],
+    [form.category],
+  );
+  const selectedSubcategory = useMemo(
+    () => selectedTaxonomy?.subcategories.find((subcategory) => subcategory.name === form.subcategory) ?? selectedTaxonomy?.subcategories[0],
+    [form.subcategory, selectedTaxonomy],
+  );
   const cityOptions = useMemo(
     () => indiaDistricts.filter((city) => city.state === form.state).slice(0, 1200),
     [form.state],
@@ -171,6 +184,7 @@ function ListingForm({
     onSave({
       address: form.address.trim(),
       addressProofName: form.addressProofName?.trim(),
+      businessType: form.businessType.trim(),
       category: form.category,
       city: form.city.trim(),
       contactPerson: form.contactPerson.trim(),
@@ -181,6 +195,7 @@ function ListingForm({
       mobile: form.mobile.trim(),
       name: form.name.trim(),
       state: form.state.trim(),
+      subcategory: form.subcategory.trim(),
       subcity: form.subcity.trim(),
       website: form.website.trim(),
       youtube: form.youtube.trim(),
@@ -197,7 +212,9 @@ function ListingForm({
         <label className="panel-field"><span>Website</span><input value={form.website} onChange={(event) => setForm({ ...form, website: event.target.value })} /></label>
         <label className="panel-field"><span>YouTube Video</span><input value={form.youtube} onChange={(event) => setForm({ ...form, youtube: event.target.value })} /></label>
         <label className="panel-field wide"><span>Address *</span><textarea value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} /></label>
-        <label className="panel-field"><span>Category *</span><select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
+        <label className="panel-field"><span>Main Category *</span><select value={form.category} onChange={(event) => { const next = businessTaxonomy.find((category) => category.name === event.target.value); const firstSub = next?.subcategories[0]; setForm({ ...form, businessType: firstSub?.businessTypes[0]?.name ?? "", category: event.target.value, subcategory: firstSub?.name ?? "" }); }}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
+        <label className="panel-field"><span>Subcategory *</span><select value={form.subcategory} onChange={(event) => { const next = selectedTaxonomy?.subcategories.find((subcategory) => subcategory.name === event.target.value); setForm({ ...form, businessType: next?.businessTypes[0]?.name ?? "", subcategory: event.target.value }); }}>{selectedTaxonomy?.subcategories.map((subcategory) => <option key={subcategory.slug}>{subcategory.name}</option>)}</select></label>
+        <label className="panel-field"><span>Business Type *</span><select value={form.businessType} onChange={(event) => setForm({ ...form, businessType: event.target.value })}>{selectedSubcategory?.businessTypes.map((businessType) => <option key={businessType.slug}>{businessType.name}</option>)}</select></label>
         <label className="panel-field"><span>State *</span><select value={form.state} onChange={(event) => setForm({ ...form, city: "", state: event.target.value, subcity: "" })}>{indiaStates.map((state) => <option key={state.id}>{state.name}</option>)}</select></label>
         <label className="panel-field"><span>City / District *</span><select value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value, subcity: "" })}><option value="">Select city</option>{cityOptions.map((city) => <option key={city.id}>{city.name}</option>)}</select></label>
         <label className="panel-field"><span>Subcity / Area</span><select value={form.subcity} onChange={(event) => setForm({ ...form, subcity: event.target.value })}><option value="">Optional area</option>{subcityOptions.map((subcity) => <option key={subcity.id}>{subcity.name}</option>)}</select></label>

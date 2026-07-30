@@ -1,3 +1,5 @@
+import { businessMainCategories } from "./businessTaxonomy";
+
 export type Listing = {
   badge: string;
   category: string;
@@ -19,20 +21,7 @@ export type AdminPageConfig = {
   title: string;
 };
 
-export const categories = [
-  "Website Developer",
-  "Advertising",
-  "Animation Institute",
-  "Food",
-  "Restaurants",
-  "Hotels",
-  "Schools",
-  "Hospitals",
-  "Automobile",
-  "Home Decor",
-  "Education",
-  "PG/Hostels",
-];
+export const categories = businessMainCategories;
 
 export const listings: Listing[] = [];
 
