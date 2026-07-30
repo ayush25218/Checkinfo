@@ -1094,23 +1094,6 @@ cite {
 
 .check-category-stage {
   position: relative;
-  perspective: 1200px;
-  transform-style: preserve-3d;
-}
-
-.check-category-stage.is-launching {
-  z-index: 6;
-}
-
-.check-category-cinema-dim {
-  position: fixed;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 50% 44%, rgba(0, 180, 255, 0.12), transparent 28%),
-    rgba(3, 10, 24, 0.32);
-  backdrop-filter: blur(2px);
 }
 
 .check-category-card {
@@ -1126,18 +1109,15 @@ cite {
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.95));
   color: var(--check-ink);
-  cursor: pointer;
   padding: 18px;
   text-align: left;
+  text-decoration: none;
   box-shadow: 0 18px 38px rgba(7, 21, 47, 0.08);
-  transform-style: preserve-3d;
   transition:
-    opacity 420ms ease,
-    filter 420ms ease,
-    transform 620ms cubic-bezier(0.16, 0.84, 0.22, 1),
-    box-shadow 620ms cubic-bezier(0.16, 0.84, 0.22, 1),
-    border-color 620ms cubic-bezier(0.16, 0.84, 0.22, 1),
-    background 620ms cubic-bezier(0.16, 0.84, 0.22, 1);
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
 }
 
 .check-category-card::after {
@@ -1167,28 +1147,10 @@ cite {
 }
 
 .check-category-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-3px);
   border-color: rgba(31, 111, 255, 0.35);
   background: #ffffff;
-  box-shadow: 0 24px 52px rgba(7, 21, 47, 0.13), 0 0 0 4px rgba(31, 111, 255, 0.06);
-}
-
-.check-category-card[data-muted="true"] {
-  opacity: 0.25;
-  filter: blur(3px) saturate(0.7);
-  transform: translateZ(-24px) scale(0.98);
-}
-
-.check-category-card.is-active {
-  z-index: 7;
-  border-color: rgba(74, 167, 255, 0.78);
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 1), rgba(241, 248, 255, 0.96));
-  box-shadow:
-    0 30px 72px rgba(7, 21, 47, 0.24),
-    0 0 0 1px rgba(74, 167, 255, 0.38),
-    0 0 34px rgba(0, 180, 255, 0.3);
-  transform: translate3d(0, -6px, 46px) scale(1.035);
+  box-shadow: 0 22px 44px rgba(7, 21, 47, 0.12), 0 0 0 4px rgba(31, 111, 255, 0.05);
 }
 
 .check-category-card:hover::after {
@@ -1204,7 +1166,6 @@ cite {
   place-items: center;
   width: 52px;
   height: 52px;
-  transform-style: preserve-3d;
 }
 
 .check-category-icon {
@@ -1224,11 +1185,9 @@ cite {
     inset 0 -10px 18px rgba(0, 0, 0, 0.16),
     0 14px 28px rgba(29, 101, 216, 0.24);
   font-weight: 900;
-  transform: translateZ(18px);
 }
 
 .check-category-icon img,
-.check-category-flight-icon img,
 .category-orb-text img {
   width: 72%;
   height: 72%;
@@ -1237,50 +1196,9 @@ cite {
 }
 
 .check-category-icon.has-image,
-.check-category-flight-icon.has-image,
 .category-orb-text.has-image {
   background: transparent;
   box-shadow: none;
-}
-
-.check-category-icon-glow,
-.check-category-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.check-category-icon-glow {
-  background: radial-gradient(circle, rgba(0, 180, 255, 0.36), transparent 68%);
-  filter: blur(10px);
-  transform: scale(1.4) translateZ(-12px);
-}
-
-.check-category-ring {
-  border: 1px solid rgba(0, 180, 255, 0.42);
-  transform: rotateX(72deg) scale(0.7);
-}
-
-.check-category-card.is-active .check-category-icon-shell {
-  animation: categoryIconLift 1.8s cubic-bezier(0.16, 0.84, 0.22, 1) forwards;
-}
-
-.check-category-card.is-active .check-category-icon {
-  animation: categoryIconBecomeObject 1.8s cubic-bezier(0.16, 0.84, 0.22, 1) forwards;
-}
-
-.check-category-card.is-active .check-category-icon-glow {
-  animation: categoryIconGlow 1.8s cubic-bezier(0.16, 0.84, 0.22, 1) forwards;
-}
-
-.check-category-card.is-active .check-category-ring-one {
-  animation: categoryRingOpen 1.8s cubic-bezier(0.16, 0.84, 0.22, 1) 0.28s forwards;
-}
-
-.check-category-card.is-active .check-category-ring-two {
-  animation: categoryRingOpen 1.8s cubic-bezier(0.16, 0.84, 0.22, 1) 0.42s forwards reverse;
 }
 
 .check-category-card strong {
@@ -1319,98 +1237,15 @@ cite {
   color: var(--check-blue);
 }
 
-.check-category-pulse {
-  position: absolute;
-  left: 18px;
-  top: 22px;
-  width: 52px;
-  height: 52px;
-  border-radius: 999px;
-  border: 1px solid rgba(0, 180, 255, 0.5);
-  pointer-events: none;
-  animation: categoryLaunchPulse 1.7s cubic-bezier(0.16, 0.84, 0.22, 1) forwards;
-}
-
-.check-category-flight {
-  position: fixed;
-  left: 10vw;
-  top: 48vh;
-  z-index: 60;
-  display: grid;
-  place-items: center;
-  width: 110px;
-  height: 110px;
-  pointer-events: none;
-  transform-style: preserve-3d;
-}
-
-.check-category-flight-icon {
-  position: relative;
-  z-index: 3;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  width: 110px;
-  height: 110px;
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.5), transparent 26%),
-    linear-gradient(135deg, var(--check-teal), var(--check-blue));
-  color: #ffffff;
-  font-size: 34px;
-  font-weight: 950;
-  box-shadow:
-    inset 0 1px rgba(255, 255, 255, 0.42),
-    inset 0 -22px 34px rgba(0, 0, 0, 0.18),
-    0 30px 70px rgba(0, 0, 0, 0.34),
-    0 0 48px rgba(0, 180, 255, 0.42);
-}
-
-.check-category-flight-glow,
-.check-category-flight-trail {
-  position: absolute;
-  border-radius: 999px;
-  pointer-events: none;
-}
-
-.check-category-flight-glow {
-  inset: -44px;
-  background: radial-gradient(circle, rgba(0, 180, 255, 0.28), transparent 66%);
-  filter: blur(12px);
-}
-
-.check-category-flight-trail {
-  right: 62px;
-  width: 220px;
-  height: 26px;
-  background: linear-gradient(90deg, transparent, rgba(0, 180, 255, 0.22), rgba(255, 255, 255, 0.38));
-  filter: blur(10px);
-  transform: rotate(-10deg);
-}
-
-.check-category-particle {
-  position: absolute;
-  right: calc(54px + var(--p) * 12px);
-  top: calc(52px + var(--py) * 8px);
-  width: 4px;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(144, 225, 255, 0.86);
-  box-shadow: 0 0 12px rgba(0, 180, 255, 0.62);
-  animation: categoryDust 1.15s ease-in-out infinite alternate;
-  animation-delay: calc(var(--p) * -90ms);
-}
 
 .category-world {
   min-height: 100vh;
   overflow: hidden;
-  perspective: 1400px;
   background:
     radial-gradient(circle at 78% 46%, rgba(0, 180, 255, 0.16), transparent 30%),
     radial-gradient(circle at 16% 10%, rgba(29, 119, 107, 0.18), transparent 28%),
     linear-gradient(135deg, #f8fbff 0%, #eef6ff 44%, #ffffff 100%);
   color: var(--check-ink);
-  transform-style: preserve-3d;
 }
 
 .category-world::before {
@@ -1423,10 +1258,6 @@ cite {
     linear-gradient(90deg, rgba(19, 73, 78, 0.044) 1px, transparent 1px);
   background-size: 54px 54px;
   mask-image: linear-gradient(180deg, #000, transparent 82%);
-  transition: filter 800ms ease, transform 1200ms cubic-bezier(0.16, 0.84, 0.22, 1);
-}
-
-.category-world.is-landed::before {
   filter: blur(1.5px);
   transform: scale(1.04);
 }
@@ -1451,7 +1282,6 @@ cite {
   align-items: center;
   min-height: calc(100vh - 86px);
   padding: clamp(36px, 6vw, 80px) clamp(18px, 6vw, 96px);
-  transform-style: preserve-3d;
 }
 
 .category-hero-copy h1 {
@@ -1534,7 +1364,6 @@ cite {
   display: grid;
   place-items: center;
   min-height: 520px;
-  transform-style: preserve-3d;
 }
 
 .category-orb {
@@ -1553,35 +1382,11 @@ cite {
     inset 0 -44px 70px rgba(0, 0, 0, 0.2),
     0 42px 95px rgba(7, 21, 47, 0.28),
     0 0 82px rgba(0, 180, 255, 0.42);
-  animation: categoryOrbIdle 18s linear infinite, categoryOrbFloat 5.4s ease-in-out infinite;
-  transform-style: preserve-3d;
 }
 
 .category-orb:has(.category-orb-text.has-image) {
   background: transparent;
   box-shadow: none;
-}
-
-.category-orb-light {
-  position: absolute;
-  inset: -56px;
-  z-index: -1;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(0, 180, 255, 0.34), transparent 68%);
-  filter: blur(16px);
-}
-
-.category-orb-ring {
-  position: absolute;
-  inset: -24px;
-  border: 1px solid rgba(0, 180, 255, 0.28);
-  border-radius: 999px;
-  transform: rotateX(72deg);
-}
-
-.category-orb-ring-two {
-  inset: -42px;
-  transform: rotateX(68deg) rotateZ(38deg);
 }
 
 .category-orb-text {
@@ -1595,7 +1400,6 @@ cite {
   font-size: 78px;
   font-weight: 950;
   text-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);
-  transform: translateZ(42px);
 }
 
 .category-orb-shadow {
@@ -1607,17 +1411,6 @@ cite {
   background: rgba(7, 21, 47, 0.28);
   filter: blur(20px);
   transform: rotateX(72deg) translateZ(-70px);
-}
-
-.category-arrival-ripple {
-  position: absolute;
-  z-index: 1;
-  width: 270px;
-  height: 270px;
-  border-radius: 999px;
-  border: 1px solid rgba(0, 180, 255, 0.38);
-  opacity: 0;
-  animation: categoryArrivalRipple 2.8s cubic-bezier(0.16, 0.84, 0.22, 1) 0.55s forwards;
 }
 
 .check-featured {
@@ -2170,112 +1963,6 @@ cite {
   }
   to {
     transform: translateX(8%);
-  }
-}
-
-@keyframes categoryIconLift {
-  0% {
-    transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg);
-  }
-  40% {
-    transform: translate3d(0, -18px, 44px) rotateX(8deg) rotateY(38deg);
-  }
-  70% {
-    transform: translate3d(0, -24px, 82px) rotateX(12deg) rotateY(142deg);
-  }
-  100% {
-    transform: translate3d(0, -18px, 96px) rotateX(4deg) rotateY(240deg);
-  }
-}
-
-@keyframes categoryIconBecomeObject {
-  0% {
-    transform: translateZ(18px) scale(1);
-  }
-  45% {
-    transform: translateZ(44px) scale(1.45);
-  }
-  100% {
-    transform: translateZ(88px) scale(2.28);
-    box-shadow:
-      inset 0 1px rgba(255, 255, 255, 0.44),
-      inset 0 -20px 32px rgba(0, 0, 0, 0.18),
-      0 30px 76px rgba(7, 21, 47, 0.32),
-      0 0 48px rgba(0, 180, 255, 0.42);
-  }
-}
-
-@keyframes categoryIconGlow {
-  0% {
-    opacity: 0;
-    transform: scale(1) translateZ(-12px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(2.7) translateZ(-12px);
-  }
-}
-
-@keyframes categoryRingOpen {
-  0% {
-    opacity: 0;
-    transform: rotateX(72deg) scale(0.62);
-  }
-  100% {
-    opacity: 1;
-    transform: rotateX(72deg) scale(2.55);
-  }
-}
-
-@keyframes categoryLaunchPulse {
-  0% {
-    opacity: 0.7;
-    transform: scale(0.8);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(3.2);
-  }
-}
-
-@keyframes categoryDust {
-  from {
-    opacity: 0.2;
-    transform: translate3d(0, 0, 0) scale(0.7);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(-18px, -6px, 0) scale(1);
-  }
-}
-
-@keyframes categoryOrbIdle {
-  from {
-    transform: rotateY(0deg);
-  }
-  to {
-    transform: rotateY(360deg);
-  }
-}
-
-@keyframes categoryOrbFloat {
-  0%,
-  100% {
-    translate: 0 -8px;
-  }
-  50% {
-    translate: 0 8px;
-  }
-}
-
-@keyframes categoryArrivalRipple {
-  0% {
-    opacity: 0.72;
-    transform: scale(0.42);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.55);
   }
 }
 
