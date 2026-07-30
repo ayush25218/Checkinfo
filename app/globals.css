@@ -2540,7 +2540,7 @@ cite {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   border-radius: 10px 0 0 10px;
-  background: linear-gradient(135deg, #174ea6, var(--check-blue));
+  background: linear-gradient(135deg, #dc2626, #ef4444);
   color: #ffffff;
   font-weight: 900;
   padding: 16px 10px;
