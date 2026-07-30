@@ -2,6 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { categories } from "@/backend/checkinfo";
+import {
+  indiaCities,
+  indiaDistricts,
+  indiaLocationSourceNote,
+  indiaStates,
+  indiaSubdistricts,
+} from "./indiaLocations";
 
 type Status = "Active" | "Inactive" | "Pending" | "Draft" | "Featured";
 
@@ -63,9 +70,11 @@ type CityRecord = {
 };
 
 type LocationRecord = {
-  id: string;
-  city: string;
+  city?: string;
   country: string;
+  district?: string;
+  id: string;
+  kind: "District" | "Sub-district" | "City";
   name: string;
   state: string;
   status: "Active" | "Inactive";
@@ -163,22 +172,14 @@ const memberSeed: MemberRecord[] = [];
 
 const newsletterSeed: NewsletterRecord[] = [];
 
-const stateSeed: StateRecord[] = [
-  { id: "state-1", country: "India", name: "Delhi", status: "Active" },
-  { id: "state-2", country: "India", name: "Maharashtra", status: "Active" },
-  { id: "state-3", country: "India", name: "Karnataka", status: "Active" },
-];
+const stateSeed: StateRecord[] = indiaStates;
 
-const citySeed: CityRecord[] = [
-  { id: "city-1", country: "India", name: "New Delhi", state: "Delhi", status: "Active" },
-  { id: "city-2", country: "India", name: "Mumbai", state: "Maharashtra", status: "Active" },
-  { id: "city-3", country: "India", name: "Bengaluru", state: "Karnataka", status: "Active" },
-];
+const citySeed: CityRecord[] = indiaCities;
 
 const locationSeed: LocationRecord[] = [
-  { id: "loc-1", city: "New Delhi", country: "India", name: "Dwarka", state: "Delhi", status: "Active" },
-  { id: "loc-2", city: "Mumbai", country: "India", name: "Andheri East", state: "Maharashtra", status: "Active" },
-  { id: "loc-3", city: "Bengaluru", country: "India", name: "Residency Road", state: "Karnataka", status: "Active" },
+  ...indiaDistricts.map((record) => ({ ...record, kind: "District" as const })),
+  ...indiaSubdistricts.map((record) => ({ ...record, kind: "Sub-district" as const })),
+  ...indiaCities.map((record) => ({ ...record, kind: "City" as const })),
 ];
 
 const metaSeed: MetaRecord[] = [
@@ -935,15 +936,17 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
   const cityRecords = readStored("checkinfo-admin-cities", citySeed);
   const isStates = kind === "states";
   const isCities = kind === "cities";
-  const storageKey = `checkinfo-admin-${kind}`;
+  const storageKey = `checkinfo-admin-${kind}-india-v2`;
   const fallback: LocationAdminRecord[] = isStates ? stateSeed : isCities ? citySeed : locationSeed;
   const [records, setRecords] = useState<LocationAdminRecord[]>(() => readStored(storageKey, fallback));
   const [selected, setSelected] = useState<string[]>([]);
-  const [filters, setFilters] = useState({ city: "All", keyword: "", state: "All", status: "All" });
+  const [filters, setFilters] = useState({ city: "All", district: "All", keyword: "", state: "All", status: "All", type: "All" });
   const [editing, setEditing] = useState<StateRecord | CityRecord | LocationRecord | null>(null);
   const [form, setForm] = useState({
     city: cityRecords[0]?.name ?? "",
     country: "India",
+    district: "",
+    kind: "District" as LocationRecord["kind"],
     name: "",
     state: stateRecords[0]?.name ?? "",
     status: "Active" as "Active" | "Inactive",
@@ -954,8 +957,20 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
       .filter((record) => record.name.toLowerCase().includes(filters.keyword.toLowerCase()))
       .filter((record) => filters.status === "All" || record.status === filters.status)
       .filter((record) => isStates || filters.state === "All" || "state" in record && record.state === filters.state)
+      .filter((record) => !isStates && !isCities ? filters.type === "All" || "kind" in record && record.kind === filters.type : true)
+      .filter((record) => !isStates && !isCities ? filters.district === "All" || "district" in record && record.district === filters.district : true)
       .filter((record) => !isStates && !isCities ? filters.city === "All" || "city" in record && record.city === filters.city : true);
   }, [filters, isCities, isStates, records]);
+
+  const visibleRecords = filtered.slice(0, 300);
+  const districtOptions = useMemo(
+    () => locationSeed.filter((record) => record.kind === "District" && (filters.state === "All" || record.state === filters.state)).slice(0, 900),
+    [filters.state],
+  );
+  const cityOptions = useMemo(
+    () => cityRecords.filter((record) => filters.state === "All" || record.state === filters.state).slice(0, 900),
+    [cityRecords, filters.state],
+  );
 
   function sync(next: LocationAdminRecord[]) {
     setRecords(next);
@@ -967,6 +982,8 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
     setForm({
       city: cityRecords[0]?.name ?? "",
       country: "India",
+      district: "",
+      kind: "District",
       name: "",
       state: stateRecords[0]?.name ?? "",
       status: "Active",
@@ -981,7 +998,7 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
       ? base
       : isCities
         ? { ...base, state: form.state }
-        : { ...base, city: form.city, state: form.state };
+        : { ...base, city: form.kind === "City" ? form.city : undefined, district: form.kind === "Sub-district" ? form.district : undefined, kind: form.kind, state: form.state };
 
     sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
     resetForm();
@@ -990,8 +1007,10 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
   function editRecord(record: StateRecord | CityRecord | LocationRecord) {
     setEditing(record);
     setForm({
-      city: "city" in record ? record.city : cityRecords[0]?.name ?? "",
+      city: "city" in record ? record.city ?? "" : cityRecords[0]?.name ?? "",
       country: record.country,
+      district: "district" in record ? record.district ?? "" : "",
+      kind: "kind" in record ? record.kind : "District",
       name: record.name,
       state: "state" in record ? record.state : stateRecords[0]?.name ?? "",
       status: record.status,
@@ -1011,7 +1030,7 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
   return (
     <section className="admin-card">
       <div className="admin-filters">
-        <label><span>{isStates ? "State Name" : isCities ? "City Name" : "Location Name"}</span><input value={filters.keyword} onChange={(event) => setFilters({ ...filters, keyword: event.target.value })} /></label>
+        <label><span>{isStates ? "State / UT Name" : isCities ? "City Name" : "District / Sub-district / City"}</span><input value={filters.keyword} onChange={(event) => setFilters({ ...filters, keyword: event.target.value })} /></label>
         <label>
           <span>Status</span>
           <select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
@@ -1029,10 +1048,27 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
         ) : null}
         {!isStates && !isCities ? (
           <label>
+            <span>Type</span>
+            <select value={filters.type} onChange={(event) => setFilters({ ...filters, type: event.target.value })}>
+              <option>All</option><option>District</option><option>Sub-district</option><option>City</option>
+            </select>
+          </label>
+        ) : null}
+        {!isStates && !isCities ? (
+          <label>
+            <span>District</span>
+            <select value={filters.district} onChange={(event) => setFilters({ ...filters, district: event.target.value })}>
+              <option>All</option>
+              {districtOptions.map((record) => <option key={record.id}>{record.name}</option>)}
+            </select>
+          </label>
+        ) : null}
+        {!isStates && !isCities ? (
+          <label>
             <span>City</span>
             <select value={filters.city} onChange={(event) => setFilters({ ...filters, city: event.target.value })}>
               <option>All</option>
-              {cityRecords.map((record) => <option key={record.id}>{record.name}</option>)}
+              {cityOptions.map((record) => <option key={record.id}>{record.name}</option>)}
             </select>
           </label>
         ) : null}
@@ -1040,7 +1076,15 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
       </div>
 
       <div className="admin-editor admin-editor-location">
-        <label><span>{isStates ? "State Name" : isCities ? "City Name" : "Location Name"}</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
+        {!isStates && !isCities ? (
+          <label>
+            <span>Location Type</span>
+            <select value={form.kind} onChange={(event) => setForm({ ...form, kind: event.target.value as LocationRecord["kind"] })}>
+              <option>District</option><option>Sub-district</option><option>City</option>
+            </select>
+          </label>
+        ) : null}
+        <label><span>{isStates ? "State / UT Name" : isCities ? "City Name" : "Name"}</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
         <label><span>Country Name</span><input value={form.country} onChange={(event) => setForm({ ...form, country: event.target.value })} /></label>
         {!isStates ? (
           <label>
@@ -1050,11 +1094,20 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
             </select>
           </label>
         ) : null}
+        {!isStates && !isCities && form.kind === "Sub-district" ? (
+          <label>
+            <span>District</span>
+            <select value={form.district} onChange={(event) => setForm({ ...form, district: event.target.value })}>
+              <option value="">Select District</option>
+              {locationSeed.filter((record) => record.kind === "District" && record.state === form.state).slice(0, 900).map((record) => <option key={record.id}>{record.name}</option>)}
+            </select>
+          </label>
+        ) : null}
         {!isStates && !isCities ? (
           <label>
             <span>City</span>
             <select value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })}>
-              {cityRecords.map((record) => <option key={record.id}>{record.name}</option>)}
+              {cityRecords.filter((record) => record.state === form.state).slice(0, 900).map((record) => <option key={record.id}>{record.name}</option>)}
             </select>
           </label>
         ) : null}
@@ -1064,9 +1117,14 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
             <option>Active</option><option>Inactive</option>
           </select>
         </label>
-        <button type="button" onClick={saveRecord}>{editing ? "Update" : isStates ? "Add State" : isCities ? "Add City" : "Add Location"}</button>
+        <button type="button" onClick={saveRecord}>{editing ? "Update" : isStates ? "Add State / UT" : isCities ? "Add City" : "Add Location"}</button>
         {editing ? <button type="button" className="admin-light-button" onClick={resetForm}>Cancel</button> : null}
       </div>
+
+      <p className="admin-data-note">
+        Loaded {records.length.toLocaleString()} {isStates ? "states/UTs" : isCities ? "cities" : "location records"}.
+        Showing {visibleRecords.length.toLocaleString()} of {filtered.length.toLocaleString()} filtered records. {indiaLocationSourceNote}
+      </p>
 
       <div className="admin-actions">
         <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Activate</button>
@@ -1076,13 +1134,15 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
 
       <div className={`admin-real-table ${isStates ? "admin-real-table-states" : isCities ? "admin-real-table-cities" : "admin-real-table-locations"}`}>
         <div className="admin-real-row admin-real-head">
-          <span>Select</span><span>Name</span>{!isStates ? <span>State Name</span> : null}{!isStates && !isCities ? <span>City Name</span> : null}<span>Country Name</span><span>Status</span><span>Action</span>
+          <span>Select</span><span>Name</span>{!isStates && !isCities ? <span>Type</span> : null}{!isStates ? <span>State Name</span> : null}{!isStates && !isCities ? <span>District</span> : null}{!isStates && !isCities ? <span>City Name</span> : null}<span>Country Name</span><span>Status</span><span>Action</span>
         </div>
-        {filtered.map((record) => (
+        {visibleRecords.map((record) => (
           <div className="admin-real-row" key={record.id}>
             <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
             <span>{record.name}</span>
+            {!isStates && !isCities ? <span>{"kind" in record ? record.kind : "-"}</span> : null}
             {!isStates ? <span>{"state" in record ? record.state : "-"}</span> : null}
+            {!isStates && !isCities ? <span>{"district" in record ? record.district || "-" : "-"}</span> : null}
             {!isStates && !isCities ? <span>{"city" in record ? record.city : "-"}</span> : null}
             <span>{record.country}</span>
             <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
