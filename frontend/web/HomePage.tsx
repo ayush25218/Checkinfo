@@ -31,6 +31,10 @@ function CategoryIcon({ label, index }: { label: string; index: number }) {
   );
 }
 
+function categoryAdsCount(index: number) {
+  return [248, 214, 192, 185, 176, 164, 151, 143, 137, 126, 118, 104, 92, 86, 74][index] ?? 64;
+}
+
 export function HomePage() {
   return (
     <main className="check-home">
@@ -78,8 +82,15 @@ export function HomePage() {
         <div className="check-category-strip">
           {categories.concat(["Fruits", "Bank", "Rent Services"]).map((category, index) => (
             <a className="check-category-card" href="#featured" key={category}>
-              <CategoryIcon label={category} index={index} />
-              <strong>{category}</strong>
+              <span className="check-category-topline" />
+              <span className="check-category-main">
+                <CategoryIcon label={category} index={index} />
+                <span>
+                  <strong>{category}</strong>
+                  <small>{categoryAdsCount(index)} active ads</small>
+                </span>
+              </span>
+              <span className="check-category-action">Explore</span>
             </a>
           ))}
         </div>
