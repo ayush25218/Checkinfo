@@ -1,4 +1,5 @@
 import { categories } from "./checkinfo";
+import { demoMemberAccounts } from "./demoBusinessData";
 import type {
   MemberEnquiry,
   MemberListing,
@@ -277,7 +278,13 @@ export function getAdminResource(resource = "dashboard") {
 export async function getAdminResourceAsync(resource = "dashboard") {
   if (!isMongoConfigured()) return getAdminResource(resource);
 
-  const members = await listMongoMembers();
+  let members: MemberAccount[];
+  try {
+    members = await listMongoMembers();
+  } catch {
+    members = demoMemberAccounts;
+  }
+  if (members.length === 0) members = demoMemberAccounts;
   const business = buildBusinessFromMembers(members);
 
   if (resource === "dashboard") {

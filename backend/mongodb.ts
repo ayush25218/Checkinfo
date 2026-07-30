@@ -80,7 +80,9 @@ export async function getMongoClient() {
     throw new Error("MONGODB_URI is not configured.");
   }
 
-  globalMongo.__checkinfoMongoClientPromise ??= new MongoClient(uri).connect();
+  globalMongo.__checkinfoMongoClientPromise ??= new MongoClient(uri, {
+    serverSelectionTimeoutMS: 6000,
+  }).connect();
   return globalMongo.__checkinfoMongoClientPromise;
 }
 
