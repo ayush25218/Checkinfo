@@ -1461,49 +1461,57 @@ cite {
   will-change: transform, box-shadow, filter;
 }
 
-.check-footer-card::before,
-.check-footer-card::after {
-  content: "";
+.check-footer-rod {
   position: absolute;
-  top: 50%;
   z-index: -1;
-  width: clamp(48px, 5vw, 86px);
-  height: 14px;
+  width: clamp(42px, 4.4vw, 74px);
+  height: 11px;
   border-radius: 999px;
   opacity: 0;
   pointer-events: none;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92)),
-    linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0));
+    linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0));
   box-shadow:
     inset 0 1px 3px rgba(255, 255, 255, 0.82),
-    inset 0 -2px 5px rgba(0, 0, 0, 0.42),
-    0 0 0 1px rgba(255, 255, 255, 0.18),
-    0 0 18px rgba(0, 180, 255, 0.2);
+    inset 0 -2px 4px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 0 14px rgba(0, 180, 255, 0.18);
   transition:
     opacity 2s cubic-bezier(0.16, 0.84, 0.22, 1),
     transform 2s cubic-bezier(0.16, 0.84, 0.22, 1),
     box-shadow 2s cubic-bezier(0.16, 0.84, 0.22, 1);
-  transform: translateY(-50%) scaleX(0.08) translateZ(-60px);
   will-change: transform, opacity;
 }
 
-.check-footer-card::before {
+.check-footer-rod-left-top,
+.check-footer-rod-left-bottom {
   left: 0;
-  background:
-    radial-gradient(circle at calc(100% - 6px) 50%, rgba(199, 239, 255, 0.96) 0 3px, rgba(0, 180, 255, 0.86) 4px 7px, rgba(0, 180, 255, 0.14) 8px 13px, transparent 14px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92)),
-    linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0));
+  transform: scaleX(0.08) translateZ(-65px);
   transform-origin: right center;
+  background:
+    radial-gradient(circle at calc(100% - 5px) 50%, rgba(199, 239, 255, 0.94) 0 2px, rgba(0, 180, 255, 0.84) 3px 6px, rgba(0, 180, 255, 0.12) 7px 11px, transparent 12px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92));
 }
 
-.check-footer-card::after {
+.check-footer-rod-right-top,
+.check-footer-rod-right-bottom {
   right: 0;
-  background:
-    radial-gradient(circle at 6px 50%, rgba(199, 239, 255, 0.96) 0 3px, rgba(0, 180, 255, 0.86) 4px 7px, rgba(0, 180, 255, 0.14) 8px 13px, transparent 14px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92)),
-    linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0));
+  transform: scaleX(0.08) translateZ(-65px);
   transform-origin: left center;
+  background:
+    radial-gradient(circle at 5px 50%, rgba(199, 239, 255, 0.94) 0 2px, rgba(0, 180, 255, 0.84) 3px 6px, rgba(0, 180, 255, 0.12) 7px 11px, transparent 12px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(185, 197, 210, 0.92) 24%, rgba(80, 91, 106, 0.88) 50%, rgba(226, 235, 244, 0.95) 74%, rgba(118, 130, 145, 0.92));
+}
+
+.check-footer-rod-left-top,
+.check-footer-rod-right-top {
+  top: clamp(14px, 6%, 24px);
+}
+
+.check-footer-rod-left-bottom,
+.check-footer-rod-right-bottom {
+  bottom: clamp(14px, 6%, 24px);
 }
 
 .check-footer-card-sheen {
@@ -1528,7 +1536,7 @@ cite {
   transition: opacity 0.4s ease;
 }
 
-.check-footer-card > :not(.check-footer-card-sheen) {
+.check-footer-card > :not(.check-footer-card-sheen):not(.check-footer-rod) {
   position: relative;
   z-index: 2;
   transform: translateZ(18px);
@@ -1545,26 +1553,28 @@ cite {
     0 0 25px rgba(0, 180, 255, 0.35);
 }
 
-.check-footer-card:hover::before {
+.check-footer-card:hover .check-footer-rod-left-top,
+.check-footer-card:hover .check-footer-rod-left-bottom {
   opacity: 1;
-  transform: translateX(calc(-100% + 2px)) translateY(-50%) scaleX(1) translateZ(-65px);
+  transform: translateX(calc(-100% + 2px)) scaleX(1) translateZ(-65px);
   box-shadow:
     inset 0 1px 3px rgba(255, 255, 255, 0.9),
-    inset 0 -2px 5px rgba(0, 0, 0, 0.48),
-    0 0 0 1px rgba(255, 255, 255, 0.18),
-    7px 0 12px rgba(0, 180, 255, 0.32),
-    0 0 22px rgba(0, 116, 255, 0.22);
+    inset 0 -2px 4px rgba(0, 0, 0, 0.48),
+    0 0 0 1px rgba(255, 255, 255, 0.16),
+    6px 0 10px rgba(0, 180, 255, 0.3),
+    0 0 18px rgba(0, 116, 255, 0.2);
 }
 
-.check-footer-card:hover::after {
+.check-footer-card:hover .check-footer-rod-right-top,
+.check-footer-card:hover .check-footer-rod-right-bottom {
   opacity: 1;
-  transform: translateX(calc(100% - 2px)) translateY(-50%) scaleX(1) translateZ(-65px);
+  transform: translateX(calc(100% - 2px)) scaleX(1) translateZ(-65px);
   box-shadow:
     inset 0 1px 3px rgba(255, 255, 255, 0.9),
-    inset 0 -2px 5px rgba(0, 0, 0, 0.48),
-    0 0 0 1px rgba(255, 255, 255, 0.18),
-    -7px 0 12px rgba(0, 180, 255, 0.32),
-    0 0 22px rgba(0, 116, 255, 0.22);
+    inset 0 -2px 4px rgba(0, 0, 0, 0.48),
+    0 0 0 1px rgba(255, 255, 255, 0.16),
+    -6px 0 10px rgba(0, 180, 255, 0.3),
+    0 0 18px rgba(0, 116, 255, 0.2);
 }
 
 .check-footer-card:hover .check-footer-card-sheen::before {

@@ -170,17 +170,29 @@ export function HomePage() {
       <footer className="check-footer" id="contact">
         <div className="check-footer-card">
           <span className="check-footer-card-sheen" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-left-top" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-right-top" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-left-bottom" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-right-bottom" aria-hidden="true" />
           <h3>Quick Links</h3>
           {footerLinks.quick.map((link) => <a href="#top" key={link}>{link}</a>)}
           <p><strong>Business Owner :</strong> Login | Register</p>
         </div>
         <div className="check-footer-card">
           <span className="check-footer-card-sheen" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-left-top" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-right-top" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-left-bottom" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-right-bottom" aria-hidden="true" />
           <h3>Info Links</h3>
           {footerLinks.info.map((link) => <a href="#top" key={link}>{link}</a>)}
         </div>
         <div className="check-footer-card">
           <span className="check-footer-card-sheen" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-left-top" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-right-top" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-left-bottom" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-right-bottom" aria-hidden="true" />
           <h3>Our Categories</h3>
           {categories.concat(["Fruits", "Bank", "Rent Services"]).map((category) => (
             <a href="#categories" key={category}>{category}</a>
@@ -189,6 +201,10 @@ export function HomePage() {
         </div>
         <div className="check-footer-card">
           <span className="check-footer-card-sheen" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-left-top" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-right-top" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-left-bottom" aria-hidden="true" />
+          <span className="check-footer-rod check-footer-rod-right-bottom" aria-hidden="true" />
           <h3>Contact Detail</h3>
           <p>New Delhi</p>
           <a href="tel:9718290290">9718-290-290</a>
