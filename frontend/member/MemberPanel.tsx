@@ -22,7 +22,7 @@ const accountNav = [
   ["Notifications", "/members/notifications"],
   ["Support", "/members/support"],
   ["Change Password", "/members/change_password"],
-  ["Logout", "/members/logout"],
+  ["Logout", "/api/auth/logout?role=member"],
 ];
 
 export function MemberShell({

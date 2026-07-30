@@ -47,7 +47,10 @@ export function AdminHeader({ page }: { page: AdminPageConfig }) {
         <h1>{page.title}</h1>
         <p>{page.subtitle}</p>
       </div>
-      <a href="/">View Website</a>
+      <div className="admin-header-actions">
+        <a href="/">View Website</a>
+        <a href="/api/auth/logout?role=admin">Logout</a>
+      </div>
     </header>
   );
 }
