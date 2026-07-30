@@ -1211,6 +1211,7 @@ cite {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
+  overflow: hidden;
   width: 48px;
   height: 48px;
   border-radius: 14px;
@@ -1224,6 +1225,23 @@ cite {
     0 14px 28px rgba(29, 101, 216, 0.24);
   font-weight: 900;
   transform: translateZ(18px);
+}
+
+.check-category-icon img,
+.check-category-flight-icon img,
+.category-orb-text img {
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.22));
+}
+
+.check-category-icon.has-image,
+.check-category-flight-icon.has-image,
+.category-orb-text.has-image {
+  background:
+    radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.52), transparent 28%),
+    linear-gradient(135deg, rgba(19, 73, 78, 0.96), rgba(29, 101, 216, 0.9));
 }
 
 .check-category-icon-glow,
@@ -1332,6 +1350,7 @@ cite {
   z-index: 3;
   display: grid;
   place-items: center;
+  overflow: hidden;
   width: 110px;
   height: 110px;
   border-radius: 28px;
@@ -1562,6 +1581,12 @@ cite {
 }
 
 .category-orb-text {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
   color: #ffffff;
   font-size: 78px;
   font-weight: 950;

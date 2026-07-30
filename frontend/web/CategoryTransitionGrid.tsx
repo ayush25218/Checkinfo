@@ -3,8 +3,9 @@
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
-import { useState } from "react";
-import type { CategoryExperience } from "./categoryExperience";
+import { useEffect, useMemo, useState } from "react";
+import { CategoryIconVisual } from "./CategoryIconVisual";
+import { createCategoryExperience, type CategoryExperience } from "./categoryExperience";
 
 type CategoryTransitionGridProps = {
   categories: CategoryExperience[];
@@ -19,9 +20,31 @@ function flyToCategory(router: ReturnType<typeof useRouter>, href: string) {
 
 export function CategoryTransitionGrid({ categories }: CategoryTransitionGridProps) {
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const [adminCategories, setAdminCategories] = useState<CategoryExperience[]>([]);
   const router = useRouter();
   const reduceMotion = useReducedMotion();
-  const activeCategory = categories.find((category) => category.slug === activeSlug);
+  const visibleCategories = useMemo(() => {
+    const merged = new Map(categories.map((category) => [category.slug, category]));
+    adminCategories.forEach((category) => merged.set(category.slug, category));
+    return [...merged.values()];
+  }, [adminCategories, categories]);
+  const activeCategory = visibleCategories.find((category) => category.slug === activeSlug);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("checkinfo-admin-categories");
+      if (!raw) return;
+
+      const records = JSON.parse(raw) as Array<{ image?: string; name?: string; order?: number; status?: string }>;
+      const next = records
+        .filter((record) => record.name && record.status !== "Inactive")
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .map((record, index) => createCategoryExperience(record.name ?? "", index, record.image));
+      window.setTimeout(() => setAdminCategories(next), 0);
+    } catch {
+      window.setTimeout(() => setAdminCategories([]), 0);
+    }
+  }, []);
 
   function openCategory(category: CategoryExperience) {
     const href = `/category/${category.slug}`;
@@ -42,7 +65,7 @@ export function CategoryTransitionGrid({ categories }: CategoryTransitionGridPro
           {activeSlug ? <motion.span className="check-category-cinema-dim" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} /> : null}
         </AnimatePresence>
         <div className="check-category-strip">
-          {categories.map((category) => {
+          {visibleCategories.map((category) => {
             const isActive = category.slug === activeSlug;
             return (
               <motion.button
@@ -56,7 +79,7 @@ export function CategoryTransitionGrid({ categories }: CategoryTransitionGridPro
                 <span className="check-category-topline" />
                 <span className="check-category-main">
                   <motion.span className="check-category-icon-shell" layoutId={`category-icon-${category.slug}`}>
-                    <span className="check-category-icon" aria-hidden="true">{category.initials}</span>
+                    <CategoryIconVisual className="check-category-icon" icon={category.icon} initials={category.initials} />
                     <span className="check-category-icon-glow" />
                     <span className="check-category-ring check-category-ring-one" />
                     <span className="check-category-ring check-category-ring-two" />
@@ -91,7 +114,7 @@ export function CategoryTransitionGrid({ categories }: CategoryTransitionGridPro
               transition={{ duration: 1.8, ease: [0.16, 0.84, 0.22, 1], times: [0, 0.34, 0.72, 1] }}
             >
               <span className="check-category-flight-glow" />
-              <span className="check-category-flight-icon">{activeCategory.initials}</span>
+              <CategoryIconVisual className="check-category-flight-icon" icon={activeCategory.icon} initials={activeCategory.initials} />
               <span className="check-category-flight-trail" />
               {Array.from({ length: 10 }).map((_, index) => (
                 <span className="check-category-particle" style={{ "--p": index, "--py": (index % 5) - 2 } as CSSProperties} key={index} />
