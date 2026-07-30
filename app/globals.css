@@ -828,7 +828,7 @@ cite {
 
 .check-home {
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 16% 0%, rgba(29, 101, 216, 0.12), transparent 30%),
     radial-gradient(circle at 88% 12%, rgba(74, 140, 255, 0.12), transparent 28%),
@@ -1535,7 +1535,7 @@ cite {
 .category-world {
   --category-accent: var(--check-blue);
   min-height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 78% 46%, color-mix(in srgb, var(--category-accent), transparent 78%), transparent 30%),
     radial-gradient(circle at 16% 10%, rgba(74, 140, 255, 0.18), transparent 28%),
@@ -1558,7 +1558,8 @@ cite {
 }
 
 .category-world-header {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 5;
   display: flex;
   align-items: center;
@@ -1566,6 +1567,25 @@ cite {
   gap: 18px;
   min-height: 86px;
   padding: 16px clamp(18px, 4vw, 56px);
+  border-bottom: 1px solid rgba(219, 231, 251, 0.9);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 12px 34px rgba(7, 21, 47, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.category-world-header nav {
+  justify-content: flex-end;
+  gap: clamp(12px, 1.5vw, 22px);
+}
+
+.category-world-header nav a:not(.check-post-button) {
+  color: #344257;
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.category-world-header nav a:not(.check-post-button):hover {
+  color: var(--check-blue);
+  transform: translateY(-1px);
 }
 
 .category-hero {
@@ -1790,6 +1810,7 @@ cite {
 }
 
 .category-breadcrumbs button,
+.category-breadcrumbs a,
 .category-breadcrumbs span {
   border: 1px solid #d6e4f6;
   border-radius: 999px;
@@ -1803,6 +1824,101 @@ cite {
 .category-breadcrumbs span {
   background: linear-gradient(135deg, #174ea6, var(--category-accent));
   color: #ffffff;
+}
+
+.category-listings-section {
+  position: relative;
+  z-index: 2;
+  padding: 0 clamp(18px, 6vw, 96px) clamp(58px, 8vw, 96px);
+}
+
+.category-listing-grid {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.listing-collection-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(29, 101, 216, 0.15), transparent 28%),
+    radial-gradient(circle at 88% 10%, rgba(91, 124, 255, 0.12), transparent 30%),
+    linear-gradient(180deg, #ffffff 0%, #f5f8ff 44%, #ffffff 100%);
+  color: var(--check-ink);
+}
+
+.listing-collection-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 76px;
+  border-bottom: 1px solid rgba(219, 231, 251, 0.95);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px clamp(18px, 4vw, 56px);
+  box-shadow: 0 12px 36px rgba(7, 21, 47, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.listing-collection-header nav {
+  color: #344257;
+}
+
+.listing-collection-header nav a {
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.listing-collection-header nav a:hover {
+  color: var(--check-blue);
+  transform: translateY(-1px);
+}
+
+.listing-collection-hero {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 14px;
+  padding: clamp(52px, 7vw, 90px) clamp(18px, 6vw, 96px);
+  background:
+    radial-gradient(circle at 80% 20%, rgba(47, 117, 232, 0.32), transparent 28%),
+    linear-gradient(135deg, rgba(5, 14, 30, 0.98), rgba(13, 46, 116, 0.95) 54%, rgba(29, 101, 216, 0.84));
+  color: #ffffff;
+}
+
+.listing-collection-hero h1 {
+  max-width: 920px;
+  margin: 0;
+  font-size: clamp(42px, 6vw, 74px);
+  line-height: 1;
+}
+
+.listing-collection-hero p:not(.eyebrow) {
+  max-width: 720px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 18px;
+  font-weight: 720;
+  line-height: 1.7;
+}
+
+.listing-collection-hero span {
+  width: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-weight: 900;
+  padding: 9px 13px;
+}
+
+.listing-collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+  gap: 20px;
+  padding: clamp(32px, 5vw, 58px) clamp(18px, 6vw, 96px);
 }
 
 .category-drilldown-grid {
@@ -4819,6 +4935,20 @@ cite {
 
   .category-drilldown-grid {
     grid-template-columns: 1fr;
+  }
+
+  .listing-collection-header,
+  .category-world-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .listing-collection-header nav,
+  .category-world-header nav {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 2px;
   }
 
   .category-drilldown-head {

@@ -244,7 +244,8 @@ function buildBusinessFromMembers(members: MemberAccount[]) {
 
 export function getAdminResource(resource = "dashboard") {
   const store = getStore();
-  const members = Object.values(store.members);
+  const localMembers = Object.values(store.members);
+  const members = localMembers.length ? localMembers : demoMemberAccounts;
   const business = buildBusinessFromMembers(members);
 
   if (resource === "dashboard") {

@@ -1,21 +1,28 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { businessTaxonomy } from "@/backend/businessTaxonomy";
+import type { PublicBusinessListing } from "@/backend/listingSeo";
+import { BusinessCard } from "./BusinessCard";
 import { CategoryIconVisual } from "./CategoryIconVisual";
 import type { CategoryExperience } from "./categoryExperience";
 import { LocationSearchForm } from "./LocationSearchForm";
 
 type CategoryLandingPageProps = {
   category: CategoryExperience;
+  initialSubcategorySlug?: string;
+  initialTypeSlug?: string;
+  listings?: PublicBusinessListing[];
 };
 
-export function CategoryLandingPage({ category }: CategoryLandingPageProps) {
+export function CategoryLandingPage({ category, initialSubcategorySlug = "", initialTypeSlug = "", listings = [] }: CategoryLandingPageProps) {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState(category);
-  const [activeSubcategorySlug, setActiveSubcategorySlug] = useState("");
-  const [activeTypeSlug, setActiveTypeSlug] = useState("");
+  const [activeSubcategorySlug, setActiveSubcategorySlug] = useState(initialSubcategorySlug);
+  const [activeTypeSlug, setActiveTypeSlug] = useState(initialTypeSlug);
   const taxonomyCategory = useMemo(
     () => businessTaxonomy.find((item) => item.slug === activeCategory.slug),
     [activeCategory.slug],
@@ -23,6 +30,9 @@ export function CategoryLandingPage({ category }: CategoryLandingPageProps) {
   const activeSubcategory = taxonomyCategory?.subcategories.find((item) => item.slug === activeSubcategorySlug);
   const activeBusinessType = activeSubcategory?.businessTypes.find((item) => item.slug === activeTypeSlug);
   const finalQuery = activeBusinessType?.name ?? activeSubcategory?.name ?? activeCategory.name;
+  const currentCategoryPath = `/category/${activeCategory.slug}`;
+  const activeSubcategoryPath = activeSubcategory ? `${currentCategoryPath}/${activeSubcategory.slug}` : currentCategoryPath;
+  const finalPagePath = activeBusinessType ? `${activeSubcategoryPath}/${activeBusinessType.slug}` : activeSubcategoryPath;
 
   useEffect(() => {
     try {
@@ -38,13 +48,14 @@ export function CategoryLandingPage({ category }: CategoryLandingPageProps) {
   }, [category]);
 
   useEffect(() => {
-    setActiveSubcategorySlug("");
-    setActiveTypeSlug("");
-  }, [activeCategory.slug]);
+    setActiveSubcategorySlug(initialSubcategorySlug);
+    setActiveTypeSlug(initialTypeSlug);
+  }, [activeCategory.slug, initialSubcategorySlug, initialTypeSlug]);
 
   function selectSubcategory(slug: string) {
     setActiveSubcategorySlug((current) => (current === slug ? "" : slug));
     setActiveTypeSlug("");
+    router.push(`${currentCategoryPath}/${slug}`);
   }
 
   return (
@@ -55,7 +66,13 @@ export function CategoryLandingPage({ category }: CategoryLandingPageProps) {
           <strong>Checkinfo</strong>
           <small>Check kiya kya?</small>
         </Link>
-        <a className="check-post-button" href="/members/add_listing">Post Your Ad</a>
+        <nav aria-label="Category navigation">
+          <a href="/">Home</a>
+          <a href="/featured">Featured</a>
+          <a href="/new">New Ads</a>
+          <a href="/trending">Trending</a>
+          <a className="check-post-button" href="/members/add_listing">Post Your Ad</a>
+        </nav>
       </header>
 
       <section className="category-hero">
@@ -70,7 +87,7 @@ export function CategoryLandingPage({ category }: CategoryLandingPageProps) {
           </div>
           <LocationSearchForm className="check-hero-search category-search" defaultQuery={activeCategory.name} />
           <div className="category-actions">
-            <a href={`/search?q=${encodeURIComponent(finalQuery)}`}>Search Listings</a>
+            <a href={finalPagePath}>Open Page</a>
             <a href="/members/add_listing">Post In Category</a>
           </div>
         </div>
@@ -101,7 +118,7 @@ export function CategoryLandingPage({ category }: CategoryLandingPageProps) {
 
           <div className="category-breadcrumbs" aria-label="Category path">
             <button type="button" onClick={() => { setActiveSubcategorySlug(""); setActiveTypeSlug(""); }}>{taxonomyCategory.name}</button>
-            {activeSubcategory ? <button type="button" onClick={() => setActiveTypeSlug("")}>{activeSubcategory.name}</button> : null}
+            {activeSubcategory ? <a href={`${currentCategoryPath}/${activeSubcategory.slug}`}>{activeSubcategory.name}</a> : null}
             {activeBusinessType ? <span>{activeBusinessType.name}</span> : null}
           </div>
 
@@ -127,7 +144,10 @@ export function CategoryLandingPage({ category }: CategoryLandingPageProps) {
                 <button
                   className={businessType.slug === activeTypeSlug ? "active" : ""}
                   key={businessType.slug}
-                  onClick={() => setActiveTypeSlug(businessType.slug)}
+                  onClick={() => {
+                    setActiveTypeSlug((current) => current === businessType.slug ? "" : businessType.slug);
+                    router.push(`${currentCategoryPath}/${activeSubcategorySlug}/${businessType.slug}`);
+                  }}
                   type="button"
                 >
                   <span>{businessType.name}</span>
@@ -144,12 +164,27 @@ export function CategoryLandingPage({ category }: CategoryLandingPageProps) {
               <span>Final Output</span>
               <strong>{finalQuery}</strong>
               <p>{activeBusinessType ? `${activeBusinessType.name} listings in this category are ready for search and SEO pages.` : "Subcategory/business type select karne ke baad final output yahan dikhega."}</p>
-              <a href={`/search?q=${encodeURIComponent(finalQuery)}`}>Open Search</a>
+              <a href={finalPagePath}>Open Page</a>
               <a href="/members/add_listing">Register Business</a>
             </div>
           </div>
         </section>
       ) : null}
+
+      <section className="category-listings-section">
+        <div className="check-section-title centered">
+          <h2>{finalQuery} listings</h2>
+          <p>Approved businesses for this category path. Homepage limited hai, full category results yahan milenge.</p>
+        </div>
+        <div className="listing-collection-grid category-listing-grid">
+          {listings.length ? listings.map((listing) => <BusinessCard listing={listing} key={`${listing.ownerId}-${listing.id}`} />) : (
+            <article className="check-empty-listing">
+              <strong>No listings found</strong>
+              <span>Is category path me approved listings admin approval ke baad show hongi.</span>
+            </article>
+          )}
+        </div>
+      </section>
     </main>
   );
 }

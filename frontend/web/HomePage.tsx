@@ -1,8 +1,8 @@
 import { categories } from "@/backend/checkinfo";
-import { getAdminResourceAsync } from "@/backend/directoryStore";
-import { listingLocationText, listingPublicPath, type PublicBusinessListing } from "@/backend/listingSeo";
 import { CategoryTransitionGrid } from "./CategoryTransitionGrid";
 import { getAllCategoryExperiences } from "./categoryExperience";
+import { BusinessCard } from "./BusinessCard";
+import { getApprovedListings } from "./listingCollections";
 import { LocationSearchForm } from "./LocationSearchForm";
 
 const footerLinks = {
@@ -11,32 +11,6 @@ const footerLinks = {
 };
 
 const trendingSearches = ["Website Developer", "Restaurants near me", "Hospitals", "Hotels", "Schools", "Bank"];
-
-function BusinessCard({ listing }: { listing: PublicBusinessListing }) {
-  const location = listingLocationText(listing);
-
-  return (
-    <article className="check-ad-card">
-      <div className="check-ad-image blue">
-        <span>{(listing.name || "CI").slice(0, 2).toUpperCase()}</span>
-        <b>{listing.badge || "Verified"}</b>
-      </div>
-      <small>{listing.businessType || listing.subcategory || listing.category || "Business"}{location ? ` / ${location}` : ""}</small>
-      <h3>{listing.name}</h3>
-      <p>{listing.details || listing.description || listing.address || "Approved Checkinfo business listing."}</p>
-      <a href={listingPublicPath(listing)}>View Details</a>
-    </article>
-  );
-}
-
-async function getApprovedHomeListings() {
-  try {
-    const business = (((await getAdminResourceAsync("business")) ?? []) as PublicBusinessListing[]);
-    return business.filter((listing) => listing.status === "Active" || listing.status === "Featured");
-  } catch {
-    return [];
-  }
-}
 
 function GoogleAdSlot({ label, slot }: { label: string; slot: string }) {
   return (
@@ -57,15 +31,15 @@ function GoogleAdSlot({ label, slot }: { label: string; slot: string }) {
 
 export async function HomePage() {
   const categoryExperiences = getAllCategoryExperiences();
-  const business = await getApprovedHomeListings();
-  const featured = business.filter((listing) => listing.status === "Featured");
-  const newest = business;
-  const trending = business;
+  const business = await getApprovedListings();
+  const featured = business.filter((listing) => listing.status === "Featured").slice(0, 3);
+  const newest = business.slice(0, 8);
+  const trending = [...business].sort((a, b) => Number(b.status === "Featured") - Number(a.status === "Featured")).slice(0, 6);
 
   return (
     <main className="check-home">
       <header className="check-header">
-        <a className="check-logo" href="#top" aria-label="Checkinfo home">
+        <a className="check-logo" href="/" aria-label="Checkinfo home">
           <span>i</span>
           <strong>Checkinfo</strong>
           <small>Check kiya kya?</small>
@@ -74,9 +48,9 @@ export async function HomePage() {
         <nav aria-label="Primary navigation">
           <a href="#top">Home</a>
           <a href="/about">About Us</a>
-          <a href="#categories">Business</a>
+          <a href="/new">Business</a>
           <a href="#categories">Categories</a>
-          <a href="#featured">Featured Ads</a>
+          <a href="/featured">Featured Ads</a>
           <a href="#advertise">Advertise</a>
           <a href="#contact">Contact</a>
           <a href="/members/myaccount">My Profile</a>
@@ -127,7 +101,7 @@ export async function HomePage() {
             Featured placements keep premium businesses visible across search,
             category, and buyer-intent journeys with a sharper profile card.
           </p>
-          <a href="/members/add_listing">View More</a>
+          <a href="/featured">View More</a>
         </div>
         <div className="check-card-row">
           {featured.length ? featured.map((listing) => <BusinessCard listing={listing} key={listing.id} />) : (
@@ -152,7 +126,7 @@ export async function HomePage() {
             </article>
           )}
         </div>
-        <a className="check-more-button" href="/members/add_listing">View More</a>
+        <a className="check-more-button" href="/new">View More</a>
       </section>
 
       <GoogleAdSlot label="Middle homepage advertisement" slot="2222222222" />
@@ -172,6 +146,7 @@ export async function HomePage() {
             </article>
           )}
         </div>
+        <a className="check-more-button" href="/trending">View More</a>
       </section>
 
       <section className="advertise" id="advertise">
