@@ -1,6 +1,11 @@
 import fs from "node:fs/promises";
+import zlib from "node:zlib";
 
 const LEVELS = ["ADM1", "ADM2", "ADM3"];
+const GEONAMES_IN_URL = "https://download.geonames.org/export/dump/IN.zip";
+const GEONAMES_ADMIN1_URL = "https://download.geonames.org/export/dump/admin1CodesASCII.txt";
+const MIN_CITY_POPULATION = 1000;
+const ADMIN_SEAT_CODES = new Set(["PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4"]);
 
 function cleanName(value) {
   return String(value ?? "").trim().replace(/\s+/g, " ");
@@ -63,9 +68,67 @@ function slug(value) {
   return cleanName(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
+async function fetchJson(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  return response.json();
+}
+
+async function fetchText(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  return response.text();
+}
+
+async function fetchBuffer(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  return Buffer.from(await response.arrayBuffer());
+}
+
+function readZipText(buffer, expectedName) {
+  let eocdOffset = -1;
+  for (let index = buffer.length - 22; index >= 0; index -= 1) {
+    if (buffer.readUInt32LE(index) === 0x06054b50) {
+      eocdOffset = index;
+      break;
+    }
+  }
+
+  if (eocdOffset === -1) throw new Error("Invalid zip: missing central directory");
+
+  let directoryOffset = buffer.readUInt32LE(eocdOffset + 16);
+
+  while (directoryOffset < eocdOffset) {
+    if (buffer.readUInt32LE(directoryOffset) !== 0x02014b50) break;
+
+    const method = buffer.readUInt16LE(directoryOffset + 10);
+    const compressedSize = buffer.readUInt32LE(directoryOffset + 20);
+    const fileNameLength = buffer.readUInt16LE(directoryOffset + 28);
+    const extraLength = buffer.readUInt16LE(directoryOffset + 30);
+    const commentLength = buffer.readUInt16LE(directoryOffset + 32);
+    const localHeaderOffset = buffer.readUInt32LE(directoryOffset + 42);
+    const fileName = buffer.toString("utf8", directoryOffset + 46, directoryOffset + 46 + fileNameLength);
+
+    if (fileName === expectedName) {
+      const localNameLength = buffer.readUInt16LE(localHeaderOffset + 26);
+      const localExtraLength = buffer.readUInt16LE(localHeaderOffset + 28);
+      const dataStart = localHeaderOffset + 30 + localNameLength + localExtraLength;
+      const compressed = buffer.subarray(dataStart, dataStart + compressedSize);
+      if (method === 0) return compressed.toString("utf8");
+      if (method === 8) return zlib.inflateRawSync(compressed).toString("utf8");
+      throw new Error(`Unsupported zip method ${method} for ${expectedName}`);
+    }
+
+    directoryOffset += 46 + fileNameLength + extraLength + commentLength;
+  }
+
+  throw new Error(`Missing ${expectedName} in zip`);
+}
+
 async function fetchLevel(level) {
-  const meta = await fetch(`https://www.geoboundaries.org/api/current/gbOpen/IND/${level}/`).then((response) => response.json());
-  const geojson = await fetch(meta.simplifiedGeometryGeoJSON).then((response) => response.json());
+  const meta = await fetchJson(`https://www.geoboundaries.org/api/current/gbOpen/IND/${level}/`);
+  const geojson = await fetchJson(meta.simplifiedGeometryGeoJSON);
 
   return geojson.features
     .map((feature) => ({
@@ -92,10 +155,61 @@ function toRecord(prefix, index, value) {
   };
 }
 
-const cityAsset = JSON.parse(await fs.readFile("package/lib/assets/city.json", "utf8"));
-const stateAsset = JSON.parse(await fs.readFile("package/lib/assets/state.json", "utf8")).filter((state) => state.countryCode === "IN");
-const stateCodeToName = new Map(stateAsset.map((state) => [state.isoCode, state.name]));
-const [statesRaw, districtsRaw, subdistrictsRaw] = await Promise.all(LEVELS.map(fetchLevel));
+function parseAdmin1Names(text) {
+  return new Map(
+    text
+      .split("\n")
+      .map((line) => line.split("\t"))
+      .filter((cols) => cols[0]?.startsWith("IN."))
+      .map((cols) => [cols[0].replace("IN.", ""), cleanName(cols[1])]),
+  );
+}
+
+function parseGeoNamesCities(text, stateCodeToName) {
+  const deduped = new Map();
+
+  for (const line of text.split("\n")) {
+    if (!line) continue;
+    const cols = line.split("\t");
+    const featureClass = cols[6];
+    const featureCode = cols[7];
+    const population = Number(cols[14] || 0);
+
+    if (featureClass !== "P" || !featureCode.startsWith("PPL")) continue;
+    if (population < MIN_CITY_POPULATION && !ADMIN_SEAT_CODES.has(featureCode)) continue;
+
+    const name = cleanName(cols[1]);
+    const state = stateCodeToName.get(cols[10]) ?? cleanName(cols[10]);
+    if (!name || !state) continue;
+
+    const key = `${state.toLowerCase()}::${slug(name)}`;
+    const current = deduped.get(key);
+    const record = {
+      featureCode,
+      geonameId: cols[0],
+      latitude: cols[4],
+      longitude: cols[5],
+      name,
+      population,
+      state,
+    };
+
+    if (!current || record.population > current.population) deduped.set(key, record);
+  }
+
+  return [...deduped.values()]
+    .map((city, index) => toRecord("city", index, city))
+    .sort((a, b) => a.state.localeCompare(b.state) || a.name.localeCompare(b.name));
+}
+
+const [admin1Text, geonamesZip, statesRaw, districtsRaw, subdistrictsRaw] = await Promise.all([
+  fetchText(GEONAMES_ADMIN1_URL),
+  fetchBuffer(GEONAMES_IN_URL),
+  ...LEVELS.map(fetchLevel),
+]);
+
+const stateCodeToName = parseAdmin1Names(admin1Text);
+const geonamesText = readZipText(geonamesZip, "IN.txt");
 
 statesRaw.forEach((state) => {
   state.displayName = stateCodeToName.get(state.iso) ?? state.name;
@@ -124,25 +238,18 @@ const subdistricts = subdistrictsRaw
   })
   .sort((a, b) => a.state.localeCompare(b.state) || a.district.localeCompare(b.district) || a.name.localeCompare(b.name));
 
-const cities = cityAsset
-  .filter((city) => city[1] === "IN")
-  .map((city, index) => toRecord("city", index, {
-    latitude: city[3],
-    longitude: city[4],
-    name: cleanName(city[0]),
-    state: stateCodeToName.get(city[2]) ?? city[2],
-  }))
-  .sort((a, b) => a.state.localeCompare(b.state) || a.name.localeCompare(b.name));
+const cities = parseGeoNamesCities(geonamesText, stateCodeToName);
 
 const sourceNote = [
-  "Generated from geoBoundaries India gbOpen simplified ADM1/ADM2/ADM3 data and country-state-city city data.",
-  "geoBoundaries source: William & Mary geoLab / DataMeet India community. City source: country-state-city package.",
+  "Generated from geoBoundaries India gbOpen simplified ADM1/ADM2/ADM3 data and GeoNames India populated places.",
+  `Cities include GeoNames populated places with population ${MIN_CITY_POPULATION}+ plus administrative seats.`,
+  "geoBoundaries source: William & Mary geoLab / DataMeet India community. City source: GeoNames CC-BY data.",
 ].join(" ");
 
 const output = `export type IndiaStateSeed = { country: string; id: string; name: string; status: "Active" | "Inactive" };
 export type IndiaDistrictSeed = IndiaStateSeed & { state: string };
 export type IndiaSubdistrictSeed = IndiaStateSeed & { district: string; state: string };
-export type IndiaCitySeed = IndiaStateSeed & { latitude?: string; longitude?: string; state: string };
+export type IndiaCitySeed = IndiaStateSeed & { featureCode?: string; geonameId?: string; latitude?: string; longitude?: string; population?: number; state: string };
 
 export const indiaLocationSourceNote = ${JSON.stringify(sourceNote)};
 export const indiaStates = ${JSON.stringify(states)} as IndiaStateSeed[];

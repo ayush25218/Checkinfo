@@ -15,7 +15,8 @@
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
-    "db:mongo:seed": "node scripts/seed-mongodb.mjs"
+    "db:mongo:seed": "node scripts/seed-mongodb.mjs",
+    "db:mongo:seed-locations": "node scripts/seed-india-locations-mongodb.mjs"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
