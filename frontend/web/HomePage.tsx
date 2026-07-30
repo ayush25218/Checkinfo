@@ -1,4 +1,6 @@
 import { categories } from "@/backend/checkinfo";
+import { CategoryTransitionGrid } from "./CategoryTransitionGrid";
+import { getAllCategoryExperiences } from "./categoryExperience";
 import { LocationSearchForm } from "./LocationSearchForm";
 
 const footerLinks = {
@@ -23,19 +25,9 @@ function GoogleAdSlot({ label, slot }: { label: string; slot: string }) {
   );
 }
 
-function CategoryIcon({ label, index }: { label: string; index: number }) {
-  return (
-    <span className="check-category-icon" aria-hidden="true">
-      {label.split(" ").map((word) => word[0]).join("").slice(0, 2) || String(index + 1)}
-    </span>
-  );
-}
-
-function categoryAdsCount(index: number) {
-  return [248, 214, 192, 185, 176, 164, 151, 143, 137, 126, 118, 104, 92, 86, 74][index] ?? 64;
-}
-
 export function HomePage() {
+  const categoryExperiences = getAllCategoryExperiences();
+
   return (
     <main className="check-home">
       <header className="check-header">
@@ -79,21 +71,7 @@ export function HomePage() {
           <h2>Top Categories by Ads</h2>
           <p>Explore business categories through a clean, high-speed discovery grid.</p>
         </div>
-        <div className="check-category-strip">
-          {categories.concat(["Fruits", "Bank", "Rent Services"]).map((category, index) => (
-            <a className="check-category-card" href="#featured" key={category}>
-              <span className="check-category-topline" />
-              <span className="check-category-main">
-                <CategoryIcon label={category} index={index} />
-                <span>
-                  <strong>{category}</strong>
-                  <small>{categoryAdsCount(index)} active ads</small>
-                </span>
-              </span>
-              <span className="check-category-action">Explore</span>
-            </a>
-          ))}
-        </div>
+        <CategoryTransitionGrid categories={categoryExperiences} />
       </section>
 
       <section className="check-featured" id="featured">
