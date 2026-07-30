@@ -4,10 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { categories } from "@/backend/checkinfo";
 import {
   indiaCities,
-  indiaDistricts,
   indiaLocationSourceNote,
   indiaStates,
-  indiaSubdistricts,
 } from "./indiaLocations";
 
 type Status = "Active" | "Inactive" | "Pending" | "Draft" | "Featured";
@@ -176,11 +174,7 @@ const stateSeed: StateRecord[] = indiaStates;
 
 const citySeed: CityRecord[] = indiaCities;
 
-const locationSeed: LocationRecord[] = [
-  ...indiaDistricts.map((record) => ({ ...record, kind: "District" as const })),
-  ...indiaSubdistricts.map((record) => ({ ...record, kind: "Sub-district" as const })),
-  ...indiaCities.map((record) => ({ ...record, kind: "City" as const })),
-];
+const locationSeed: LocationRecord[] = [];
 
 const metaSeed: MetaRecord[] = [
   {
@@ -932,11 +926,11 @@ export function ManageLocationsModule() {
 }
 
 function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations" }) {
-  const stateRecords = readStored("checkinfo-admin-states-india-v4", stateSeed);
-  const cityRecords = readStored("checkinfo-admin-cities-india-v4", citySeed);
+  const stateRecords = readStored("checkinfo-admin-states-india-v5", stateSeed);
+  const cityRecords = readStored("checkinfo-admin-cities-india-v5", citySeed);
   const isStates = kind === "states";
   const isCities = kind === "cities";
-  const storageKey = `checkinfo-admin-${kind}-india-v4`;
+  const storageKey = `checkinfo-admin-${kind}-india-v5`;
   const fallback: LocationAdminRecord[] = isStates ? stateSeed : isCities ? citySeed : locationSeed;
   const [records, setRecords] = useState<LocationAdminRecord[]>(() => readStored(storageKey, fallback));
   const [selected, setSelected] = useState<string[]>([]);
@@ -1143,7 +1137,7 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
 
       <p className="admin-data-note">
         Loaded {records.length.toLocaleString()} {isStates ? "states/UTs" : isCities ? "cities" : "location records"}.
-        Showing {visibleRecords.length.toLocaleString()} of {filtered.length.toLocaleString()} filtered records. {indiaLocationSourceNote}
+        Showing {visibleRecords.length.toLocaleString()} of {filtered.length.toLocaleString()} filtered records. {isStates || isCities ? indiaLocationSourceNote : "Manage Location is kept blank for city-level local areas, sectors, colonies, and neighbourhoods."}
       </p>
 
       <div className="admin-actions">
