@@ -49,7 +49,7 @@ export function CategoryTransitionGrid({ categories }: CategoryTransitionGridPro
             href={`/category/${category.slug}`}
             key={category.slug}
             onClick={() => rememberCategory(category)}
-            style={{ "--category-accent": category.accent } as CSSProperties}
+            style={{ "--category-accent": category.accent, "--category-image": `url("${category.backgroundImage}")` } as CSSProperties}
           >
             <span className="check-category-topline" />
             <span className="check-category-main">
