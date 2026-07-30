@@ -1205,81 +1205,85 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
         </div>
       ) : null}
 
-      <div className="admin-editor admin-editor-location">
-        {!isStates && !isCities ? (
-          <label>
-            <span>Location Type</span>
-            <select value={form.kind} onChange={(event) => setForm({ ...form, kind: event.target.value as LocationRecord["kind"] })}>
-              <option>District</option><option>Sub-district</option><option>City</option>
-            </select>
-          </label>
-        ) : null}
-        <label><span>{isStates ? "State / UT Name" : isCities ? "City Name" : "Name"}</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
-        <label><span>Country Name</span><input value={form.country} onChange={(event) => setForm({ ...form, country: event.target.value })} /></label>
-        {!isStates ? (
-          <label>
-            <span>State</span>
-            <select value={form.state} onChange={(event) => setForm({ ...form, state: event.target.value })}>
-              {stateRecords.map((record) => <option key={record.id}>{record.name}</option>)}
-            </select>
-          </label>
-        ) : null}
-        {!isStates && !isCities && form.kind === "Sub-district" ? (
-          <label>
-            <span>District</span>
-            <select value={form.district} onChange={(event) => setForm({ ...form, district: event.target.value })}>
-              <option value="">Select District</option>
-              {locationSeed.filter((record) => record.kind === "District" && record.state === form.state).slice(0, 900).map((record) => <option key={record.id}>{record.name}</option>)}
-            </select>
-          </label>
-        ) : null}
-        {!isStates && !isCities ? (
-          <label>
-            <span>City</span>
-            <select value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })}>
-              {cityRecords.filter((record) => record.state === form.state).slice(0, 900).map((record) => <option key={record.id}>{record.name}</option>)}
-            </select>
-          </label>
-        ) : null}
-        <label>
-          <span>Status</span>
-          <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as "Active" | "Inactive" })}>
-            <option>Active</option><option>Inactive</option>
-          </select>
-        </label>
-        <button type="button" onClick={saveRecord}>{editing ? "Update" : isStates ? "Add State / UT" : isCities ? "Add City" : "Add Location"}</button>
-        {editing ? <button type="button" className="admin-light-button" onClick={resetForm}>Cancel</button> : null}
-      </div>
-
-      <p className="admin-data-note">
-        Loaded {records.length.toLocaleString()} {isStates ? "states/UTs" : isCities ? "cities" : "location records"}.
-        Showing {visibleRecords.length.toLocaleString()} of {filtered.length.toLocaleString()} filtered records. {isStates || isCities ? indiaLocationSourceNote : "Manage Location is kept blank for city-level local areas, sectors, colonies, and neighbourhoods."}
-      </p>
-
-      <div className="admin-actions">
-        <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Activate</button>
-        <button type="button" onClick={() => bulkStatus("Inactive")} disabled={!selected.length}>Deactivate</button>
-        <button type="button" onClick={deleteSelected} disabled={!selected.length}>Delete</button>
-      </div>
-
-      <div className={`admin-real-table ${isStates ? "admin-real-table-states" : isCities ? "admin-real-table-cities" : "admin-real-table-locations"}`}>
-        <div className="admin-real-row admin-real-head">
-          <span>Select</span><span>Name</span>{!isStates && !isCities ? <span>Type</span> : null}{!isStates ? <span>State Name</span> : null}{!isStates && !isCities ? <span>District</span> : null}{!isStates && !isCities ? <span>City Name</span> : null}<span>Country Name</span><span>Status</span><span>Action</span>
-        </div>
-        {visibleRecords.map((record) => (
-          <div className="admin-real-row" key={record.id}>
-            <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
-            <span>{record.name}</span>
-            {!isStates && !isCities ? <span>{"kind" in record ? record.kind : "-"}</span> : null}
-            {!isStates ? <span>{"state" in record ? record.state : "-"}</span> : null}
-            {!isStates && !isCities ? <span>{"district" in record ? record.district || "-" : "-"}</span> : null}
-            {!isStates && !isCities ? <span>{"city" in record ? record.city : "-"}</span> : null}
-            <span>{record.country}</span>
-            <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
-            <span><button type="button" className="admin-link-button" onClick={() => editRecord(record)}>Edit</button></span>
+      {!isCities ? (
+        <>
+          <div className="admin-editor admin-editor-location">
+            {!isStates ? (
+              <label>
+                <span>Location Type</span>
+                <select value={form.kind} onChange={(event) => setForm({ ...form, kind: event.target.value as LocationRecord["kind"] })}>
+                  <option>District</option><option>Sub-district</option><option>City</option>
+                </select>
+              </label>
+            ) : null}
+            <label><span>{isStates ? "State / UT Name" : "Name"}</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
+            <label><span>Country Name</span><input value={form.country} onChange={(event) => setForm({ ...form, country: event.target.value })} /></label>
+            {!isStates ? (
+              <label>
+                <span>State</span>
+                <select value={form.state} onChange={(event) => setForm({ ...form, state: event.target.value })}>
+                  {stateRecords.map((record) => <option key={record.id}>{record.name}</option>)}
+                </select>
+              </label>
+            ) : null}
+            {!isStates && form.kind === "Sub-district" ? (
+              <label>
+                <span>District</span>
+                <select value={form.district} onChange={(event) => setForm({ ...form, district: event.target.value })}>
+                  <option value="">Select District</option>
+                  {locationSeed.filter((record) => record.kind === "District" && record.state === form.state).slice(0, 900).map((record) => <option key={record.id}>{record.name}</option>)}
+                </select>
+              </label>
+            ) : null}
+            {!isStates ? (
+              <label>
+                <span>City</span>
+                <select value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })}>
+                  {cityRecords.filter((record) => record.state === form.state).slice(0, 900).map((record) => <option key={record.id}>{record.name}</option>)}
+                </select>
+              </label>
+            ) : null}
+            <label>
+              <span>Status</span>
+              <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as "Active" | "Inactive" })}>
+                <option>Active</option><option>Inactive</option>
+              </select>
+            </label>
+            <button type="button" onClick={saveRecord}>{editing ? "Update" : isStates ? "Add State / UT" : "Add Location"}</button>
+            {editing ? <button type="button" className="admin-light-button" onClick={resetForm}>Cancel</button> : null}
           </div>
-        ))}
-      </div>
+
+          <p className="admin-data-note">
+            Loaded {records.length.toLocaleString()} {isStates ? "states/UTs" : "location records"}.
+            Showing {visibleRecords.length.toLocaleString()} of {filtered.length.toLocaleString()} filtered records. {isStates ? indiaLocationSourceNote : "Manage Location is kept blank for city-level local areas, sectors, colonies, and neighbourhoods."}
+          </p>
+
+          <div className="admin-actions">
+            <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Activate</button>
+            <button type="button" onClick={() => bulkStatus("Inactive")} disabled={!selected.length}>Deactivate</button>
+            <button type="button" onClick={deleteSelected} disabled={!selected.length}>Delete</button>
+          </div>
+
+          <div className={`admin-real-table ${isStates ? "admin-real-table-states" : "admin-real-table-locations"}`}>
+            <div className="admin-real-row admin-real-head">
+              <span>Select</span><span>Name</span>{!isStates ? <span>Type</span> : null}{!isStates ? <span>State Name</span> : null}{!isStates ? <span>District</span> : null}{!isStates ? <span>City Name</span> : null}<span>Country Name</span><span>Status</span><span>Action</span>
+            </div>
+            {visibleRecords.map((record) => (
+              <div className="admin-real-row" key={record.id}>
+                <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
+                <span>{record.name}</span>
+                {!isStates ? <span>{"kind" in record ? record.kind : "-"}</span> : null}
+                {!isStates ? <span>{"state" in record ? record.state : "-"}</span> : null}
+                {!isStates ? <span>{"district" in record ? record.district || "-" : "-"}</span> : null}
+                {!isStates ? <span>{"city" in record ? record.city : "-"}</span> : null}
+                <span>{record.country}</span>
+                <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
+                <span><button type="button" className="admin-link-button" onClick={() => editRecord(record)}>Edit</button></span>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : null}
     </section>
   );
 }
