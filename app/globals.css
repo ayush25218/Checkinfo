@@ -1239,9 +1239,8 @@ cite {
 .check-category-icon.has-image,
 .check-category-flight-icon.has-image,
 .category-orb-text.has-image {
-  background:
-    radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.52), transparent 28%),
-    linear-gradient(135deg, rgba(19, 73, 78, 0.96), rgba(29, 101, 216, 0.9));
+  background: transparent;
+  box-shadow: none;
 }
 
 .check-category-icon-glow,
@@ -1556,6 +1555,11 @@ cite {
     0 0 82px rgba(0, 180, 255, 0.42);
   animation: categoryOrbIdle 18s linear infinite, categoryOrbFloat 5.4s ease-in-out infinite;
   transform-style: preserve-3d;
+}
+
+.category-orb:has(.category-orb-text.has-image) {
+  background: transparent;
+  box-shadow: none;
 }
 
 .category-orb-light {
@@ -2216,10 +2220,10 @@ cite {
 
 @keyframes categoryOrbIdle {
   from {
-    rotate: 0deg;
+    transform: rotateY(0deg);
   }
   to {
-    rotate: 360deg;
+    transform: rotateY(360deg);
   }
 }
 
