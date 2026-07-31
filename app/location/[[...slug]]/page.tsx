@@ -7,6 +7,8 @@ import {
   type PublicBusinessListing,
 } from "@/backend/listingSeo";
 
+import { PublicListingInteractiveForm } from "@/frontend/web/PublicListingInteractiveForm";
+
 type LocationPageProps = {
   params: Promise<{ slug?: string[] }>;
 };
@@ -96,6 +98,8 @@ export default async function LocationListingPage({ params }: LocationPageProps)
           </div>
         )}
       </section>
+
+      {exact ? <PublicListingInteractiveForm listing={exact} /> : null}
     </main>
   );
 }

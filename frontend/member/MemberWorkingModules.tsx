@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AccountHeader,
   categories,
@@ -119,6 +119,15 @@ function postMemberAction(resource: string, payload: Record<string, unknown>) {
     headers: { "content-type": "application/json", "x-checkinfo-member-id": getMemberId() },
     method: "POST",
   }).catch(() => undefined);
+}
+
+function getMemberData<T>(resource: string, fallback: T): Promise<T> {
+  return fetch(`/api/member/${resource}`, {
+    headers: { "x-checkinfo-member-id": getMemberId() },
+  })
+    .then((res) => res.json())
+    .then((json) => (json.ok && json.data ? (json.data as T) : fallback))
+    .catch(() => fallback);
 }
 
 function useStoredState<T>(key: string, fallback: T) {
@@ -294,6 +303,13 @@ export function AddListingModule() {
 export function MyListingsModule() {
   const [listings, setListings] = useStoredState("checkinfo-member-listings", listingSeed);
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    void getMemberData<MemberListing[]>("listings", []).then((data) => {
+      if (Array.isArray(data) && data.length > 0) setListings(data);
+    });
+  }, [setListings]);
+
   const filtered = useMemo(() => listings.filter((listing) => [listing.name, listing.category, listing.location].join(" ").toLowerCase().includes(query.toLowerCase())), [listings, query]);
   function remove(id: string) {
     setListings(listings.filter((listing) => listing.id !== id));
@@ -335,6 +351,13 @@ export function EditAccountModule() {
 export function EnquiriesModule() {
   const [records, setRecords] = useStoredState("checkinfo-member-enquiries", enquirySeed);
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    void getMemberData<MemberEnquiry[]>("enquiries", []).then((data) => {
+      if (Array.isArray(data) && data.length > 0) setRecords(data);
+    });
+  }, [setRecords]);
+
   const filtered = useMemo(() => records.filter((record) => [record.name, record.email, record.contact, record.message].join(" ").toLowerCase().includes(query.toLowerCase())), [query, records]);
   function status(id: string, next: MemberEnquiry["status"]) {
     setRecords(records.map((record) => record.id === id ? { ...record, status: next } : record));
@@ -353,6 +376,13 @@ export function EnquiriesModule() {
 
 export function ReviewsModule() {
   const [reviews, setReviews] = useStoredState("checkinfo-member-reviews", reviewSeed);
+
+  useEffect(() => {
+    void getMemberData<MemberReview[]>("reviews", []).then((data) => {
+      if (Array.isArray(data) && data.length > 0) setReviews(data);
+    });
+  }, [setReviews]);
+
   function update(id: string, status: MemberReview["status"]) {
     setReviews(reviews.map((review) => review.id === id ? { ...review, status } : review));
     void postMemberAction("review", { id, status });
@@ -386,6 +416,13 @@ export function PackagesModule() {
 
 export function NotificationsModule() {
   const [notifications, setNotifications] = useStoredState("checkinfo-member-notifications", notificationSeed);
+
+  useEffect(() => {
+    void getMemberData<NotificationRecord[]>("notifications", []).then((data) => {
+      if (Array.isArray(data) && data.length > 0) setNotifications(data);
+    });
+  }, [setNotifications]);
+
   function markAllRead() {
     setNotifications(notifications.map((item) => ({ ...item, unread: false })));
     void postMemberAction("notification", { action: "mark-all-read" });

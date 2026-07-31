@@ -859,6 +859,13 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
       account.listings = account.listings.map((listing) =>
         listing.id === id ? { ...listing, status: action as MemberListing["status"] } : listing,
       );
+      account.notifications.unshift({
+        id: `notif-${Date.now()}`,
+        text: `Your listing status was updated to ${action} by Administrator.`,
+        time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+        title: "Listing Status Update",
+        unread: true,
+      });
       await saveMongoMember(account);
       return { business: await getAdminResourceAsync("business") };
     }
@@ -877,4 +884,52 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
   }
 
   return { data: await getAdminResourceAsync(resource) };
+}
+
+export async function addEnquiryToMemberAsync(ownerId: string, enquiry: { contact: string; email: string; message: string; name: string }) {
+  if (!ownerId) return null;
+  const account = await getOrCreateMongoMember(ownerId);
+  const now = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const newEnq: MemberEnquiry = {
+    id: `enq-${Date.now()}`,
+    contact: enquiry.contact,
+    date: now,
+    email: enquiry.email,
+    message: enquiry.message,
+    name: enquiry.name,
+    status: "New",
+  };
+  account.enquiries.unshift(newEnq);
+  account.notifications.unshift({
+    id: `notif-${Date.now()}`,
+    text: `New lead received from ${enquiry.name} (${enquiry.contact || enquiry.email}).`,
+    time: now,
+    title: "New Buyer Enquiry",
+    unread: true,
+  });
+  await saveMongoMember(account);
+  return newEnq;
+}
+
+export async function addReviewToMemberAsync(ownerId: string, review: { author: string; message: string; rating: number }) {
+  if (!ownerId) return null;
+  const account = await getOrCreateMongoMember(ownerId);
+  const now = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const newRev: MemberReview = {
+    id: `rev-${Date.now()}`,
+    author: review.author,
+    message: review.message,
+    rating: review.rating,
+    status: "Published",
+  };
+  account.reviews.unshift(newRev);
+  account.notifications.unshift({
+    id: `notif-${Date.now()}`,
+    text: `New ${review.rating}★ review received from ${review.author}.`,
+    time: now,
+    title: "Customer Review Received",
+    unread: true,
+  });
+  await saveMongoMember(account);
+  return newRev;
 }
