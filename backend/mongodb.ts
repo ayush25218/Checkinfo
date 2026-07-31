@@ -128,6 +128,24 @@ type LeadRecord = Record<string, unknown> & {
   source: string;
 };
 
+type TestimonialRecord = {
+  _id: string;
+  description: string;
+  displayOrder: number;
+  name: string;
+  status: "Active" | "Inactive";
+  updatedAt: string;
+};
+
+type FaqRecord = {
+  _id: string;
+  answer: string;
+  displayOrder: number;
+  question: string;
+  status: "Active" | "Inactive";
+  updatedAt: string;
+};
+
 const globalMongo = globalThis as typeof globalThis & {
   __checkinfoMongoClientPromise?: Promise<MongoClient>;
 };
@@ -165,6 +183,7 @@ export async function getMongoCollections() {
     adminSettings: db.collection<AdminSettingsExtended>("admin_settings"),
     categories: db.collection<CategoryRecord>("categories"),
     enquiries: db.collection<EnquiryRecord>("enquiries"),
+    faqs: db.collection<FaqRecord>("faqs"),
     leads: db.collection<LeadRecord>("advertising_leads"),
     media: db.collection<MediaRecord>("media"),
     members: db.collection<MemberAccount>("members"),
@@ -173,6 +192,7 @@ export async function getMongoCollections() {
     settings: db.collection<SettingRecord>("settings"),
     staticPages: db.collection<StaticPageRecord>("static_pages"),
     subadmins: db.collection<SubadminRecord>("subadmins"),
+    testimonials: db.collection<TestimonialRecord>("testimonials"),
   };
 }
 
@@ -213,6 +233,7 @@ async function ensureIndexes(collections: Awaited<ReturnType<typeof getMongoColl
     collections.categories.createIndex({ status: 1, displayOrder: 1 }),
     collections.enquiries.createIndex({ createdAt: -1 }),
     collections.enquiries.createIndex({ type: 1, status: 1 }),
+    collections.faqs.createIndex({ displayOrder: 1 }),
     collections.leads.createIndex({ createdAt: -1 }),
     collections.media.createIndex({ kind: 1 }),
     collections.members.createIndex({ "profile.username": 1 }),
@@ -220,6 +241,7 @@ async function ensureIndexes(collections: Awaited<ReturnType<typeof getMongoColl
     collections.newsletters.createIndex({ email: 1 }, { unique: true }),
     collections.staticPages.createIndex({ slug: 1 }, { unique: true }),
     collections.subadmins.createIndex({ username: 1 }, { unique: true }),
+    collections.testimonials.createIndex({ displayOrder: 1 }),
   ]);
 }
 
@@ -296,9 +318,25 @@ export async function saveNewsletterSubscription(email: string, source = "websit
 export async function saveAdvertisingLead(payload: Record<string, unknown>, source = "advertise-form") {
   if (!isMongoConfigured()) return null;
 
-  const { leads } = await getMongoCollections();
-  const record = { ...payload, createdAt: new Date().toISOString(), source };
+  const { leads, enquiries } = await getMongoCollections();
+  const now = new Date().toISOString();
+  const record = { ...payload, createdAt: now, source };
   await leads.insertOne(record);
+
+  const enquiryType = (payload.type as EnquiryRecord["type"]) || "Advertise";
+  const enqDoc: EnquiryRecord = {
+    _id: `enq-${Date.now()}`,
+    createdAt: now,
+    email: String(payload.email || ""),
+    message: String(payload.message || payload.details || payload.comment || "Website enquiry lead"),
+    name: String(payload.name || payload.poster || payload.fullName || "Website Lead"),
+    phone: String(payload.phone || payload.mobile || payload.contact || ""),
+    receivedAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+    status: "New",
+    type: enquiryType,
+  };
+  await enquiries.insertOne(enqDoc);
+
   return record;
 }
 
@@ -623,10 +661,92 @@ export async function deleteMongoMediaByIds(ids: string[]) {
   await media.deleteMany({ _id: { $in: ids } });
 }
 
+// ─── Testimonials ─────────────────────────────────────────────────────────────
+
+export async function listMongoTestimonials() {
+  const { testimonials } = await getMongoCollections();
+  return testimonials.find({}).sort({ displayOrder: 1 }).toArray();
+}
+
+export async function upsertMongoTestimonial(record: {
+  description: string;
+  id: string;
+  name: string;
+  order: number;
+  status: "Active" | "Inactive";
+}) {
+  const { testimonials } = await getMongoCollections();
+  const now = new Date().toISOString();
+  const doc: TestimonialRecord = {
+    _id: record.id,
+    description: record.description,
+    displayOrder: record.order,
+    name: record.name,
+    status: record.status,
+    updatedAt: now,
+  };
+  await testimonials.updateOne(
+    { _id: record.id },
+    { $set: { description: doc.description, displayOrder: doc.displayOrder, name: doc.name, status: doc.status, updatedAt: now }, $setOnInsert: { _id: doc._id } },
+    { upsert: true },
+  );
+  return doc;
+}
+
+export async function deleteMongoTestimonialById(id: string) {
+  const { testimonials } = await getMongoCollections();
+  await testimonials.deleteOne({ _id: id });
+}
+
+// ─── FAQs ──────────────────────────────────────────────────────────────────────
+
+export async function listMongoFaqs() {
+  const { faqs } = await getMongoCollections();
+  return faqs.find({}).sort({ displayOrder: 1 }).toArray();
+}
+
+export async function upsertMongoFaq(record: {
+  answer: string;
+  id: string;
+  order: number;
+  question: string;
+  status: "Active" | "Inactive";
+}) {
+  const { faqs } = await getMongoCollections();
+  const now = new Date().toISOString();
+  const doc: FaqRecord = {
+    _id: record.id,
+    answer: record.answer,
+    displayOrder: record.order,
+    question: record.question,
+    status: record.status,
+    updatedAt: now,
+  };
+  await faqs.updateOne(
+    { _id: record.id },
+    { $set: { answer: doc.answer, displayOrder: doc.displayOrder, question: doc.question, status: doc.status, updatedAt: now }, $setOnInsert: { _id: doc._id } },
+    { upsert: true },
+  );
+  return doc;
+}
+
+export async function deleteMongoFaqById(id: string) {
+  const { faqs } = await getMongoCollections();
+  await faqs.deleteOne({ _id: id });
+}
+
+export async function updateMongoFaqsOrder(records: Array<{ id: string; order: number }>) {
+  const { faqs } = await getMongoCollections();
+  await Promise.all(
+    records.map((item) => faqs.updateOne({ _id: item.id }, { $set: { displayOrder: item.order } })),
+  );
+}
+
 export type MongoCollectionMap = {
   adminSettings: import("mongodb").Collection<AdminSettingsExtended>;
   categories: import("mongodb").Collection<CategoryRecord>;
   enquiries: import("mongodb").Collection<EnquiryRecord>;
+  faqs: import("mongodb").Collection<FaqRecord>;
   leads: import("mongodb").Collection<LeadRecord>;
   media: import("mongodb").Collection<MediaRecord>;
   members: import("mongodb").Collection<MemberAccount>;
@@ -634,5 +754,6 @@ export type MongoCollectionMap = {
   newsletters: import("mongodb").Collection<NewsletterRecord>;
   staticPages: import("mongodb").Collection<StaticPageRecord>;
   subadmins: import("mongodb").Collection<SubadminRecord>;
+  testimonials: import("mongodb").Collection<TestimonialRecord>;
 };
 

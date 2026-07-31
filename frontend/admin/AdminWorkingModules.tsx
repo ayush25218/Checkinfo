@@ -2062,6 +2062,17 @@ export function ManageTestimonialsModule() {
   const [records, setRecords] = useState(() => readStored("checkinfo-admin-testimonials", testimonialSeed));
   const [editing, setEditing] = useState<TestimonialRecord | null>(null);
   const [form, setForm] = useState({ description: "", name: "", order: "", status: "Active" as "Active" | "Inactive" });
+
+  // ── Load from backend on mount ──────────────────────────────────────────────
+  useEffect(() => {
+    void getAdminData<TestimonialRecord[]>("testimonials", []).then((data) => {
+      if (data.length > 0) {
+        setRecords(data);
+        writeStored("checkinfo-admin-testimonials", data);
+      }
+    });
+  }, []);
+
   const sorted = useMemo(() => [...records].sort((a, b) => a.order - b.order), [records]);
 
   function sync(next: TestimonialRecord[]) {
@@ -2073,8 +2084,19 @@ export function ManageTestimonialsModule() {
     if (!form.name.trim() || !form.description.trim()) return;
     const nextRecord: TestimonialRecord = { id: editing?.id ?? `test-${Date.now()}`, description: form.description.trim(), name: form.name.trim(), order: Number(form.order) || records.length * 10 + 10, status: form.status };
     sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("testimonials", {
+      action: "upsert",
+      record: { description: nextRecord.description, id: nextRecord.id, name: nextRecord.name, order: nextRecord.order, status: nextRecord.status },
+    });
     setEditing(null);
     setForm({ description: "", name: "", order: "", status: "Active" });
+  }
+
+  function deleteRecord(id: string) {
+    sync(records.filter((item) => item.id !== id));
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("testimonials", { action: "delete", id });
   }
 
   return (
@@ -2091,7 +2113,7 @@ export function ManageTestimonialsModule() {
         {sorted.map((record) => (
           <div className="admin-real-row" key={record.id}>
             <span>{record.name}</span><span>{record.description}</span><span>{record.order}</span><span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
-            <span><button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm({ description: record.description, name: record.name, order: String(record.order), status: record.status }); }}>Edit</button><button type="button" className="admin-link-button" onClick={() => sync(records.filter((item) => item.id !== record.id))}>Delete</button></span>
+            <span><button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm({ description: record.description, name: record.name, order: String(record.order), status: record.status }); }}>Edit</button><button type="button" className="admin-link-button" onClick={() => deleteRecord(record.id)}>Delete</button></span>
           </div>
         ))}
       </div>
@@ -2103,6 +2125,17 @@ export function ManageFaqsModule() {
   const [records, setRecords] = useState(() => readStored("checkinfo-admin-faqs", faqSeed));
   const [editing, setEditing] = useState<FaqRecord | null>(null);
   const [form, setForm] = useState({ answer: "", order: "", question: "", status: "Active" as "Active" | "Inactive" });
+
+  // ── Load from backend on mount ──────────────────────────────────────────────
+  useEffect(() => {
+    void getAdminData<FaqRecord[]>("faqs", []).then((data) => {
+      if (data.length > 0) {
+        setRecords(data);
+        writeStored("checkinfo-admin-faqs", data);
+      }
+    });
+  }, []);
+
   const sorted = useMemo(() => [...records].sort((a, b) => a.order - b.order), [records]);
 
   function sync(next: FaqRecord[]) {
@@ -2114,8 +2147,29 @@ export function ManageFaqsModule() {
     if (!form.question.trim() || !form.answer.trim()) return;
     const nextRecord: FaqRecord = { answer: form.answer.trim(), id: editing?.id ?? `faq-${Date.now()}`, order: Number(form.order) || records.length * 10 + 10, question: form.question.trim(), status: form.status };
     sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("faqs", {
+      action: "upsert",
+      record: { answer: nextRecord.answer, id: nextRecord.id, order: nextRecord.order, question: nextRecord.question, status: nextRecord.status },
+    });
     setEditing(null);
     setForm({ answer: "", order: "", question: "", status: "Active" });
+  }
+
+  function deleteRecord(id: string) {
+    sync(records.filter((item) => item.id !== id));
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("faqs", { action: "delete", id });
+  }
+
+  function updateOrder() {
+    const updated = records.map((record, index) => ({ ...record, order: (index + 1) * 10 }));
+    sync(updated);
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("faqs", {
+      action: "update-order",
+      records: updated.map((r) => ({ id: r.id, order: r.order })),
+    });
   }
 
   return (
@@ -2126,16 +2180,123 @@ export function ManageFaqsModule() {
         <label><span>Status</span><select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as "Active" | "Inactive" })}><option>Active</option><option>Inactive</option></select></label>
         <label className="admin-wide-field"><span>Answer</span><textarea value={form.answer} onChange={(event) => setForm({ ...form, answer: event.target.value })} /></label>
         <button type="button" onClick={saveRecord}>{editing ? "Update FAQ" : "Add FAQ"}</button>
-        <button type="button" className="admin-light-button" onClick={() => sync(records.map((record, index) => ({ ...record, order: (index + 1) * 10 })))}>Update Order</button>
+        <button type="button" className="admin-light-button" onClick={updateOrder}>Update Order</button>
       </div>
       <div className="admin-real-table admin-real-table-faqs">
         <div className="admin-real-row admin-real-head"><span>Question</span><span>Answer</span><span>Order</span><span>Status</span><span>Action</span></div>
         {sorted.map((record) => (
           <div className="admin-real-row" key={record.id}>
             <span>{record.question}</span><span>{record.answer}</span><span>{record.order}</span><span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
-            <span><button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm({ answer: record.answer, order: String(record.order), question: record.question, status: record.status }); }}>View</button><button type="button" className="admin-link-button" onClick={() => sync(records.filter((item) => item.id !== record.id))}>Delete</button></span>
+            <span><button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm({ answer: record.answer, order: String(record.order), question: record.question, status: record.status }); }}>View</button><button type="button" className="admin-link-button" onClick={() => deleteRecord(record.id)}>Delete</button></span>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+export function ManageExportModule() {
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  async function exportResource(resource: string, filename: string) {
+    setDownloading(resource);
+    try {
+      const data = await getAdminData<Array<Record<string, unknown>>>(resource, []);
+      if (!Array.isArray(data) || data.length === 0) {
+        alert(`No records found for ${resource} export.`);
+        setDownloading(null);
+        return;
+      }
+
+      const headers = Object.keys(data[0]);
+      const csvRows = [
+        headers.join(","),
+        ...data.map((row) =>
+          headers
+            .map((field) => {
+              const val = String(row[field] ?? "").replace(/"/g, '""');
+              return `"${val}"`;
+            })
+            .join(","),
+        ),
+      ];
+
+      const csvContent = csvRows.join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `${filename}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to export data.");
+    } finally {
+      setDownloading(null);
+    }
+  }
+
+  return (
+    <section className="admin-card">
+      <div className="admin-actions">
+        <button type="button" onClick={() => exportResource("business", "business_export")} disabled={downloading === "business"}>
+          {downloading === "business" ? "Exporting..." : "Export Business"}
+        </button>
+        <button type="button" onClick={() => exportResource("categories", "categories_export")} disabled={downloading === "categories"}>
+          {downloading === "categories" ? "Exporting..." : "Export Categories"}
+        </button>
+        <button type="button" onClick={() => exportResource("members", "members_export")} disabled={downloading === "members"}>
+          {downloading === "members" ? "Exporting..." : "Export Members"}
+        </button>
+        <button type="button" onClick={() => exportResource("contact-enquiries", "enquiries_export")} disabled={downloading === "contact-enquiries"}>
+          {downloading === "contact-enquiries" ? "Exporting..." : "Export Enquiries"}
+        </button>
+      </div>
+
+      <div className="admin-real-table admin-real-table-export">
+        <div className="admin-real-row admin-real-head">
+          <span>Export Type</span>
+          <span>Format</span>
+          <span>Action</span>
+        </div>
+        <div className="admin-real-row">
+          <span>Business Export</span>
+          <span>CSV</span>
+          <span>
+            <button type="button" className="admin-link-button" onClick={() => exportResource("business", "business_export")}>
+              Download CSV
+            </button>
+          </span>
+        </div>
+        <div className="admin-real-row">
+          <span>Category Export</span>
+          <span>CSV</span>
+          <span>
+            <button type="button" className="admin-link-button" onClick={() => exportResource("categories", "categories_export")}>
+              Download CSV
+            </button>
+          </span>
+        </div>
+        <div className="admin-real-row">
+          <span>Members Export</span>
+          <span>CSV</span>
+          <span>
+            <button type="button" className="admin-link-button" onClick={() => exportResource("members", "members_export")}>
+              Download CSV
+            </button>
+          </span>
+        </div>
+        <div className="admin-real-row">
+          <span>Enquiries Export</span>
+          <span>CSV</span>
+          <span>
+            <button type="button" className="admin-link-button" onClick={() => exportResource("contact-enquiries", "enquiries_export")}>
+              Download CSV
+            </button>
+          </span>
+        </div>
       </div>
     </section>
   );

@@ -21,6 +21,7 @@ import {
   ManageStaticPagesModule,
   ManageSubadminsModule,
   ManageTestimonialsModule,
+  ManageExportModule,
 } from "@/frontend/admin/AdminWorkingModules";
 
 export default async function AdminPage({
@@ -39,6 +40,8 @@ export default async function AdminPage({
         <ManageCategoriesModule />
       ) : active === "business" ? (
         <ManageBusinessModule />
+      ) : active === "export" ? (
+        <ManageExportModule />
       ) : active === "members" ? (
         <ManageMembersModule />
       ) : active === "newsletter" ? (

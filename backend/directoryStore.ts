@@ -51,6 +51,15 @@ import {
   upsertMongoMedia,
   bulkUpdateMongoMediaStatus,
   deleteMongoMediaByIds,
+  // Testimonials
+  listMongoTestimonials,
+  upsertMongoTestimonial,
+  deleteMongoTestimonialById,
+  // FAQs
+  listMongoFaqs,
+  upsertMongoFaq,
+  deleteMongoFaqById,
+  updateMongoFaqsOrder,
 } from "./mongodb";
 import { listingLocationText, listingPublicPath } from "./listingSeo";
 
@@ -472,6 +481,38 @@ export async function getAdminResourceAsync(resource = "dashboard") {
     }
   }
 
+  // Testimonials
+  if (resource === "testimonials") {
+    try {
+      const docs = await listMongoTestimonials();
+      return docs.map((doc) => ({
+        description: doc.description,
+        id: doc._id,
+        name: doc.name,
+        order: doc.displayOrder,
+        status: doc.status,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  // FAQs
+  if (resource === "faqs") {
+    try {
+      const docs = await listMongoFaqs();
+      return docs.map((doc) => ({
+        answer: doc.answer,
+        id: doc._id,
+        order: doc.displayOrder,
+        question: doc.question,
+        status: doc.status,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
   let members: MemberAccount[];
   try {
     members = await listMongoMembers();
@@ -761,6 +802,46 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
     }
     if (action === "bulk-delete" && Array.isArray(payload.ids)) {
       if (isMongoConfigured()) await deleteMongoMediaByIds(payload.ids as string[]);
+      return { ok: true };
+    }
+    return { ok: true };
+  }
+
+  // Testimonials
+  if (resource === "testimonials") {
+    const action = String(payload.action ?? "");
+
+    if (action === "upsert" && payload.record) {
+      const rec = payload.record as {
+        description: string; id: string; name: string; order: number; status: "Active" | "Inactive";
+      };
+      if (isMongoConfigured()) await upsertMongoTestimonial(rec);
+      return { ok: true };
+    }
+    if (action === "delete" && payload.id) {
+      if (isMongoConfigured()) await deleteMongoTestimonialById(String(payload.id));
+      return { ok: true };
+    }
+    return { ok: true };
+  }
+
+  // FAQs
+  if (resource === "faqs") {
+    const action = String(payload.action ?? "");
+
+    if (action === "upsert" && payload.record) {
+      const rec = payload.record as {
+        answer: string; id: string; order: number; question: string; status: "Active" | "Inactive";
+      };
+      if (isMongoConfigured()) await upsertMongoFaq(rec);
+      return { ok: true };
+    }
+    if (action === "delete" && payload.id) {
+      if (isMongoConfigured()) await deleteMongoFaqById(String(payload.id));
+      return { ok: true };
+    }
+    if (action === "update-order" && Array.isArray(payload.records)) {
+      if (isMongoConfigured()) await updateMongoFaqsOrder(payload.records as Array<{ id: string; order: number }>);
       return { ok: true };
     }
     return { ok: true };
