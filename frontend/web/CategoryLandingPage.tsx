@@ -71,7 +71,8 @@ export function CategoryLandingPage({ category, initialSubcategorySlug = "", ini
           <a href="/featured">Featured</a>
           <a href="/new">New Ads</a>
           <a href="/trending">Trending</a>
-          <a className="check-post-button" href="/members/add_listing">Post Your Ad</a>
+          <a href="/login">Login</a>
+          <a className="check-post-button" href="/members/login">List Your Business</a>
         </nav>
       </header>
 

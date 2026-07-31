@@ -60,7 +60,8 @@ export default async function LocationListingPage({ params }: LocationPageProps)
           <strong>Checkinfo</strong>
           <small>Check kiya kya?</small>
         </a>
-        <a className="check-post-button" href="/members/add_listing">Post Your Ad</a>
+        <a href="/login" style={{ color: "#0284c7", fontWeight: "600", textDecoration: "none", marginRight: "1rem" }}>Login</a>
+        <a className="check-post-button" href="/members/login">List Your Business</a>
       </header>
 
       <section className="location-hero">

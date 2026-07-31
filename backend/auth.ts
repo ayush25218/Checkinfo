@@ -1,10 +1,11 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-export type AuthRole = "admin" | "member";
+export type AuthRole = "admin" | "member" | "user";
 
 const cookieNames: Record<AuthRole, string> = {
   admin: "checkinfo_admin_auth",
   member: "checkinfo_member_auth",
+  user: "checkinfo_user_auth",
 };
 
 function base64Url(value: string) {
@@ -63,6 +64,13 @@ export function getExpectedCredentials(role: AuthRole) {
     return {
       password: process.env.ADMIN_LOGIN_PASSWORD || "admin123",
       username: process.env.ADMIN_LOGIN_USERNAME || "admin",
+    };
+  }
+
+  if (role === "user") {
+    return {
+      password: process.env.USER_LOGIN_PASSWORD || "user123",
+      username: process.env.USER_LOGIN_USERNAME || "user",
     };
   }
 

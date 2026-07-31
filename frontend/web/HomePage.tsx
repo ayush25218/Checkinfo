@@ -53,9 +53,9 @@ export async function HomePage() {
           <a href="/featured">Featured Ads</a>
           <a href="#advertise">Advertise</a>
           <a href="#contact">Contact</a>
-          <a href="/members/myaccount">My Profile</a>
+          <a href="/login">Login</a>
         </nav>
-        <a className="check-post-button" href="/members/add_listing">Post Your Ad</a>
+        <a className="check-post-button" href="/members/login">List Your Business</a>
       </header>
 
       <section className="check-hero" id="top">
@@ -79,8 +79,8 @@ export async function HomePage() {
         <div className="check-hero-panel">
           <span className="check-hero-panel-light" aria-hidden="true" />
           <strong>Checkinfo</strong>
-          <span>Business Owner: Login | Register</span>
-          <a href="/members/add_listing">Start Free Listing</a>
+          <span>Business Owner: <a href="/members/login" style={{ color: "inherit", textDecoration: "underline" }}>Login</a></span>
+          <a href="/members/login">List Your Business</a>
         </div>
       </section>
 

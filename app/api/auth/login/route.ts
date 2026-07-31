@@ -3,15 +3,17 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 function isAuthRole(value: FormDataEntryValue | null): value is AuthRole {
-  return value === "admin" || value === "member";
+  return value === "admin" || value === "member" || value === "user";
 }
 
 function destinationFor(role: AuthRole) {
-  return role === "admin" ? "/admin" : "/members/myaccount";
+  if (role === "admin") return "/admin";
+  if (role === "user") return "/?login=success";
+  return "/members/myaccount";
 }
 
 function loginPath(role: AuthRole, error = "") {
-  const path = role === "admin" ? "/admin/login" : "/members/login";
+  const path = role === "admin" ? "/admin/login" : role === "user" ? "/login" : "/members/login";
   return error ? `${path}?error=${encodeURIComponent(error)}` : path;
 }
 
