@@ -1166,7 +1166,8 @@ cite {
 
 .check-hero {
   position: relative;
-  overflow: hidden;
+  z-index: 10;
+  overflow: visible;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: clamp(22px, 4vw, 58px);
@@ -1184,7 +1185,7 @@ cite {
 .check-hero::before {
   content: "";
   position: absolute;
-  inset: -40% -10%;
+  inset: 0;
   pointer-events: none;
   background:
     radial-gradient(circle at 72% 28%, rgba(47, 117, 232, 0.26), transparent 24%),
@@ -1240,7 +1241,7 @@ cite {
 }
 
 .check-hero-search {
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.55fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.55fr) auto auto auto;
   max-width: 860px;
   margin-top: 28px;
   border-color: rgba(255, 255, 255, 0.52);

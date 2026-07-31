@@ -21,7 +21,12 @@ export async function GET() {
   }
 
   const cities = [...cityByName.values()]
-    .sort((a, b) => b.population - a.population || a.label.localeCompare(b.label))
+    .sort((a, b) => {
+      const aStartsWithLetter = /^[a-z]/i.test(a.label);
+      const bStartsWithLetter = /^[a-z]/i.test(b.label);
+      if (aStartsWithLetter !== bStartsWithLetter) return aStartsWithLetter ? -1 : 1;
+      return a.label.localeCompare(b.label);
+    })
     .map(({ label, value }) => ({ label, value }));
 
   return Response.json({
