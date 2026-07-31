@@ -3,6 +3,7 @@ import { LocationSearchForm } from "@/frontend/web/LocationSearchForm";
 
 type SearchPageProps = {
   searchParams: Promise<{
+    category?: string;
     lat?: string;
     lng?: string;
     location?: string;
@@ -18,9 +19,11 @@ function toNumber(value?: string) {
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
+  const category = params.category ?? "";
   const q = params.q ?? "";
   const location = params.location ?? "";
   const data = await searchDirectory({
+    category,
     lat: toNumber(params.lat),
     lng: toNumber(params.lng),
     location,
@@ -38,6 +41,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </a>
         <LocationSearchForm
           className="check-top-search search-page-form"
+          defaultCategory={category}
           defaultLocation={location}
           defaultQuery={q}
         />
@@ -46,7 +50,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
       <section className="search-hero">
         <p className="eyebrow">Local business search</p>
-        <h1>{q ? `Results for ${q}` : "Search nearby businesses"}</h1>
+        <h1>{q ? `Results for ${q}` : category ? `Results for ${category}` : "Search nearby businesses"}</h1>
         <p>
           Sponsored Checkinfo listings appear first, followed by nearby Google
           Places results sorted for your search intent.

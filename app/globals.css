@@ -903,8 +903,8 @@ cite {
 
 .check-top-search,
 .check-hero-search {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
   min-width: 0;
   border: 1px solid rgba(219, 231, 251, 0.95);
@@ -912,6 +912,16 @@ cite {
   background: rgba(255, 255, 255, 0.94);
   padding: 6px;
   box-shadow: 0 14px 38px rgba(7, 21, 47, 0.09);
+}
+
+.check-top-search.is-compact,
+.check-hero-search.is-compact {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+.check-top-search.with-location,
+.check-hero-search.with-location {
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 0.7fr) auto auto auto;
 }
 
 .check-top-search {
@@ -952,7 +962,9 @@ cite {
 }
 
 .check-top-search .voice-search-button,
-.check-hero-search .voice-search-button {
+.check-hero-search .voice-search-button,
+.check-top-search .search-filter-button,
+.check-hero-search .search-filter-button {
   position: relative;
   min-width: 42px;
   width: 42px;
@@ -967,7 +979,9 @@ cite {
 }
 
 .check-top-search .voice-search-button svg,
-.check-hero-search .voice-search-button svg {
+.check-hero-search .voice-search-button svg,
+.check-top-search .search-filter-button svg,
+.check-hero-search .search-filter-button svg {
   width: 18px;
   height: 18px;
   fill: none;
@@ -978,7 +992,9 @@ cite {
 }
 
 .check-top-search .voice-search-button span,
-.check-hero-search .voice-search-button span {
+.check-hero-search .voice-search-button span,
+.check-top-search .search-filter-button span,
+.check-hero-search .search-filter-button span {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -990,7 +1006,11 @@ cite {
 .check-top-search .voice-search-button:hover,
 .check-hero-search .voice-search-button:hover,
 .check-top-search .voice-search-button.is-listening,
-.check-hero-search .voice-search-button.is-listening {
+.check-hero-search .voice-search-button.is-listening,
+.check-top-search .search-filter-button:hover,
+.check-hero-search .search-filter-button:hover,
+.check-top-search .search-filter-button.is-active,
+.check-hero-search .search-filter-button.is-active {
   border-color: rgba(34, 211, 238, 0.5);
   background: linear-gradient(135deg, rgba(34, 211, 238, 0.16), rgba(31, 111, 255, 0.12));
   color: var(--check-blue);
@@ -1011,6 +1031,82 @@ cite {
 .check-hero-search .voice-search-button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+.search-filter-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 40;
+  display: grid;
+  width: min(450px, calc(100vw - 32px));
+  gap: 10px;
+  border: 1px solid rgba(191, 213, 248, 0.95);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 14px;
+  box-shadow: 0 28px 70px rgba(7, 21, 47, 0.24);
+}
+
+.search-filter-popover::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  right: 78px;
+  width: 14px;
+  height: 14px;
+  border-left: 1px solid rgba(191, 213, 248, 0.95);
+  border-top: 1px solid rgba(191, 213, 248, 0.95);
+  background: #ffffff;
+  transform: rotate(45deg);
+}
+
+.search-filter-popover > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search-filter-popover strong {
+  color: var(--check-ink);
+  font-size: 24px;
+}
+
+.search-filter-popover > div:first-child button,
+.search-filter-actions button:last-child {
+  min-height: 34px;
+  border: 1px solid rgba(191, 213, 248, 0.95);
+  background: #f8fbff;
+  color: var(--check-blue);
+  box-shadow: none;
+}
+
+.search-filter-popover label {
+  display: grid;
+  gap: 6px;
+}
+
+.search-filter-popover label span {
+  color: #344257;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.search-filter-popover select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(191, 213, 248, 0.95);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  outline: 0;
+  padding: 0 12px;
+}
+
+.search-filter-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
 }
 
 .check-top-search button:hover,
@@ -4533,7 +4629,7 @@ cite {
 }
 
 .search-page-form {
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.55fr) auto;
+  max-width: none;
 }
 
 .search-hero {
@@ -5024,8 +5120,12 @@ cite {
     max-width: none;
   }
 
+  .check-top-search.is-compact,
+  .check-hero-search.is-compact,
+  .check-top-search.with-location,
+  .check-hero-search.with-location,
   .search-page-form {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
   }
 
   .about-corporate-section {

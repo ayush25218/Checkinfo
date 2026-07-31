@@ -22,6 +22,7 @@ type GooglePlace = {
 };
 
 export type DirectorySearchParams = {
+  category?: string;
   lat?: number;
   lng?: number;
   location?: string;
@@ -82,15 +83,17 @@ type SearchableListing = Partial<MemberListing> & {
   ownerName?: string;
 };
 
-function listingMatches(listing: SearchableListing, query = "", location = "") {
+function listingMatches(listing: SearchableListing, query = "", location = "", category = "") {
   const haystack = normalizeText([listing.name, listing.description, listing.keywords, listing.details, listing.location, listing.address, listing.category, listing.subcategory, listing.businessType, listing.city, listing.subcity, listing.state].join(" "));
   const tokens = queryTokens(query);
   const locationTokens = queryTokens(location);
+  const categoryTokens = queryTokens(category);
 
   const hasQueryMatch = tokens.length === 0 || tokens.some((token) => haystack.includes(token));
   const hasLocationMatch = locationTokens.length === 0 || locationTokens.some((token) => haystack.includes(token));
+  const hasCategoryMatch = categoryTokens.length === 0 || categoryTokens.some((token) => haystack.includes(token));
 
-  return hasQueryMatch && hasLocationMatch;
+  return hasQueryMatch && hasLocationMatch && hasCategoryMatch;
 }
 
 function listingToResult(listing: SearchableListing, source: "sponsored" | "local"): DirectorySearchResult {
@@ -108,19 +111,19 @@ function listingToResult(listing: SearchableListing, source: "sponsored" | "loca
   };
 }
 
-async function getSponsoredListings(query = "", location = "") {
+async function getSponsoredListings(query = "", location = "", category = "") {
   const business = ((await getAdminResourceAsync("business")) ?? []) as SearchableListing[];
   return business
     .filter((listing) => listing.status === "Featured")
-    .filter((listing) => listingMatches(listing, query, location))
+    .filter((listing) => listingMatches(listing, query, location, category))
     .map((listing) => listingToResult(listing, "sponsored"));
 }
 
-async function getFallbackLocalListings(query = "", location = "") {
+async function getFallbackLocalListings(query = "", location = "", category = "") {
   const business = ((await getAdminResourceAsync("business")) ?? []) as SearchableListing[];
   return business
     .filter((listing) => listing.status === "Active")
-    .filter((listing) => listingMatches(listing, query, location))
+    .filter((listing) => listingMatches(listing, query, location, category))
     .map((listing) => listingToResult(listing, "local"));
 }
 
@@ -135,7 +138,7 @@ function cleanRadius(radius?: number) {
 }
 
 function buildTextQuery(params: DirectorySearchParams) {
-  const q = params.q?.trim() || "business";
+  const q = params.q?.trim() || params.category?.trim() || "business";
   const location = params.location?.trim();
 
   if (location) return `${q} in ${location}`;
@@ -223,9 +226,10 @@ function dedupeResults(priorityResults: DirectorySearchResult[], results: Direct
 export async function searchDirectory(params: DirectorySearchParams) {
   const q = params.q?.trim() ?? "";
   const location = params.location?.trim() ?? "";
-  const sponsored = await getSponsoredListings(q, location);
+  const category = params.category?.trim() ?? "";
+  const sponsored = await getSponsoredListings(q, location, category);
   const googleResponse = await fetchGooglePlaces(params);
-  const localFallback = googleResponse.places.length ? [] : await getFallbackLocalListings(q, location);
+  const localFallback = googleResponse.places.length ? [] : await getFallbackLocalListings(q, location, category);
   const organic = dedupeResults(sponsored, [...googleResponse.places, ...localFallback]);
   const results = [...sponsored, ...organic];
 
@@ -236,7 +240,7 @@ export async function searchDirectory(params: DirectorySearchParams) {
     googleCount: googleResponse.places.length,
     localFallbackCount: localFallback.length,
     ok: true,
-    query: { lat: params.lat, lng: params.lng, location, q, radius: cleanRadius(params.radius) },
+    query: { category, lat: params.lat, lng: params.lng, location, q, radius: cleanRadius(params.radius) },
     results,
     sponsored,
     warning: googleResponse.warning,
