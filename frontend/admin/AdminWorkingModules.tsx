@@ -1613,6 +1613,16 @@ export function ManageSubadminsModule() {
     username: "",
   });
 
+  // ── Load from backend on mount ──────────────────────────────────────────────
+  useEffect(() => {
+    void getAdminData<SubadminRecord[]>("subadmins", []).then((data) => {
+      if (data.length > 0) {
+        setRecords(data);
+        writeStored("checkinfo-admin-subadmins", data);
+      }
+    });
+  }, []);
+
   const filtered = useMemo(
     () =>
       records
@@ -1720,6 +1730,16 @@ export function ManageAdminSettingsModule() {
   const [settings, setSettings] = useState(() => readStored("checkinfo-admin-settings", adminSettingsSeed));
   const [saved, setSaved] = useState(false);
 
+  // ── Load from backend on mount ──────────────────────────────────────────────
+  useEffect(() => {
+    void getAdminData<typeof adminSettingsSeed>("settings", adminSettingsSeed).then((data) => {
+      if (data) {
+        setSettings(data);
+        writeStored("checkinfo-admin-settings", data);
+      }
+    });
+  }, []);
+
   function update<K extends keyof AdminSettingsRecord>(key: K, value: AdminSettingsRecord[K]) {
     setSaved(false);
     setSettings({ ...settings, [key]: value });
@@ -1727,6 +1747,8 @@ export function ManageAdminSettingsModule() {
 
   function saveSettings() {
     writeStored("checkinfo-admin-settings", settings);
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("settings", { action: "save", record: settings });
     setSaved(true);
   }
 
@@ -1760,7 +1782,7 @@ export function ChangeAdminPasswordModule() {
   const [form, setForm] = useState({ confirmPassword: "", newPassword: "", oldPassword: "" });
   const [message, setMessage] = useState("Password has not been changed in this browser session.");
 
-  function updatePassword() {
+  async function updatePassword() {
     if (!form.oldPassword || !form.newPassword || !form.confirmPassword) {
       setMessage("All password fields are required.");
       return;
@@ -1776,9 +1798,14 @@ export function ChangeAdminPasswordModule() {
       return;
     }
 
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    setMessage("Saving...");
+    const result = await postAdminAction("admin-password", { action: "update", newPassword: form.newPassword });
     writeStored("checkinfo-admin-password-updated", { updatedAt: new Date().toISOString() });
     setForm({ confirmPassword: "", newPassword: "", oldPassword: "" });
-    setMessage("Password validation passed and update is queued. Connect real auth before production use.");
+    const saved = (result as Record<string, unknown>)?.data;
+    const ok = (saved as Record<string, unknown>)?.saved ?? (saved as Record<string, unknown>)?.ok;
+    setMessage(ok ? "Password updated successfully in database." : "Password validation passed. Saved locally (DB not configured).");
   }
 
   return (
@@ -1803,6 +1830,16 @@ export function ManageStaticPagesModule() {
   const [editing, setEditing] = useState<StaticPageRecord | null>(null);
   const [form, setForm] = useState({ content: "", slug: "", status: "Active" as "Active" | "Inactive", title: "" });
 
+  // ── Load from backend on mount ──────────────────────────────────────────────
+  useEffect(() => {
+    void getAdminData<StaticPageRecord[]>("static-pages", []).then((data) => {
+      if (data.length > 0) {
+        setRecords(data);
+        writeStored("checkinfo-admin-static-pages", data);
+      }
+    });
+  }, []);
+
   const filtered = useMemo(
     () => records.filter((record) => [record.title, record.slug].join(" ").toLowerCase().includes(query.toLowerCase())),
     [query, records],
@@ -1822,6 +1859,11 @@ export function ManageStaticPagesModule() {
     if (!form.title.trim() || !form.slug.trim()) return;
     const nextRecord: StaticPageRecord = { id: editing?.id ?? `page-${Date.now()}`, ...form, slug: form.slug.trim(), title: form.title.trim() };
     sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("static-pages", {
+      action: "upsert",
+      record: { content: nextRecord.content, id: nextRecord.id, slug: nextRecord.slug, status: nextRecord.status, title: nextRecord.title },
+    });
     resetForm();
   }
 
@@ -1855,11 +1897,28 @@ export function ManageStaticPagesModule() {
 }
 
 export function ManageEnquiriesModule({ type }: { type: EnquiryRecord["type"] }) {
+  const enquiryResourceMap: Record<EnquiryRecord["type"], string> = {
+    Contact: "contact-enquiries",
+    Business: "business-enquiries",
+    Career: "career-enquiries",
+    Advertise: "advertise-enquiries",
+  };
+  const apiResource = enquiryResourceMap[type];
   const storageKey = `checkinfo-admin-${type.toLowerCase()}-enquiries`;
   const [records, setRecords] = useState(() => readStored(storageKey, enquirySeed.filter((record) => record.type === type)));
   const [selected, setSelected] = useState<string[]>([]);
   const [filters, setFilters] = useState({ keyword: "", status: "All" });
   const [reply, setReply] = useState("");
+
+  // ── Load from backend on mount ──────────────────────────────────────────────
+  useEffect(() => {
+    void getAdminData<EnquiryRecord[]>(apiResource, []).then((data) => {
+      if (data.length > 0) {
+        setRecords(data);
+        writeStored(storageKey, data);
+      }
+    });
+  }, [apiResource, storageKey]);
 
   const filtered = useMemo(
     () =>
@@ -1876,11 +1935,16 @@ export function ManageEnquiriesModule({ type }: { type: EnquiryRecord["type"] })
 
   function markStatus(status: EnquiryRecord["status"]) {
     sync(records.map((record) => (selected.includes(record.id) ? { ...record, status } : record)));
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction(apiResource, { action: "bulk-status", ids: selected, status });
     setSelected([]);
   }
 
   function deleteSelected() {
+    const toDelete = [...selected];
     sync(records.filter((record) => !selected.includes(record.id)));
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction(apiResource, { action: "bulk-delete", ids: toDelete });
     setSelected([]);
   }
 
@@ -1917,10 +1981,22 @@ export function ManageEnquiriesModule({ type }: { type: EnquiryRecord["type"] })
 
 export function ManageMediaModule({ kind }: { kind: "banners" | "header-images" }) {
   const storageKey = `checkinfo-admin-${kind}`;
+  const apiResource = kind;
+  const mediaKind = kind === "banners" ? "banner" : "header-image";
   const [records, setRecords] = useState(() => readStored(storageKey, kind === "banners" ? bannerSeed : headerImageSeed));
   const [selected, setSelected] = useState<string[]>([]);
   const [editing, setEditing] = useState<MediaRecord | null>(null);
   const [form, setForm] = useState({ image: "", lineOne: "", lineTwo: "", position: "", status: "Active" as "Active" | "Inactive" });
+
+  // ── Load from backend on mount ──────────────────────────────────────────────
+  useEffect(() => {
+    void getAdminData<MediaRecord[]>(apiResource, []).then((data) => {
+      if (data.length > 0) {
+        setRecords(data);
+        writeStored(storageKey, data);
+      }
+    });
+  }, [apiResource, storageKey]);
 
   function sync(next: MediaRecord[]) {
     setRecords(next);
@@ -1936,11 +2012,18 @@ export function ManageMediaModule({ kind }: { kind: "banners" | "header-images" 
     if (!form.position.trim()) return;
     const nextRecord: MediaRecord = { id: editing?.id ?? `${kind}-${Date.now()}`, ...form, image: form.image.trim() || "Image" };
     sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction(apiResource, {
+      action: "upsert",
+      record: { id: nextRecord.id, image: nextRecord.image, lineOne: nextRecord.lineOne, lineTwo: nextRecord.lineTwo, position: nextRecord.position, status: nextRecord.status, kind: mediaKind },
+    });
     resetForm();
   }
 
   function bulkStatus(status: "Active" | "Inactive") {
     sync(records.map((record) => (selected.includes(record.id) ? { ...record, status } : record)));
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction(apiResource, { action: "bulk-status", ids: selected, status });
     setSelected([]);
   }
 
@@ -1958,7 +2041,7 @@ export function ManageMediaModule({ kind }: { kind: "banners" | "header-images" 
       <div className="admin-actions">
         <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Activate</button>
         <button type="button" onClick={() => bulkStatus("Inactive")} disabled={!selected.length}>Deactivate</button>
-        <button type="button" onClick={() => { sync(records.filter((record) => !selected.includes(record.id))); setSelected([]); }} disabled={!selected.length}>Delete</button>
+        <button type="button" onClick={() => { const toDelete = [...selected]; sync(records.filter((record) => !selected.includes(record.id))); void postAdminAction(apiResource, { action: "bulk-delete", ids: toDelete }); setSelected([]); }} disabled={!selected.length}>Delete</button>
       </div>
       <div className="admin-real-table admin-real-table-media">
         <div className="admin-real-row admin-real-head"><span>Select</span><span>Position</span><span>Image</span><span>Line One</span><span>Line Two</span><span>Status</span><span>Action</span></div>

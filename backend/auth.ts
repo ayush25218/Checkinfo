@@ -23,6 +23,10 @@ function sign(value: string) {
   return createHmac("sha256", getAuthSecret()).update(value).digest("base64url");
 }
 
+export function hashPassword(password: string) {
+  return createHmac("sha256", getAuthSecret()).update(password).digest("base64url");
+}
+
 export function getAuthCookieName(role: AuthRole) {
   return cookieNames[role];
 }
@@ -72,3 +76,46 @@ export function validCredentials(role: AuthRole, username: string, password: str
   const expected = getExpectedCredentials(role);
   return username.trim() === expected.username && password === expected.password;
 }
+
+// ─── Async helpers (DB-backed password for admin) ─────────────────────────────
+
+export async function validCredentialsAsync(role: AuthRole, username: string, password: string): Promise<boolean> {
+  // Sync check first (env var credentials always work)
+  if (validCredentials(role, username, password)) return true;
+
+  // For admin: also check DB-stored password hash
+  if (role === "admin") {
+    try {
+      const { isMongoConfigured, getMongoAdminPasswordHash } = await import("./mongodb");
+      if (!isMongoConfigured()) return false;
+
+      const storedHash = await getMongoAdminPasswordHash();
+      if (!storedHash) return false;
+
+      const expectedUsername = process.env.ADMIN_LOGIN_USERNAME || "admin";
+      if (username.trim() !== expectedUsername) return false;
+
+      const givenHash = hashPassword(password);
+      const stored = Buffer.from(storedHash);
+      const given = Buffer.from(givenHash);
+      if (stored.length !== given.length) return false;
+      return timingSafeEqual(stored, given);
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+export async function updateAdminPasswordInDb(newPassword: string): Promise<boolean> {
+  try {
+    const { isMongoConfigured, setMongoAdminPasswordHash } = await import("./mongodb");
+    if (!isMongoConfigured()) return false;
+    await setMongoAdminPasswordHash(hashPassword(newPassword));
+    return true;
+  } catch {
+    return false;
+  }
+}
+

@@ -30,6 +30,27 @@ import {
   listMongoMetaTags,
   upsertMongoMetaTag,
   deleteMongoMetaTagById,
+  // Subadmins
+  listMongoSubadmins,
+  upsertMongoSubadmin,
+  bulkUpdateMongoSubadminStatus,
+  deleteMongoSubadminsByIds,
+  // Admin Settings
+  getMongoAdminSettings,
+  saveMongoAdminSettings,
+  // Static Pages
+  listMongoStaticPages,
+  upsertMongoStaticPage,
+  deleteMongoStaticPageById,
+  // Enquiries
+  listMongoEnquiries,
+  bulkUpdateMongoEnquiryStatus,
+  deleteMongoEnquiriesByIds,
+  // Media
+  listMongoMedia,
+  upsertMongoMedia,
+  bulkUpdateMongoMediaStatus,
+  deleteMongoMediaByIds,
 } from "./mongodb";
 import { listingLocationText, listingPublicPath } from "./listingSeo";
 
@@ -345,6 +366,112 @@ export async function getAdminResourceAsync(resource = "dashboard") {
     }
   }
 
+  // Subadmins
+  if (resource === "subadmins") {
+    try {
+      const docs = await listMongoSubadmins();
+      return docs.map((doc) => ({
+        email: doc.email,
+        id: doc._id,
+        name: doc.name,
+        phone: doc.phone,
+        registeredAt: doc.registeredAt,
+        status: doc.status,
+        username: doc.username,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  // Admin Settings
+  if (resource === "settings") {
+    try {
+      const doc = await getMongoAdminSettings();
+      if (doc) {
+        const { passwordHash: _, ...rest } = doc;
+        return rest;
+      }
+    } catch { /* fall through */ }
+    return null;
+  }
+
+  // Static Pages
+  if (resource === "static-pages") {
+    try {
+      const docs = await listMongoStaticPages();
+      return docs.map((doc) => ({
+        content: doc.content,
+        id: doc._id,
+        slug: doc.slug,
+        status: doc.status,
+        title: doc.title,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  // Enquiries (Contact / Business / Career / Advertise)
+  const enquiryTypeMap: Record<string, "Contact" | "Business" | "Career" | "Advertise"> = {
+    "contact-enquiries": "Contact",
+    "business-enquiries": "Business",
+    "career-enquiries": "Career",
+    "advertise-enquiries": "Advertise",
+  };
+  if (resource in enquiryTypeMap) {
+    const type = enquiryTypeMap[resource];
+    try {
+      const docs = await listMongoEnquiries(type);
+      return docs.map((doc) => ({
+        email: doc.email,
+        id: doc._id,
+        message: doc.message,
+        name: doc.name,
+        phone: doc.phone,
+        receivedAt: doc.receivedAt,
+        status: doc.status,
+        type: doc.type,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  // Banners
+  if (resource === "banners") {
+    try {
+      const docs = await listMongoMedia("banner");
+      return docs.map((doc) => ({
+        id: doc._id,
+        image: doc.image,
+        lineOne: doc.lineOne,
+        lineTwo: doc.lineTwo,
+        position: doc.position,
+        status: doc.status,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  // Header Images
+  if (resource === "header-images") {
+    try {
+      const docs = await listMongoMedia("header-image");
+      return docs.map((doc) => ({
+        id: doc._id,
+        image: doc.image,
+        lineOne: doc.lineOne,
+        lineTwo: doc.lineTwo,
+        position: doc.position,
+        status: doc.status,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
   let members: MemberAccount[];
   try {
     members = await listMongoMembers();
@@ -509,6 +636,133 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
       return { ok: true };
     }
 
+    return { ok: true };
+  }
+
+  // Subadmins
+  if (resource === "subadmins") {
+    const action = String(payload.action ?? "");
+
+    if (action === "upsert" && payload.record) {
+      const rec = payload.record as {
+        email: string; id: string; name: string; phone: string;
+        registeredAt: string; status: "Active" | "Inactive"; username: string;
+      };
+      if (isMongoConfigured()) await upsertMongoSubadmin(rec);
+      return { ok: true };
+    }
+    if (action === "bulk-status" && Array.isArray(payload.ids) && payload.status) {
+      if (isMongoConfigured()) await bulkUpdateMongoSubadminStatus(payload.ids as string[], payload.status as "Active" | "Inactive");
+      return { ok: true };
+    }
+    if (action === "bulk-delete" && Array.isArray(payload.ids)) {
+      if (isMongoConfigured()) await deleteMongoSubadminsByIds(payload.ids as string[]);
+      return { ok: true };
+    }
+    return { ok: true };
+  }
+
+  // Admin Settings
+  if (resource === "settings") {
+    const action = String(payload.action ?? "");
+
+    if (action === "save" && payload.record) {
+      const rec = payload.record as {
+        address: string; analyticsId: string; email: string; facebook: string;
+        instagram: string; mapEmbed: string; phone: string; webCode: string; youtube: string;
+      };
+      if (isMongoConfigured()) await saveMongoAdminSettings(rec);
+      return { ok: true };
+    }
+    return { ok: true };
+  }
+
+  // Admin Password
+  if (resource === "admin-password") {
+    const action = String(payload.action ?? "");
+    if (action === "update" && payload.newPassword) {
+      const { updateAdminPasswordInDb } = await import("./auth");
+      const saved = await updateAdminPasswordInDb(String(payload.newPassword));
+      return { ok: saved, saved };
+    }
+    return { ok: true };
+  }
+
+  // Static Pages
+  if (resource === "static-pages") {
+    const action = String(payload.action ?? "");
+
+    if (action === "upsert" && payload.record) {
+      const rec = payload.record as {
+        content: string; id: string; slug: string; status: "Active" | "Inactive"; title: string;
+      };
+      if (isMongoConfigured()) await upsertMongoStaticPage(rec);
+      return { ok: true };
+    }
+    if (action === "delete" && payload.id) {
+      if (isMongoConfigured()) await deleteMongoStaticPageById(String(payload.id));
+      return { ok: true };
+    }
+    return { ok: true };
+  }
+
+  // Enquiries (Contact / Business / Career / Advertise)
+  const enquiryResources = ["contact-enquiries", "business-enquiries", "career-enquiries", "advertise-enquiries"];
+  if (enquiryResources.includes(resource)) {
+    const action = String(payload.action ?? "");
+
+    if (action === "bulk-status" && Array.isArray(payload.ids) && payload.status) {
+      if (isMongoConfigured()) await bulkUpdateMongoEnquiryStatus(payload.ids as string[], payload.status as "New" | "Replied" | "Closed");
+      return { ok: true };
+    }
+    if (action === "bulk-delete" && Array.isArray(payload.ids)) {
+      if (isMongoConfigured()) await deleteMongoEnquiriesByIds(payload.ids as string[]);
+      return { ok: true };
+    }
+    return { ok: true };
+  }
+
+  // Banners
+  if (resource === "banners") {
+    const action = String(payload.action ?? "");
+
+    if (action === "upsert" && payload.record) {
+      const rec = payload.record as {
+        id: string; image: string; lineOne: string; lineTwo: string; position: string; status: "Active" | "Inactive";
+      };
+      if (isMongoConfigured()) await upsertMongoMedia({ ...rec, kind: "banner" });
+      return { ok: true };
+    }
+    if (action === "bulk-status" && Array.isArray(payload.ids) && payload.status) {
+      if (isMongoConfigured()) await bulkUpdateMongoMediaStatus(payload.ids as string[], payload.status as "Active" | "Inactive");
+      return { ok: true };
+    }
+    if (action === "bulk-delete" && Array.isArray(payload.ids)) {
+      if (isMongoConfigured()) await deleteMongoMediaByIds(payload.ids as string[]);
+      return { ok: true };
+    }
+    return { ok: true };
+  }
+
+  // Header Images
+  if (resource === "header-images") {
+    const action = String(payload.action ?? "");
+
+    if (action === "upsert" && payload.record) {
+      const rec = payload.record as {
+        id: string; image: string; lineOne: string; lineTwo: string; position: string; status: "Active" | "Inactive";
+      };
+      if (isMongoConfigured()) await upsertMongoMedia({ ...rec, kind: "header-image" });
+      return { ok: true };
+    }
+    if (action === "bulk-status" && Array.isArray(payload.ids) && payload.status) {
+      if (isMongoConfigured()) await bulkUpdateMongoMediaStatus(payload.ids as string[], payload.status as "Active" | "Inactive");
+      return { ok: true };
+    }
+    if (action === "bulk-delete" && Array.isArray(payload.ids)) {
+      if (isMongoConfigured()) await deleteMongoMediaByIds(payload.ids as string[]);
+      return { ok: true };
+    }
     return { ok: true };
   }
 

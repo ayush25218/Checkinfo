@@ -66,6 +66,63 @@ type MetaTagRecord = {
   url: string;
 };
 
+type SubadminRecord = {
+  _id: string;
+  email: string;
+  name: string;
+  phone: string;
+  registeredAt: string;
+  status: "Active" | "Inactive";
+  username: string;
+};
+
+type AdminSettingsExtended = {
+  _id: string;
+  address: string;
+  analyticsId: string;
+  email: string;
+  facebook: string;
+  instagram: string;
+  mapEmbed: string;
+  passwordHash?: string;
+  phone: string;
+  updatedAt: string;
+  webCode: string;
+  youtube: string;
+};
+
+type StaticPageRecord = {
+  _id: string;
+  content: string;
+  slug: string;
+  status: "Active" | "Inactive";
+  title: string;
+  updatedAt: string;
+};
+
+type EnquiryRecord = {
+  _id: string;
+  createdAt: string;
+  email: string;
+  message: string;
+  name: string;
+  phone: string;
+  receivedAt: string;
+  status: "New" | "Replied" | "Closed";
+  type: "Contact" | "Business" | "Career" | "Advertise";
+};
+
+type MediaRecord = {
+  _id: string;
+  image: string;
+  kind: "banner" | "header-image";
+  lineOne: string;
+  lineTwo: string;
+  position: string;
+  status: "Active" | "Inactive";
+  updatedAt: string;
+};
+
 type LeadRecord = Record<string, unknown> & {
   createdAt: string;
   source: string;
@@ -105,12 +162,17 @@ export async function getMongoCollections() {
   const db = await getMongoDb();
 
   return {
+    adminSettings: db.collection<AdminSettingsExtended>("admin_settings"),
     categories: db.collection<CategoryRecord>("categories"),
+    enquiries: db.collection<EnquiryRecord>("enquiries"),
     leads: db.collection<LeadRecord>("advertising_leads"),
+    media: db.collection<MediaRecord>("media"),
     members: db.collection<MemberAccount>("members"),
     metaTags: db.collection<MetaTagRecord>("meta_tags"),
     newsletters: db.collection<NewsletterRecord>("newsletter_subscribers"),
     settings: db.collection<SettingRecord>("settings"),
+    staticPages: db.collection<StaticPageRecord>("static_pages"),
+    subadmins: db.collection<SubadminRecord>("subadmins"),
   };
 }
 
@@ -149,10 +211,15 @@ async function ensureIndexes(collections: Awaited<ReturnType<typeof getMongoColl
   await Promise.all([
     collections.categories.createIndex({ slug: 1 }, { unique: true }),
     collections.categories.createIndex({ status: 1, displayOrder: 1 }),
-    collections.members.createIndex({ "profile.username": 1 }),
-    collections.newsletters.createIndex({ email: 1 }, { unique: true }),
+    collections.enquiries.createIndex({ createdAt: -1 }),
+    collections.enquiries.createIndex({ type: 1, status: 1 }),
     collections.leads.createIndex({ createdAt: -1 }),
+    collections.media.createIndex({ kind: 1 }),
+    collections.members.createIndex({ "profile.username": 1 }),
     collections.metaTags.createIndex({ url: 1 }, { unique: true }),
+    collections.newsletters.createIndex({ email: 1 }, { unique: true }),
+    collections.staticPages.createIndex({ slug: 1 }, { unique: true }),
+    collections.subadmins.createIndex({ username: 1 }, { unique: true }),
   ]);
 }
 
@@ -376,10 +443,196 @@ export async function deleteMongoMetaTagById(id: string) {
   await metaTags.deleteOne({ _id: id });
 }
 
+// ─── Subadmins ─────────────────────────────────────────────────────────────────
+
+export async function listMongoSubadmins() {
+  const { subadmins } = await getMongoCollections();
+  return subadmins.find({}).sort({ registeredAt: -1 }).toArray();
+}
+
+export async function upsertMongoSubadmin(record: {
+  email: string;
+  id: string;
+  name: string;
+  phone: string;
+  registeredAt: string;
+  status: "Active" | "Inactive";
+  username: string;
+}) {
+  const { subadmins } = await getMongoCollections();
+  const doc: SubadminRecord = {
+    _id: record.id,
+    email: record.email,
+    name: record.name,
+    phone: record.phone,
+    registeredAt: record.registeredAt,
+    status: record.status,
+    username: record.username,
+  };
+  await subadmins.updateOne(
+    { _id: record.id },
+    { $set: doc, $setOnInsert: { _id: record.id } },
+    { upsert: true },
+  );
+  return doc;
+}
+
+export async function bulkUpdateMongoSubadminStatus(ids: string[], status: "Active" | "Inactive") {
+  const { subadmins } = await getMongoCollections();
+  await subadmins.updateMany({ _id: { $in: ids } }, { $set: { status } });
+}
+
+export async function deleteMongoSubadminsByIds(ids: string[]) {
+  const { subadmins } = await getMongoCollections();
+  await subadmins.deleteMany({ _id: { $in: ids } });
+}
+
+// ─── Admin Settings ────────────────────────────────────────────────────────────
+
+export async function getMongoAdminSettings(): Promise<AdminSettingsExtended | null> {
+  const { adminSettings } = await getMongoCollections();
+  return adminSettings.findOne({ _id: "site" });
+}
+
+export async function saveMongoAdminSettings(record: Omit<AdminSettingsExtended, "_id" | "updatedAt" | "passwordHash">) {
+  const { adminSettings } = await getMongoCollections();
+  const now = new Date().toISOString();
+  await adminSettings.updateOne(
+    { _id: "site" },
+    {
+      $set: { ...record, updatedAt: now },
+      $setOnInsert: { _id: "site" },
+    },
+    { upsert: true },
+  );
+}
+
+export async function getMongoAdminPasswordHash(): Promise<string | null> {
+  const { adminSettings } = await getMongoCollections();
+  const doc = await adminSettings.findOne({ _id: "site" });
+  return doc?.passwordHash ?? null;
+}
+
+export async function setMongoAdminPasswordHash(hash: string) {
+  const { adminSettings } = await getMongoCollections();
+  await adminSettings.updateOne(
+    { _id: "site" },
+    { $set: { passwordHash: hash, updatedAt: new Date().toISOString() }, $setOnInsert: { _id: "site" } },
+    { upsert: true },
+  );
+}
+
+// ─── Static Pages ──────────────────────────────────────────────────────────────
+
+export async function listMongoStaticPages() {
+  const { staticPages } = await getMongoCollections();
+  return staticPages.find({}).sort({ title: 1 }).toArray();
+}
+
+export async function upsertMongoStaticPage(record: {
+  content: string;
+  id: string;
+  slug: string;
+  status: "Active" | "Inactive";
+  title: string;
+}) {
+  const { staticPages } = await getMongoCollections();
+  const now = new Date().toISOString();
+  const doc: StaticPageRecord = {
+    _id: record.id,
+    content: record.content,
+    slug: record.slug,
+    status: record.status,
+    title: record.title,
+    updatedAt: now,
+  };
+  await staticPages.updateOne(
+    { _id: record.id },
+    { $set: { content: doc.content, slug: doc.slug, status: doc.status, title: doc.title, updatedAt: now }, $setOnInsert: { _id: doc._id } },
+    { upsert: true },
+  );
+  return doc;
+}
+
+export async function deleteMongoStaticPageById(id: string) {
+  const { staticPages } = await getMongoCollections();
+  await staticPages.deleteOne({ _id: id });
+}
+
+// ─── Enquiries ─────────────────────────────────────────────────────────────────
+
+export async function listMongoEnquiries(type?: EnquiryRecord["type"]) {
+  const { enquiries } = await getMongoCollections();
+  const filter = type ? { type } : {};
+  return enquiries.find(filter).sort({ createdAt: -1 }).toArray();
+}
+
+export async function bulkUpdateMongoEnquiryStatus(ids: string[], status: EnquiryRecord["status"]) {
+  const { enquiries } = await getMongoCollections();
+  await enquiries.updateMany({ _id: { $in: ids } }, { $set: { status } });
+}
+
+export async function deleteMongoEnquiriesByIds(ids: string[]) {
+  const { enquiries } = await getMongoCollections();
+  await enquiries.deleteMany({ _id: { $in: ids } });
+}
+
+// ─── Media (Banners / Header Images) ──────────────────────────────────────────
+
+export async function listMongoMedia(kind: MediaRecord["kind"]) {
+  const { media } = await getMongoCollections();
+  return media.find({ kind }).sort({ position: 1 }).toArray();
+}
+
+export async function upsertMongoMedia(record: {
+  id: string;
+  image: string;
+  kind: "banner" | "header-image";
+  lineOne: string;
+  lineTwo: string;
+  position: string;
+  status: "Active" | "Inactive";
+}) {
+  const { media } = await getMongoCollections();
+  const now = new Date().toISOString();
+  const doc: MediaRecord = {
+    _id: record.id,
+    image: record.image,
+    kind: record.kind,
+    lineOne: record.lineOne,
+    lineTwo: record.lineTwo,
+    position: record.position,
+    status: record.status,
+    updatedAt: now,
+  };
+  await media.updateOne(
+    { _id: record.id },
+    { $set: { image: doc.image, lineOne: doc.lineOne, lineTwo: doc.lineTwo, position: doc.position, status: doc.status, updatedAt: now }, $setOnInsert: { _id: doc._id, kind: doc.kind } },
+    { upsert: true },
+  );
+  return doc;
+}
+
+export async function bulkUpdateMongoMediaStatus(ids: string[], status: "Active" | "Inactive") {
+  const { media } = await getMongoCollections();
+  await media.updateMany({ _id: { $in: ids } }, { $set: { status } });
+}
+
+export async function deleteMongoMediaByIds(ids: string[]) {
+  const { media } = await getMongoCollections();
+  await media.deleteMany({ _id: { $in: ids } });
+}
+
 export type MongoCollectionMap = {
-  categories: Collection<CategoryRecord>;
-  leads: Collection<LeadRecord>;
-  members: Collection<MemberAccount>;
-  metaTags: Collection<MetaTagRecord>;
-  newsletters: Collection<NewsletterRecord>;
+  adminSettings: import("mongodb").Collection<AdminSettingsExtended>;
+  categories: import("mongodb").Collection<CategoryRecord>;
+  enquiries: import("mongodb").Collection<EnquiryRecord>;
+  leads: import("mongodb").Collection<LeadRecord>;
+  media: import("mongodb").Collection<MediaRecord>;
+  members: import("mongodb").Collection<MemberAccount>;
+  metaTags: import("mongodb").Collection<MetaTagRecord>;
+  newsletters: import("mongodb").Collection<NewsletterRecord>;
+  staticPages: import("mongodb").Collection<StaticPageRecord>;
+  subadmins: import("mongodb").Collection<SubadminRecord>;
 };
+
