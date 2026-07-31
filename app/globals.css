@@ -5317,3 +5317,47 @@ cite {
     overflow-x: auto;
   }
 }
+
+/* ─── Circular Profile & Header Action Styles ─── */
+.check-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.check-profile-circle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px 5px 5px;
+  background: #ffffff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 9999px;
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+}
+
+.check-profile-circle:hover {
+  background: #f8fafc;
+  border-color: #0284c7;
+  color: #0284c7;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.2);
+  transform: translateY(-1px);
+}
+
+.check-profile-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+}
