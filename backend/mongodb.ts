@@ -56,6 +56,16 @@ type SettingRecord = {
   supportEmail?: string;
 };
 
+type MetaTagRecord = {
+  _id: string;
+  createdAt: string;
+  description: string;
+  keywords: string;
+  title: string;
+  updatedAt: string;
+  url: string;
+};
+
 type LeadRecord = Record<string, unknown> & {
   createdAt: string;
   source: string;
@@ -98,6 +108,7 @@ export async function getMongoCollections() {
     categories: db.collection<CategoryRecord>("categories"),
     leads: db.collection<LeadRecord>("advertising_leads"),
     members: db.collection<MemberAccount>("members"),
+    metaTags: db.collection<MetaTagRecord>("meta_tags"),
     newsletters: db.collection<NewsletterRecord>("newsletter_subscribers"),
     settings: db.collection<SettingRecord>("settings"),
   };
@@ -141,6 +152,7 @@ async function ensureIndexes(collections: Awaited<ReturnType<typeof getMongoColl
     collections.members.createIndex({ "profile.username": 1 }),
     collections.newsletters.createIndex({ email: 1 }, { unique: true }),
     collections.leads.createIndex({ createdAt: -1 }),
+    collections.metaTags.createIndex({ url: 1 }, { unique: true }),
   ]);
 }
 
@@ -223,9 +235,151 @@ export async function saveAdvertisingLead(payload: Record<string, unknown>, sour
   return record;
 }
 
+// ─── Categories ───────────────────────────────────────────────────────────────
+
+export async function listMongoCategories() {
+  const { categories } = await getMongoCollections();
+  return categories.find({}).sort({ displayOrder: 1 }).toArray();
+}
+
+export async function upsertMongoCategory(record: {
+  displayOrder: number;
+  homeBottom: boolean;
+  homeTop: boolean;
+  id: string;
+  image: string;
+  name: string;
+  status: "Active" | "Inactive";
+}) {
+  const { categories } = await getMongoCollections();
+  const slug = slugify(record.name);
+  const doc: Omit<CategoryRecord, "_id"> & { _id: string } = {
+    _id: record.id,
+    displayOrder: record.displayOrder,
+    homePlacement: record.homeTop ? "Top" : "Bottom",
+    image: record.image,
+    name: record.name,
+    slug,
+    status: record.status,
+  };
+  await categories.updateOne(
+    { _id: record.id },
+    { $set: doc, $setOnInsert: { _id: record.id } },
+    { upsert: true },
+  );
+  return doc;
+}
+
+export async function deleteMongoCategoryById(id: string) {
+  const { categories } = await getMongoCollections();
+  await categories.deleteOne({ _id: id });
+}
+
+export async function bulkUpdateMongoCategoryStatus(ids: string[], status: "Active" | "Inactive") {
+  const { categories } = await getMongoCollections();
+  await categories.updateMany({ _id: { $in: ids } }, { $set: { status } });
+}
+
+export async function deleteMongoCategoriesByIds(ids: string[]) {
+  const { categories } = await getMongoCollections();
+  await categories.deleteMany({ _id: { $in: ids } });
+}
+
+// ─── Newsletter ────────────────────────────────────────────────────────────────
+
+export async function listMongoNewsletter() {
+  const { newsletters } = await getMongoCollections();
+  return newsletters.find({}).sort({ subscribedAt: -1 }).toArray();
+}
+
+export async function upsertMongoNewsletterRecord(record: {
+  email: string;
+  joinedAt: string;
+  lastSent: string;
+  status: "Subscribed" | "Unsubscribed";
+}) {
+  const { newsletters } = await getMongoCollections();
+  const doc = {
+    email: record.email,
+    joinedAt: record.joinedAt,
+    lastSent: record.lastSent,
+    source: "admin",
+    status: record.status,
+    subscribedAt: record.joinedAt,
+  };
+  await newsletters.updateOne(
+    { email: record.email },
+    { $set: doc },
+    { upsert: true },
+  );
+  return doc;
+}
+
+export async function bulkUnsubscribeNewsletter(emails: string[]) {
+  const { newsletters } = await getMongoCollections();
+  await newsletters.updateMany({ email: { $in: emails } }, { $set: { status: "Unsubscribed" } });
+}
+
+export async function deleteMongoNewsletterByEmails(emails: string[]) {
+  const { newsletters } = await getMongoCollections();
+  await newsletters.deleteMany({ email: { $in: emails } });
+}
+
+export async function markNewsletterSent(emails: string[]) {
+  const { newsletters } = await getMongoCollections();
+  const stamp = new Date().toISOString();
+  await newsletters.updateMany(
+    { email: { $in: emails } },
+    { $set: { lastSent: stamp } },
+  );
+  return stamp;
+}
+
+// ─── Meta Tags ─────────────────────────────────────────────────────────────────
+
+export async function listMongoMetaTags() {
+  const { metaTags } = await getMongoCollections();
+  return metaTags.find({}).sort({ url: 1 }).toArray();
+}
+
+export async function upsertMongoMetaTag(record: {
+  description: string;
+  id: string;
+  keywords: string;
+  title: string;
+  url: string;
+}) {
+  const { metaTags } = await getMongoCollections();
+  const now = new Date().toISOString();
+  const doc: MetaTagRecord = {
+    _id: record.id,
+    createdAt: now,
+    description: record.description,
+    keywords: record.keywords,
+    title: record.title,
+    updatedAt: now,
+    url: record.url,
+  };
+  await metaTags.updateOne(
+    { _id: record.id },
+    {
+      $set: { description: doc.description, keywords: doc.keywords, title: doc.title, updatedAt: now, url: doc.url },
+      $setOnInsert: { _id: doc._id, createdAt: now },
+    },
+    { upsert: true },
+  );
+  return doc;
+}
+
+export async function deleteMongoMetaTagById(id: string) {
+  const { metaTags } = await getMongoCollections();
+  await metaTags.deleteOne({ _id: id });
+}
+
 export type MongoCollectionMap = {
   categories: Collection<CategoryRecord>;
   leads: Collection<LeadRecord>;
   members: Collection<MemberAccount>;
+  metaTags: Collection<MetaTagRecord>;
   newsletters: Collection<NewsletterRecord>;
 };

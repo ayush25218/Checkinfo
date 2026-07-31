@@ -14,6 +14,22 @@ import {
   saveMongoMember,
   type MemberAccount,
   type MemberProfile,
+  // Categories
+  listMongoCategories,
+  upsertMongoCategory,
+  deleteMongoCategoryById,
+  bulkUpdateMongoCategoryStatus,
+  deleteMongoCategoriesByIds,
+  // Newsletter
+  listMongoNewsletter,
+  upsertMongoNewsletterRecord,
+  bulkUnsubscribeNewsletter,
+  deleteMongoNewsletterByEmails,
+  markNewsletterSent,
+  // Meta Tags
+  listMongoMetaTags,
+  upsertMongoMetaTag,
+  deleteMongoMetaTagById,
 } from "./mongodb";
 import { listingLocationText, listingPublicPath } from "./listingSeo";
 
@@ -279,6 +295,56 @@ export function getAdminResource(resource = "dashboard") {
 export async function getAdminResourceAsync(resource = "dashboard") {
   if (!isMongoConfigured()) return getAdminResource(resource);
 
+  // Categories
+  if (resource === "categories") {
+    try {
+      const docs = await listMongoCategories();
+      return docs.map((doc) => ({
+        homeBottom: doc.homePlacement === "Bottom",
+        homeTop: doc.homePlacement === "Top",
+        id: doc._id,
+        image: doc.image,
+        name: doc.name,
+        order: doc.displayOrder,
+        status: doc.status,
+      }));
+    } catch {
+      return getAdminResource(resource);
+    }
+  }
+
+  // Newsletter
+  if (resource === "newsletter") {
+    try {
+      const docs = await listMongoNewsletter();
+      return docs.map((doc, index) => ({
+        email: doc.email,
+        id: `news-${index}`,
+        joinedAt: (doc as Record<string, unknown>).joinedAt ?? doc.subscribedAt,
+        lastSent: (doc as Record<string, unknown>).lastSent ?? "Not sent",
+        status: (doc as Record<string, unknown>).status ?? "Subscribed",
+      }));
+    } catch {
+      return getAdminResource(resource);
+    }
+  }
+
+  // Meta Tags
+  if (resource === "meta") {
+    try {
+      const docs = await listMongoMetaTags();
+      return docs.map((doc) => ({
+        description: doc.description,
+        id: doc._id,
+        keywords: doc.keywords,
+        title: doc.title,
+        url: doc.url,
+      }));
+    } catch {
+      return getAdminResource(resource);
+    }
+  }
+
   let members: MemberAccount[];
   try {
     members = await listMongoMembers();
@@ -346,6 +412,106 @@ export function handleAdminAction(resource: string, payload: Record<string, unkn
 }
 
 export async function handleAdminActionAsync(resource: string, payload: Record<string, unknown>) {
+  // Categories
+  if (resource === "categories") {
+    const action = String(payload.action ?? "");
+
+    if (action === "upsert" && payload.record) {
+      const rec = payload.record as {
+        displayOrder: number;
+        homeBottom: boolean;
+        homeTop: boolean;
+        id: string;
+        image: string;
+        name: string;
+        status: "Active" | "Inactive";
+      };
+      if (isMongoConfigured()) {
+        await upsertMongoCategory(rec);
+      }
+      return { ok: true };
+    }
+
+    if (action === "delete" && payload.id) {
+      if (isMongoConfigured()) await deleteMongoCategoryById(String(payload.id));
+      return { ok: true };
+    }
+
+    if (action === "bulk-status" && Array.isArray(payload.ids) && payload.status) {
+      if (isMongoConfigured()) {
+        await bulkUpdateMongoCategoryStatus(
+          payload.ids as string[],
+          payload.status as "Active" | "Inactive",
+        );
+      }
+      return { ok: true };
+    }
+
+    if (action === "bulk-delete" && Array.isArray(payload.ids)) {
+      if (isMongoConfigured()) await deleteMongoCategoriesByIds(payload.ids as string[]);
+      return { ok: true };
+    }
+
+    return { ok: true };
+  }
+
+  // Newsletter
+  if (resource === "newsletter") {
+    const action = String(payload.action ?? "");
+
+    if (action === "upsert" && payload.record) {
+      const rec = payload.record as {
+        email: string;
+        joinedAt: string;
+        lastSent: string;
+        status: "Subscribed" | "Unsubscribed";
+      };
+      if (isMongoConfigured()) await upsertMongoNewsletterRecord(rec);
+      return { ok: true };
+    }
+
+    if (action === "unsubscribe" && Array.isArray(payload.emails)) {
+      if (isMongoConfigured()) await bulkUnsubscribeNewsletter(payload.emails as string[]);
+      return { ok: true };
+    }
+
+    if (action === "delete" && Array.isArray(payload.emails)) {
+      if (isMongoConfigured()) await deleteMongoNewsletterByEmails(payload.emails as string[]);
+      return { ok: true };
+    }
+
+    if (action === "send" && Array.isArray(payload.emails)) {
+      if (isMongoConfigured()) await markNewsletterSent(payload.emails as string[]);
+      return { ok: true };
+    }
+
+    return { ok: true };
+  }
+
+  // Meta Tags
+  if (resource === "meta") {
+    const action = String(payload.action ?? "");
+
+    if (action === "upsert" && payload.record) {
+      const rec = payload.record as {
+        description: string;
+        id: string;
+        keywords: string;
+        title: string;
+        url: string;
+      };
+      if (isMongoConfigured()) await upsertMongoMetaTag(rec);
+      return { ok: true };
+    }
+
+    if (action === "delete" && payload.id) {
+      if (isMongoConfigured()) await deleteMongoMetaTagById(String(payload.id));
+      return { ok: true };
+    }
+
+    return { ok: true };
+  }
+
   if (!isMongoConfigured()) return handleAdminAction(resource, payload);
 
   if (resource === "business") {

@@ -314,6 +314,16 @@ export function ManageCategoriesModule() {
     homeTop: false,
   });
 
+  // ── Load from backend on mount ──────────────────────────────────────────────
+  useEffect(() => {
+    void getAdminData<CategoryRecord[]>("categories", []).then((data) => {
+      if (data.length > 0) {
+        setRecords(data);
+        writeStored("checkinfo-admin-categories-v2", data);
+      }
+    });
+  }, []);
+
   const filtered = useMemo(() => {
     return records
       .filter((record) => record.name.toLowerCase().includes(query.toLowerCase()))
@@ -381,6 +391,21 @@ export function ManageCategoriesModule() {
         ? records.map((record) => (record.id === editing.id ? nextRecord : record))
         : [...records, nextRecord],
     );
+
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("categories", {
+      action: "upsert",
+      record: {
+        displayOrder: nextRecord.order,
+        homeBottom: nextRecord.homeBottom,
+        homeTop: nextRecord.homeTop,
+        id: nextRecord.id,
+        image: nextRecord.image,
+        name: nextRecord.name,
+        status: nextRecord.status,
+      },
+    });
+
     resetForm();
   }
 
@@ -398,11 +423,16 @@ export function ManageCategoriesModule() {
 
   function bulkStatus(nextStatus: "Active" | "Inactive") {
     sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("categories", { action: "bulk-status", ids: selected, status: nextStatus });
     setSelected([]);
   }
 
   function deleteSelected() {
+    const toDelete = [...selected];
     sync(records.filter((record) => !selected.includes(record.id)));
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("categories", { action: "bulk-delete", ids: toDelete });
     setSelected([]);
   }
 
@@ -1001,6 +1031,16 @@ export function ManageNewsletterModule() {
   const [editing, setEditing] = useState<NewsletterRecord | null>(null);
   const [form, setForm] = useState({ email: "", joinedAt: new Date().toLocaleDateString("en-IN"), lastSent: "Not sent", status: "Subscribed" as "Subscribed" | "Unsubscribed" });
 
+  // ── Load from backend on mount ──────────────────────────────────────────────
+  useEffect(() => {
+    void getAdminData<NewsletterRecord[]>("newsletter", []).then((data) => {
+      if (data.length > 0) {
+        setRecords(data);
+        writeStored("checkinfo-admin-newsletter", data);
+      }
+    });
+  }, []);
+
   const filtered = useMemo(() => records.filter((record) => record.email.toLowerCase().includes(query.toLowerCase())), [query, records]);
 
   function sync(next: NewsletterRecord[]) {
@@ -1017,22 +1057,36 @@ export function ManageNewsletterModule() {
     if (!form.email.trim()) return;
     const nextRecord: NewsletterRecord = { id: editing?.id ?? `news-${Date.now()}`, ...form, email: form.email.trim() };
     sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("newsletter", {
+      action: "upsert",
+      record: { email: nextRecord.email, joinedAt: nextRecord.joinedAt, lastSent: nextRecord.lastSent, status: nextRecord.status },
+    });
     resetForm();
   }
 
   function sendSelected() {
+    const emails = selected.map((id) => records.find((r) => r.id === id)?.email).filter(Boolean) as string[];
     const stamp = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
     sync(records.map((record) => (selected.includes(record.id) ? { ...record, lastSent: `Campaign sent ${stamp}` } : record)));
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("newsletter", { action: "send", emails });
     setSelected([]);
   }
 
   function unsubscribeSelected() {
+    const emails = selected.map((id) => records.find((r) => r.id === id)?.email).filter(Boolean) as string[];
     sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: "Unsubscribed" } : record)));
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("newsletter", { action: "unsubscribe", emails });
     setSelected([]);
   }
 
   function deleteSelected() {
+    const emails = selected.map((id) => records.find((r) => r.id === id)?.email).filter(Boolean) as string[];
     sync(records.filter((record) => !selected.includes(record.id)));
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("newsletter", { action: "delete", emails });
     setSelected([]);
   }
 
@@ -1460,6 +1514,16 @@ export function ManageMetaTagsModule() {
   const [editing, setEditing] = useState<MetaRecord | null>(null);
   const [form, setForm] = useState({ description: "", keywords: "", title: "", url: "" });
 
+  // ── Load from backend on mount ──────────────────────────────────────────────
+  useEffect(() => {
+    void getAdminData<MetaRecord[]>("meta", []).then((data) => {
+      if (data.length > 0) {
+        setRecords(data);
+        writeStored("checkinfo-admin-meta", data);
+      }
+    });
+  }, []);
+
   const filtered = useMemo(
     () => records.filter((record) => [record.url, record.title].join(" ").toLowerCase().includes(query.toLowerCase())),
     [query, records],
@@ -1485,12 +1549,19 @@ export function ManageMetaTagsModule() {
       url: form.url.trim(),
     };
     sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("meta", {
+      action: "upsert",
+      record: { description: nextRecord.description, id: nextRecord.id, keywords: nextRecord.keywords, title: nextRecord.title, url: nextRecord.url },
+    });
     resetForm();
   }
 
   function deleteRecord(id: string) {
     sync(records.filter((record) => record.id !== id));
     if (editing?.id === id) resetForm();
+    // ── Backend sync ──────────────────────────────────────────────────────────
+    void postAdminAction("meta", { action: "delete", id });
   }
 
   return (
