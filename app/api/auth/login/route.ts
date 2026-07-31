@@ -47,5 +47,15 @@ export async function POST(request: Request) {
     });
   }
 
+  if (role === "user") {
+    cookieStore.set("checkinfo_user_auth", "true", {
+      httpOnly: false,
+      maxAge: 60 * 60 * 24 * 365,
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+  }
+
   redirect(destinationFor(role));
 }

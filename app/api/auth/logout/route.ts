@@ -4,10 +4,12 @@ import { redirect } from "next/navigation";
 
 function getRole(request: Request): AuthRole {
   const role = new URL(request.url).searchParams.get("role");
-  return role === "admin" ? "admin" : "member";
+  if (role === "admin") return "admin";
+  if (role === "user") return "user";
+  return "member";
 }
 
-function logout(role: AuthRole) {
+function logout() {
   return async (request: Request) => {
     const activeRole = getRole(request);
     const cookieStore = await cookies();
@@ -17,9 +19,14 @@ function logout(role: AuthRole) {
       cookieStore.delete("checkinfo_member_id");
     }
 
-    redirect(activeRole === "admin" ? "/admin/login" : "/members/login");
+    if (activeRole === "user") {
+      cookieStore.delete("checkinfo_user_auth");
+    }
+
+    const redirectPath = activeRole === "admin" ? "/admin/login" : activeRole === "user" ? "/?logout=success" : "/members/login";
+    redirect(redirectPath);
   };
 }
 
-export const GET = logout("member");
-export const POST = logout("member");
+export const GET = logout();
+export const POST = logout();
