@@ -259,44 +259,62 @@ export function HeaderUserProfileDropdown() {
               </a>
             </div>
           ) : (
-            /* ── Guest Visitor Menu ── */
+            /* ── Guest Visitor Menu (Matches checkinfo.in) ── */
             <div>
-              <div style={{ marginBottom: "1rem", paddingBottom: "0.75rem", borderBottom: "1px solid #f1f5f9" }}>
-                <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: "700", color: "#0f172a" }}>Welcome to Checkinfo</h4>
-                <p style={{ margin: "4px 0 0", fontSize: "0.8rem", color: "#64748b" }}>Choose your account type to sign in.</p>
+              <div style={{ marginBottom: "0.75rem", paddingBottom: "0.5rem", borderBottom: "1px solid #f1f5f9" }}>
+                <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: "700", color: "#0f172a" }}>My Profile</h4>
+                <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "#64748b" }}>Select login or register option</p>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
                 <a
-                  href="/login"
+                  href="/users/login"
                   onClick={() => setIsOpen(false)}
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    gap: "0.5rem",
-                    padding: "0.65rem",
-                    background: "#0284c7",
-                    color: "#ffffff",
+                    gap: "0.6rem",
+                    padding: "0.55rem 0.75rem",
+                    background: "#f0f9ff",
+                    color: "#0369a1",
                     borderRadius: "8px",
                     fontWeight: "600",
                     fontSize: "0.875rem",
                     textDecoration: "none",
                   }}
                 >
-                  👤 Visitor Login
+                  🔑 Login
                 </a>
+                <a
+                  href="/users/register"
+                  onClick={() => setIsOpen(false)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.6rem",
+                    padding: "0.55rem 0.75rem",
+                    background: "#f8fafc",
+                    color: "#334155",
+                    borderRadius: "8px",
+                    fontWeight: "600",
+                    fontSize: "0.875rem",
+                    textDecoration: "none",
+                    border: "1px solid #e2e8f0",
+                  }}
+                >
+                  📝 Register Account
+                </a>
+                <div style={{ margin: "0.25rem 0", height: "1px", background: "#f1f5f9" }} />
                 <a
                   href="/members/login"
                   onClick={() => setIsOpen(false)}
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    gap: "0.5rem",
-                    padding: "0.65rem",
-                    background: "#059669",
-                    color: "#ffffff",
+                    gap: "0.6rem",
+                    padding: "0.55rem 0.75rem",
+                    background: "#ecfdf5",
+                    color: "#047857",
                     borderRadius: "8px",
                     fontWeight: "600",
                     fontSize: "0.875rem",
