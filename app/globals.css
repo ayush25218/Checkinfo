@@ -4247,6 +4247,14 @@ cite {
   justify-content: flex-start;
 }
 
+.admin-form-toggle-row-auto {
+  margin: 0 0 10px;
+}
+
+.admin-editor-collapsed {
+  display: none !important;
+}
+
 .admin-form-toggle-button {
   min-height: 38px;
   border: 1px solid #1f91d0;

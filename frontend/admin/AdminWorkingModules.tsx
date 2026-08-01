@@ -563,7 +563,7 @@ export function ManageCategoriesModule() {
       </div>
 
       {showCategoryForm ? (
-        <div className="admin-editor">
+        <div className="admin-editor" data-admin-manual-toggle="true">
           <label>
             <span>Category Name</span>
             <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />

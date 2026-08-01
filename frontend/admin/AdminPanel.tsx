@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { adminGroups, adminPages, type AdminPageConfig } from "@/backend/checkinfo";
+import { AdminFormAutoToggle } from "./AdminFormAutoToggle";
 import { AdminSidebarNav } from "./AdminSidebarNav";
 
 export { adminPages };
@@ -34,6 +35,7 @@ export function AdminShell({
             <a href="/api/auth/logout?role=admin">Logout</a>
           </div>
         </div>
+        <AdminFormAutoToggle />
         <section className="admin-main">{children}</section>
       </section>
     </main>
