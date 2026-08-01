@@ -2459,23 +2459,34 @@ cite {
 }
 
 .check-ad-card {
+  position: relative;
+  overflow: hidden;
   display: grid;
-  gap: 12px;
-  min-height: 360px;
-  border: 1px solid rgba(219, 231, 251, 0.94);
-  border-radius: 16px;
-  background:
-    linear-gradient(180deg, #ffffff, #fbfdff);
-  padding: 16px;
-  box-shadow: 0 18px 40px rgba(7, 21, 47, 0.08);
+  align-content: start;
+  gap: 13px;
+  min-height: 275px;
+  border: 1px solid rgba(203, 213, 225, 0.92);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+  padding: 18px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.check-ad-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #0f172a, rgba(15, 23, 42, 0.18), transparent);
+  opacity: 0.78;
 }
 
 .check-ad-card:hover,
 .check-trending-card:hover {
-  transform: translateY(-6px) rotateX(1deg);
-  border-color: rgba(31, 111, 255, 0.28);
-  box-shadow: 0 28px 58px rgba(7, 21, 47, 0.15), 0 0 28px rgba(31, 111, 255, 0.08);
+  transform: translateY(-5px);
+  border-color: rgba(15, 23, 42, 0.26);
+  box-shadow: 0 24px 52px rgba(15, 23, 42, 0.13);
 }
 
 .check-empty-listing {
@@ -2529,90 +2540,110 @@ cite {
   font-size: clamp(20px, 3vw, 28px);
 }
 
+.check-ad-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .check-ad-image {
   position: relative;
+  overflow: hidden;
   display: grid;
   place-items: center;
-  min-height: 178px;
-  border-radius: 14px;
-  background: #f2f5f8;
-  color: #ffffff;
-  overflow: hidden;
-}
-
-.check-ad-image.red {
-  background: linear-gradient(135deg, #ff4d47, #d92c27);
-}
-
-.check-ad-image.violet {
-  background: linear-gradient(135deg, #ffffff, #f2f0ff);
-  color: #5a35bc;
-}
-
-.check-ad-image.blue {
-  background: linear-gradient(135deg, #eef2ff, #ffffff);
-  color: #4d5bb3;
+  flex: 0 0 auto;
+  width: 58px;
+  height: 58px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
 }
 
 .check-ad-image.has-photo {
-  background: #0f172a;
+  background: #f8fafc;
 }
 
 .check-ad-image.has-photo::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 42%, rgba(8, 18, 34, 0.62));
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: inherit;
   pointer-events: none;
 }
 
 .check-ad-image img {
   width: 100%;
   height: 100%;
-  min-height: 178px;
   object-fit: cover;
-  transition: transform 220ms ease, filter 220ms ease;
+  filter: grayscale(1) contrast(1.05);
+  transition: filter 220ms ease, transform 220ms ease;
 }
 
 .check-ad-card:hover .check-ad-image img {
-  filter: saturate(1.05) contrast(1.04);
-  transform: scale(1.06);
+  filter: grayscale(0.2) contrast(1.04);
+  transform: scale(1.04);
 }
 
 .check-ad-image span {
-  font-size: 42px;
-  font-weight: 900;
+  font-size: 17px;
+  font-weight: 950;
 }
 
-.check-ad-image b,
-.check-no-image b {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.48);
-  color: #ffffff;
-  z-index: 2;
-  padding: 6px 8px;
+.check-ad-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.05em;
+  padding: 6px 10px;
+  text-transform: uppercase;
 }
 
 .check-ad-card small {
-  color: #7a7f88;
+  color: #64748b;
+  font-size: 12px;
   font-weight: 900;
+  line-height: 1.35;
 }
 
 .check-ad-card h3,
 .check-trending-card h3 {
   margin: 0;
-  color: var(--check-ink);
-  font-size: 17px;
+  color: #0f172a;
+  font-size: 20px;
+  line-height: 1.15;
 }
 
 .check-ad-card p,
 .check-trending-card p {
-  color: #7a7f88;
+  margin: 0;
+  color: #475569;
   font-size: 13px;
   font-weight: 700;
   line-height: 1.55;
+}
+
+.check-ad-meta {
+  display: grid;
+  gap: 7px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 12px;
+}
+
+.check-ad-meta span {
+  color: #334155;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
 }
 
 .check-ad-card a,
@@ -2620,10 +2651,12 @@ cite {
   display: grid;
   place-items: center;
   align-self: end;
-  min-height: 42px;
-  border: 1px solid #ccd3dd;
-  border-radius: 10px;
-  color: var(--check-blue);
+  min-height: 40px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  border-radius: 8px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 12px;
   font-weight: 900;
   text-transform: uppercase;
   transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, color 180ms ease;
@@ -2632,8 +2665,8 @@ cite {
 .check-ad-card a:hover,
 .check-trending-card a:hover {
   transform: translateY(-2px);
-  border-color: transparent;
-  background: linear-gradient(135deg, #174ea6, var(--check-blue));
+  border-color: #0f172a;
+  background: #111827;
   color: #ffffff;
 }
 
