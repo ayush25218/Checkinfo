@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createCategoryExperience, slugifyCategory, type CategoryExperience } from "./categoryExperience";
 
 type CategoryTransitionGridProps = {
@@ -70,7 +71,11 @@ function CorporateCategoryIcon({ type }: { type: string }) {
 }
 
 export function CategoryTransitionGrid({ categories }: CategoryTransitionGridProps) {
+  const stripRef = useRef<HTMLDivElement | null>(null);
   const [adminCategories, setAdminCategories] = useState<CategoryExperience[]>([]);
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [slideStep, setSlideStep] = useState(0);
+  const [isResetting, setIsResetting] = useState(false);
   const allowedCategorySlugs = useMemo(() => new Set(categories.map((category) => category.slug)), [categories]);
   const visibleCategories = useMemo(() => {
     const merged = new Map(categories.map((category) => [category.slug, category]));
@@ -79,6 +84,10 @@ export function CategoryTransitionGrid({ categories }: CategoryTransitionGridPro
     });
     return [...merged.values()];
   }, [adminCategories, allowedCategorySlugs, categories]);
+  const carouselCategories = useMemo(() => {
+    const visibleTail = visibleCategories.slice(0, 6);
+    return [...visibleCategories, ...visibleTail];
+  }, [visibleCategories]);
 
   useEffect(() => {
     try {
@@ -96,18 +105,64 @@ export function CategoryTransitionGrid({ categories }: CategoryTransitionGridPro
     }
   }, [allowedCategorySlugs]);
 
+  useEffect(() => {
+    setSlideIndex(0);
+  }, [visibleCategories.length]);
+
+  useEffect(() => {
+    function measureSlideStep() {
+      const card = stripRef.current?.querySelector<HTMLElement>(".check-category-card");
+      if (!card) return;
+
+      const gap = Number.parseFloat(window.getComputedStyle(stripRef.current as HTMLElement).columnGap || "14");
+      setSlideStep(card.getBoundingClientRect().width + gap);
+    }
+
+    measureSlideStep();
+    window.addEventListener("resize", measureSlideStep);
+    return () => window.removeEventListener("resize", measureSlideStep);
+  }, [carouselCategories.length]);
+
+  useEffect(() => {
+    if (visibleCategories.length < 2) return undefined;
+
+    const timer = window.setInterval(() => {
+      setSlideIndex((current) => current + 1);
+    }, 3000);
+
+    return () => window.clearInterval(timer);
+  }, [visibleCategories.length]);
+
+  useEffect(() => {
+    if (!visibleCategories.length || slideIndex !== visibleCategories.length) return undefined;
+
+    const resetTimer = window.setTimeout(() => {
+      setIsResetting(true);
+      setSlideIndex(0);
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => setIsResetting(false));
+      });
+    }, 680);
+
+    return () => window.clearTimeout(resetTimer);
+  }, [slideIndex, visibleCategories.length]);
+
   function rememberCategory(category: CategoryExperience) {
     window.sessionStorage.setItem("checkinfo:lastCategory", JSON.stringify(category));
   }
 
   return (
     <div className="check-category-stage">
-      <div className="check-category-strip">
-        {visibleCategories.map((category) => (
+      <div
+        ref={stripRef}
+        className={`check-category-strip${isResetting ? " is-resetting" : ""}`}
+        style={{ transform: `translate3d(-${slideIndex * slideStep}px, 0, 0)` } as CSSProperties}
+      >
+        {carouselCategories.map((category, index) => (
           <a
             className="check-category-card"
             href={`/category/${category.slug}`}
-            key={category.slug}
+            key={`${category.slug}-${index}`}
             onClick={() => rememberCategory(category)}
           >
             <span className="check-category-main">
