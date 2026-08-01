@@ -14,6 +14,20 @@ const footerLinks = {
 
 const trendingSearches = ["Website Developer", "Restaurants near me", "Hospitals", "Hotels", "Schools", "Bank"];
 
+const cityHighlights = [
+  ["Delhi NCR", "Verified businesses, services, and local enquiries.", "/search?location=Delhi"],
+  ["Mumbai", "Manufacturing, food, finance, and trade listings.", "/search?location=Mumbai"],
+  ["Bengaluru", "IT, startups, home services, and corporate vendors.", "/search?location=Bengaluru"],
+  ["Hyderabad", "Healthcare, training, fitness, and business services.", "/search?location=Hyderabad"],
+];
+
+const templateFeatures = [
+  ["Verified discovery", "Buyer-ready business pages with city and subcity SEO slugs."],
+  ["Owner panel", "Business owners can submit and manage listings from a protected panel."],
+  ["Admin approval", "Admin reviews every submitted business before it appears publicly."],
+  ["Search-first UX", "Category, city, and trending search pages stay connected."],
+];
+
 function GoogleAdSlot({ label, slot }: { label: string; slot: string }) {
   return (
     <aside className="ad-slot" aria-label={label}>
@@ -90,12 +104,68 @@ export async function HomePage() {
 
       <GoogleAdSlot label="Top homepage advertisement" slot="1111111111" />
 
+      <section className="check-template-mix" aria-label="Featured local discovery">
+        <div className="check-template-copy">
+          <p className="eyebrow">New directory experience</p>
+          <h2>Old Checkinfo trust, new premium listing discovery.</h2>
+          <p>
+            Hero and footer keep the original Checkinfo identity, while the
+            middle journey now feels like a modern listing template with rich
+            images, city discovery, category paths, and admin-approved business
+            cards.
+          </p>
+          <div className="check-template-feature-grid">
+            {templateFeatures.map(([title, text]) => (
+              <article key={title}>
+                <strong>{title}</strong>
+                <span>{text}</span>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="check-template-showcase">
+          <span className="check-template-orbit" aria-hidden="true" />
+          {featured.slice(0, 2).map((listing, index) => (
+            <article className={`check-template-float-card float-${index + 1}`} key={listing.id}>
+              <div className="check-template-float-image">
+                {listing.image ? <img src={listing.image} alt={listing.name || "Featured listing"} /> : <span>{(listing.name || "CI").slice(0, 2).toUpperCase()}</span>}
+              </div>
+              <small>{listing.city || "India"} / {listing.badge || "Verified"}</small>
+              <strong>{listing.name}</strong>
+              <a href={listing.publicPath || "#featured"}>View Detail</a>
+            </article>
+          ))}
+          <div className="check-template-search-card">
+            <span>Live discovery</span>
+            <strong>{business.length} approved businesses</strong>
+            <p>Search by business, category, city, or subcity.</p>
+          </div>
+        </div>
+      </section>
+
       <section className="check-section" id="categories">
         <div className="check-section-title">
           <h2>Top Categories by Ads</h2>
           <p>Explore business categories through a clean, high-speed discovery grid.</p>
         </div>
         <CategoryTransitionGrid categories={categoryExperiences} />
+      </section>
+
+      <section className="check-city-discovery" aria-label="Explore city business listings">
+        <div className="check-section-title centered">
+          <p className="eyebrow">Explore by city</p>
+          <h2>Find businesses across high-intent locations.</h2>
+          <p>Template-style image tiles for city pages, powered by the same Checkinfo search routes.</p>
+        </div>
+        <div className="check-city-grid">
+          {cityHighlights.map(([city, text, href], index) => (
+            <a className={`check-city-card city-${index + 1}`} href={href} key={city}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <strong>{city}</strong>
+              <small>{text}</small>
+            </a>
+          ))}
+        </div>
       </section>
 
       <section className="check-featured" id="featured">

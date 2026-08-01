@@ -7,6 +7,7 @@ export type PublicBusinessListing = Partial<MemberListing> & {
   ownerEmail?: string;
   ownerId?: string;
   ownerName?: string;
+  publicPath?: string;
 };
 
 export function slugifyLocationPart(value = "") {
