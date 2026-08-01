@@ -31,12 +31,12 @@ export default async function VisitorLoginPage({
         <form className="auth-form" action="/api/auth/login" method="post" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <input name="role" type="hidden" value="user" />
           <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: "0.875rem", fontWeight: "500" }}>
-            <span>Username</span>
-            <input autoComplete="username" name="username" defaultValue={demo.username} placeholder={demo.username} required style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.95rem" }} />
+            <span>Username / Email</span>
+            <input autoComplete="username" name="username" placeholder="Enter username or email" required style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.95rem" }} />
           </label>
           <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: "0.875rem", fontWeight: "500" }}>
             <span>Password</span>
-            <input autoComplete="current-password" name="password" defaultValue={demo.password} placeholder="Password" required type="password" style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.95rem" }} />
+            <input autoComplete="current-password" name="password" placeholder="Enter password" required type="password" style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.95rem" }} />
           </label>
           <button type="submit" style={{ padding: "0.75rem", borderRadius: "6px", background: "#0284c7", color: "#fff", fontWeight: "600", border: "none", cursor: "pointer", fontSize: "1rem" }}>
             Login as Visitor

@@ -27,12 +27,12 @@ export default async function MemberLoginPage({
         <form className="auth-form" action="/api/auth/login" method="post">
           <input name="role" type="hidden" value="member" />
           <label>
-            <span>Username</span>
-            <input autoComplete="username" defaultValue={demo.username} name="username" placeholder={demo.username} required />
+            <span>Username / Email</span>
+            <input autoComplete="username" name="username" placeholder="Enter username or email" required />
           </label>
           <label>
             <span>Password</span>
-            <input autoComplete="current-password" defaultValue={demo.password} name="password" placeholder="Password" required type="password" />
+            <input autoComplete="current-password" name="password" placeholder="Enter password" required type="password" />
           </label>
           <button type="submit">Login to Business Member Panel</button>
         </form>

@@ -26,11 +26,11 @@ export default async function AdminLoginPage({
           <input name="role" type="hidden" value="admin" />
           <label>
             <span>Username</span>
-            <input autoComplete="username" name="username" placeholder={demo.username} required />
+            <input autoComplete="username" name="username" placeholder="Enter admin username" required />
           </label>
           <label>
             <span>Password</span>
-            <input autoComplete="current-password" name="password" placeholder="Password" required type="password" />
+            <input autoComplete="current-password" name="password" placeholder="Enter admin password" required type="password" />
           </label>
           <button type="submit">Login to Admin</button>
         </form>
