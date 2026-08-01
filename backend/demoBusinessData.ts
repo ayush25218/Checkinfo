@@ -13,6 +13,19 @@ const demoRecords = [
   ["demo-user-10", "Sara Khan", "sara.khan@example.com", "9810001010", "sara-khan", "GlowFit Wellness", "Beauty, Fitness, Sports and Personal Services", "Fitness and Sports", "Gym or fitness center", "Telangana", "Hyderabad", "Madhapur", "Premium gym, yoga classes, personal training, and wellness programs."],
 ] as const;
 
+const listingImages = [
+  "/fioxen/assets/images/listing/listing-grid-1.jpg",
+  "/fioxen/assets/images/listing/listing-grid-2.jpg",
+  "/fioxen/assets/images/listing/listing-grid-3.jpg",
+  "/fioxen/assets/images/listing/listing-grid-4.jpg",
+  "/fioxen/assets/images/listing/listing-grid-5.jpg",
+  "/fioxen/assets/images/listing/listing-grid-6.jpg",
+  "/fioxen/assets/images/listing/listing-grid-7.jpg",
+  "/fioxen/assets/images/listing/listing-grid-8.jpg",
+  "/fioxen/assets/images/listing/listing-grid-9.jpg",
+  "/fioxen/assets/images/listing/listing-grid-10.jpg",
+];
+
 function isoDaysAgo(days: number) {
   const date = new Date("2026-07-30T10:00:00.000Z");
   date.setDate(date.getDate() - days);
@@ -37,6 +50,7 @@ export const demoMemberAccounts: MemberAccount[] = demoRecords.map((record, inde
         contactPerson: name,
         description,
         email,
+        image: listingImages[index],
         keywords: [businessType, subcategory, category, city, subcity].join(", "),
         location: [subcity, city, state].join(", "),
         mobile: phone,

@@ -5,8 +5,8 @@ export function BusinessCard({ listing }: { listing: PublicBusinessListing }) {
 
   return (
     <article className="check-ad-card">
-      <div className="check-ad-image blue">
-        <span>{(listing.name || "CI").slice(0, 2).toUpperCase()}</span>
+      <div className={listing.image ? "check-ad-image has-photo" : "check-ad-image blue"}>
+        {listing.image ? <img src={listing.image} alt={listing.name || "Business listing"} loading="lazy" /> : <span>{(listing.name || "CI").slice(0, 2).toUpperCase()}</span>}
         <b>{listing.badge || "Verified"}</b>
       </div>
       <small>{listing.businessType || listing.subcategory || listing.category || "Business"}{location ? ` / ${location}` : ""}</small>

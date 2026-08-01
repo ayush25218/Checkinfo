@@ -278,6 +278,7 @@ function buildBusinessFromMembers(members: MemberAccount[]) {
       contact: listing.mobile || listing.email,
       details: listing.description || listing.keywords,
       id: listing.id,
+      image: listing.image,
       location: listingLocationText(listing),
       mobile: listing.mobile,
       name: listing.name,
@@ -297,7 +298,7 @@ function buildBusinessFromMembers(members: MemberAccount[]) {
 export function getAdminResource(resource = "dashboard") {
   const store = getStore();
   const localMembers = Object.values(store.members);
-  const members = localMembers.length ? localMembers : demoMemberAccounts;
+  const members = localMembers.some((member) => member.listings.length) ? localMembers : demoMemberAccounts;
   const business = buildBusinessFromMembers(members);
 
   if (resource === "dashboard") {
@@ -546,7 +547,7 @@ export async function getAdminResourceAsync(resource = "dashboard") {
   } catch {
     members = demoMemberAccounts;
   }
-  if (members.length === 0) members = demoMemberAccounts;
+  if (members.length === 0 || !members.some((member) => member.listings.length)) members = demoMemberAccounts;
   const business = buildBusinessFromMembers(members);
 
   if (resource === "dashboard") {

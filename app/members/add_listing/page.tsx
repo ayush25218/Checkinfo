@@ -1,5 +1,5 @@
-import { FioxenPage } from "@/frontend/fioxen/FioxenPage";
+import { AddListingModule } from "@/frontend/member/MemberWorkingModules";
 
 export default function AddListingPage() {
-  return <FioxenPage file="add-listing.html" />;
+  return <AddListingModule />;
 }

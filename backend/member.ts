@@ -5,6 +5,7 @@ export type MemberListing = {
   contactPerson: string;
   description: string;
   email: string;
+  image?: string;
   keywords: string;
   addressProofName?: string;
   businessType: string;

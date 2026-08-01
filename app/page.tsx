@@ -1,5 +1,5 @@
-import { FioxenPage } from "@/frontend/fioxen/FioxenPage";
+import { HomePage } from "@/frontend/web/HomePage";
 
 export default function Page() {
-  return <FioxenPage file="index.html" />;
+  return <HomePage />;
 }
