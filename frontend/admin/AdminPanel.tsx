@@ -15,24 +15,27 @@ export function AdminShell({
   return (
     <main className="admin-shell">
       <aside className="admin-sidebar">
-        <a className="admin-logo" href="/admin">
-          <span className="admin-logo-mark">CI</span>
-          <span>
-            <strong>Checkinfo</strong>
-            <small>Administrator Area</small>
-          </span>
-        </a>
         <AdminSidebarNav active={active} groups={adminGroups} />
       </aside>
       <section className="admin-workspace">
         <div className="admin-topbar">
-          <div>
-            <strong>Checkinfo Control Center</strong>
-            <span>Manage listings, taxonomy, members, locations, and content.</span>
+          <div className="admin-topbar-brand">
+            <button className="admin-menu-button" type="button" aria-label="Admin menu">
+              <span />
+              <span />
+              <span />
+            </button>
+            <a className="admin-logo" href="/admin">
+              <span className="admin-logo-symbol">i</span>
+              <span className="admin-logo-text">
+                <strong>Checkinfo</strong>
+                <small>CHECK KIYA KYA?</small>
+              </span>
+            </a>
           </div>
           <div className="admin-topbar-actions">
-            <a href="/">Website</a>
-            <a href="/api/auth/logout?role=admin">Logout</a>
+            <span>You are logged in as <strong>administrator</strong></span>
+            <a aria-label="Logout" href="/api/auth/logout?role=admin">Logout</a>
           </div>
         </div>
         <AdminFormAutoToggle />
