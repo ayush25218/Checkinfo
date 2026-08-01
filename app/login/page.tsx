@@ -28,15 +28,17 @@ export default async function VisitorLoginPage({
         
         {error ? <p className="auth-error" style={{ background: "#fef2f2", color: "#dc2626", padding: "0.75rem", borderRadius: "6px", fontSize: "0.875rem", marginBottom: "1rem" }}>{error}</p> : null}
         
-        <form className="auth-form" action="/api/auth/login" method="post" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <form className="auth-form" action="/api/auth/login" method="post" autoComplete="off" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <input name="role" type="hidden" value="user" />
+          <input type="text" name="fake_username_remember" style={{ display: "none" }} tabIndex={-1} />
+          <input type="password" name="fake_password_remember" style={{ display: "none" }} tabIndex={-1} />
           <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: "0.875rem", fontWeight: "500" }}>
             <span>Username / Email</span>
-            <input autoComplete="username" name="username" placeholder="Enter username or email" required style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.95rem" }} />
+            <input autoComplete="off" name="username" placeholder="Enter username or email" required style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.95rem" }} />
           </label>
           <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: "0.875rem", fontWeight: "500" }}>
             <span>Password</span>
-            <input autoComplete="current-password" name="password" placeholder="Enter password" required type="password" style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.95rem" }} />
+            <input autoComplete="new-password" name="password" placeholder="Enter password" required type="password" style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.95rem" }} />
           </label>
           <button type="submit" style={{ padding: "0.75rem", borderRadius: "6px", background: "#0284c7", color: "#fff", fontWeight: "600", border: "none", cursor: "pointer", fontSize: "1rem" }}>
             Login as Visitor

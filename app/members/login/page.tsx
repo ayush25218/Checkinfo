@@ -24,15 +24,17 @@ export default async function MemberLoginPage({
           <p>Sign in to access your Business Member Panel: manage listings, review buyer enquiries, update packages, and view customer ratings.</p>
         </div>
         {error ? <p className="auth-error">{error}</p> : null}
-        <form className="auth-form" action="/api/auth/login" method="post">
+        <form className="auth-form" action="/api/auth/login" method="post" autoComplete="off">
           <input name="role" type="hidden" value="member" />
+          <input type="text" name="fake_username_remember" style={{ display: "none" }} tabIndex={-1} />
+          <input type="password" name="fake_password_remember" style={{ display: "none" }} tabIndex={-1} />
           <label>
             <span>Username / Email</span>
-            <input autoComplete="username" name="username" placeholder="Enter username or email" required />
+            <input autoComplete="off" name="username" placeholder="Enter username or email" required />
           </label>
           <label>
             <span>Password</span>
-            <input autoComplete="current-password" name="password" placeholder="Enter password" required type="password" />
+            <input autoComplete="new-password" name="password" placeholder="Enter password" required type="password" />
           </label>
           <button type="submit">Login to Business Member Panel</button>
         </form>
