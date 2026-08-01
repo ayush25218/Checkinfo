@@ -4,6 +4,16 @@ import { useState } from "react";
 
 type AdminGroup = readonly [string, readonly (readonly [string, string])[]];
 
+const groupMarks: Record<string, string> = {
+  Dashboard: "DB",
+  "Business Management": "BM",
+  "Members Management": "MM",
+  Newsletter: "NL",
+  "Manage Admin": "AD",
+  "Locations Management": "LM",
+  "Other Management": "OM",
+};
+
 export function AdminSidebarNav({
   active,
   groups,
@@ -39,7 +49,10 @@ export function AdminSidebarNav({
               onClick={() => toggleGroup(group)}
               type="button"
             >
-              <span>{group}</span>
+              <span className="admin-nav-label">
+                <i aria-hidden="true">{groupMarks[group] ?? group.slice(0, 2).toUpperCase()}</i>
+                <span>{group}</span>
+              </span>
               <b aria-hidden="true">+</b>
             </button>
             <div className="admin-submenu" hidden={!isOpen}>

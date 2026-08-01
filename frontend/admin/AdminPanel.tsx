@@ -15,12 +15,27 @@ export function AdminShell({
     <main className="admin-shell">
       <aside className="admin-sidebar">
         <a className="admin-logo" href="/admin">
-          <strong>Checkinfo</strong>
-          <span>Administrator Area</span>
+          <span className="admin-logo-mark">CI</span>
+          <span>
+            <strong>Checkinfo</strong>
+            <small>Administrator Area</small>
+          </span>
         </a>
         <AdminSidebarNav active={active} groups={adminGroups} />
       </aside>
-      <section className="admin-main">{children}</section>
+      <section className="admin-workspace">
+        <div className="admin-topbar">
+          <div>
+            <strong>Checkinfo Control Center</strong>
+            <span>Manage listings, taxonomy, members, locations, and content.</span>
+          </div>
+          <div className="admin-topbar-actions">
+            <a href="/">Website</a>
+            <a href="/api/auth/logout?role=admin">Logout</a>
+          </div>
+        </div>
+        <section className="admin-main">{children}</section>
+      </section>
     </main>
   );
 }
@@ -28,6 +43,9 @@ export function AdminShell({
 export function AdminHeader({ page }: { page: AdminPageConfig }) {
   return (
     <header className="admin-header">
+      <div className="admin-header-icon" aria-hidden="true">
+        {page.title.slice(0, 2).toUpperCase()}
+      </div>
       <div>
         <span>{page.group}</span>
         <h1>{page.title}</h1>

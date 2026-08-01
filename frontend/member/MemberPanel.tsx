@@ -36,7 +36,7 @@ export function MemberShell({
     <main className="account-shell">
       <aside className="account-sidebar">
         <a className="brand account-brand" href="/">
-          <span className="brand-mark">CI</span>
+          <span className="brand-mark account-brand-mark">CI</span>
           <span>
             <strong>Checkinfo</strong>
             <small>Member panel</small>
@@ -64,7 +64,19 @@ export function MemberShell({
         </nav>
       </aside>
 
-      <section className="account-main">{children}</section>
+      <section className="account-workspace">
+        <div className="member-topbar">
+          <div>
+            <strong>Member Business Center</strong>
+            <span>Create listings, track approvals, manage enquiries, and update profile data.</span>
+          </div>
+          <div className="member-topbar-actions">
+            <a href="/">Website</a>
+            <a href="/api/auth/logout?role=member">Logout</a>
+          </div>
+        </div>
+        <section className="account-main">{children}</section>
+      </section>
     </main>
   );
 }
