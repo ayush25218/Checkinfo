@@ -6268,3 +6268,23 @@ cite {
   color: #ffffff;
   box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
 }
+
+/* Admin typography lock */
+.auth-page-admin,
+.auth-page-admin *,
+.admin-shell,
+.admin-shell *,
+.admin-dashboard-container,
+.admin-dashboard-container * {
+  font-family: Calibri, "Segoe UI", Arial, sans-serif !important;
+}
+
+.admin-shell input,
+.admin-shell select,
+.admin-shell textarea,
+.admin-shell button,
+.admin-shell a,
+.auth-page-admin input,
+.auth-page-admin button {
+  font-family: Calibri, "Segoe UI", Arial, sans-serif !important;
+}
