@@ -112,7 +112,7 @@ type StaticPageRecord = {
   updatedAt: string;
 };
 
-type EnquiryRecord = {
+export type EnquiryRecord = {
   _id: string;
   createdAt: string;
   email: string;

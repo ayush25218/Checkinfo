@@ -44,6 +44,7 @@ import {
   deleteMongoStaticPageById,
   // Enquiries
   listMongoEnquiries,
+  type EnquiryRecord,
   bulkUpdateMongoEnquiryStatus,
   deleteMongoEnquiriesByIds,
   // Media
