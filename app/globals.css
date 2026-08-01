@@ -5361,8 +5361,9 @@ cite {
     radial-gradient(circle at 100% 0%, rgba(61, 141, 214, 0.12), transparent 28%),
     linear-gradient(180deg, #e9edf3 0%, #f5f7fa 100%);
   color: #3b4454;
-  font-family: "Open Sans", Arial, sans-serif;
+  font-family: Calibri, "Segoe UI", Arial, sans-serif;
   font-size: 13px;
+  font-weight: 400;
 }
 
 .admin-sidebar,
@@ -5400,7 +5401,7 @@ cite {
   box-shadow: 0 8px 18px rgba(28, 137, 221, 0.3);
   color: #ffffff !important;
   font-size: 15px !important;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .admin-logo span:not(.admin-logo-mark),
@@ -5412,7 +5413,8 @@ cite {
 .admin-logo strong,
 .account-brand strong {
   color: #ffffff;
-  font-size: 17px;
+  font-size: 16px;
+  font-weight: 600;
   letter-spacing: 0;
 }
 
@@ -5420,7 +5422,7 @@ cite {
 .account-brand small {
   color: #98a6b8;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 500;
   text-transform: uppercase;
 }
 
@@ -5434,8 +5436,9 @@ cite {
   border-radius: 3px;
   background: transparent;
   color: #b8c3d1;
-  font-size: 13px;
-  font-weight: 800;
+  font-family: Calibri, "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
   letter-spacing: 0;
   padding: 11px 12px;
 }
@@ -5456,7 +5459,7 @@ cite {
   color: #75c7ff;
   font-size: 10px;
   font-style: normal;
-  font-weight: 950;
+  font-weight: 600;
 }
 
 .admin-nav-toggle b {
@@ -5491,8 +5494,9 @@ cite {
 .admin-nav-group a {
   border-radius: 3px;
   color: #aab6c6;
-  font-size: 12px;
-  font-weight: 750;
+  font-family: Calibri, "Segoe UI", Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
   padding: 8px 10px;
 }
 
@@ -5549,14 +5553,14 @@ cite {
 .member-topbar strong {
   color: #2f3a4a;
   font-size: 15px;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .admin-topbar span,
 .member-topbar span {
   color: #7b8798;
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 400;
 }
 
 .admin-topbar-actions,
@@ -5572,7 +5576,7 @@ cite {
   background: #f8fafc;
   color: #3c4656;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 500;
   padding: 8px 12px;
 }
 
