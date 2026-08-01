@@ -8,6 +8,17 @@ import type {
   SupportTicket,
 } from "./member";
 
+export type UserAccount = {
+  _id?: string;
+  createdAt: string;
+  email: string;
+  name: string;
+  passwordHash: string;
+  phone: string;
+  role: "user";
+  username: string;
+};
+
 export type MemberProfile = {
   email: string;
   id: string;
@@ -26,6 +37,7 @@ export type MemberAccount = {
   loggedOutAt: string | null;
   notifications: MemberNotification[];
   packageName: string;
+  passwordHash?: string;
   passwordUpdatedAt: string | null;
   profile: MemberProfile;
   registeredAt: string;
@@ -193,6 +205,7 @@ export async function getMongoCollections() {
     staticPages: db.collection<StaticPageRecord>("static_pages"),
     subadmins: db.collection<SubadminRecord>("subadmins"),
     testimonials: db.collection<TestimonialRecord>("testimonials"),
+    users: db.collection<UserAccount>("users"),
   };
 }
 
@@ -242,7 +255,131 @@ async function ensureIndexes(collections: Awaited<ReturnType<typeof getMongoColl
     collections.staticPages.createIndex({ slug: 1 }, { unique: true }),
     collections.subadmins.createIndex({ username: 1 }, { unique: true }),
     collections.testimonials.createIndex({ displayOrder: 1 }),
+    collections.users.createIndex({ username: 1 }, { unique: true }),
+    collections.users.createIndex({ email: 1 }, { unique: true }),
   ]);
+}
+
+// ─── User Accounts (Visitor Role) ──────────────────────────────────────────────
+
+export async function getMongoUserByUsernameOrEmail(identifier: string): Promise<UserAccount | null> {
+  if (!isMongoConfigured() || !identifier) return null;
+  const { users } = await getMongoCollections();
+  const query = identifier.trim().toLowerCase();
+  return users.findOne({
+    $or: [{ username: query }, { email: query }],
+  });
+}
+
+export async function createMongoUser(data: {
+  email: string;
+  name: string;
+  passwordHash: string;
+  phone: string;
+  username: string;
+}): Promise<UserAccount> {
+  const { users } = await getMongoCollections();
+  const now = new Date().toISOString();
+  const username = data.username.trim().toLowerCase();
+  const email = data.email.trim().toLowerCase();
+
+  const userDoc: UserAccount = {
+    _id: username,
+    createdAt: now,
+    email,
+    name: data.name,
+    passwordHash: data.passwordHash,
+    phone: data.phone,
+    role: "user",
+    username,
+  };
+
+  await users.updateOne(
+    { username },
+    { $set: userDoc, $setOnInsert: { _id: username } },
+    { upsert: true },
+  );
+
+  return userDoc;
+}
+
+// ─── Member Account Lookup By Username or Email ────────────────────────────────
+
+export async function getMongoMemberByUsernameOrEmail(identifier: string): Promise<MemberAccount | null> {
+  if (!isMongoConfigured() || !identifier) return null;
+  const { members } = await getMongoCollections();
+  const query = identifier.trim().toLowerCase();
+
+  return members.findOne({
+    $or: [
+      { _id: query },
+      { "profile.username": query },
+      { "profile.email": query },
+    ],
+  });
+}
+
+// ─── Seed Initial Default Auth Accounts in MongoDB ──────────────────────────────
+
+export async function seedMongoAuthAccounts(hashPasswordFn: (password: string) => string) {
+  if (!isMongoConfigured()) return;
+  const { adminSettings, users, members } = await getMongoCollections();
+
+  // 1. Seed Admin account passwordHash in site settings if not present
+  const adminDoc = await adminSettings.findOne({ _id: "site" });
+  if (!adminDoc?.passwordHash) {
+    const defaultAdminPass = process.env.ADMIN_LOGIN_PASSWORD || "admin123";
+    await adminSettings.updateOne(
+      { _id: "site" },
+      { $set: { passwordHash: hashPasswordFn(defaultAdminPass), updatedAt: new Date().toISOString() }, $setOnInsert: { _id: "site" } },
+      { upsert: true },
+    );
+  }
+
+  // 2. Seed Visitor user account if not present
+  const defaultUserIdent = (process.env.USER_LOGIN_USERNAME || "user").toLowerCase();
+  const existingUser = await users.findOne({ username: defaultUserIdent });
+  if (!existingUser) {
+    const defaultUserPass = process.env.USER_LOGIN_PASSWORD || "user123";
+    await users.updateOne(
+      { username: defaultUserIdent },
+      {
+        $set: {
+          createdAt: new Date().toISOString(),
+          email: "user@checkinfo.in",
+          name: "Default Visitor User",
+          passwordHash: hashPasswordFn(defaultUserPass),
+          phone: "9876543210",
+          role: "user",
+          username: defaultUserIdent,
+        },
+        $setOnInsert: { _id: defaultUserIdent },
+      },
+      { upsert: true },
+    );
+  }
+
+  // 3. Seed Business member account if not present
+  const defaultMemberIdent = (process.env.MEMBER_LOGIN_USERNAME || "member").toLowerCase();
+  const existingMember = await members.findOne({
+    $or: [{ _id: defaultMemberIdent }, { "profile.username": defaultMemberIdent }],
+  });
+
+  if (!existingMember || !existingMember.passwordHash) {
+    const defaultMemberPass = process.env.MEMBER_LOGIN_PASSWORD || "member123";
+    const memberId = defaultMemberIdent;
+    const baseAccount = existingMember || emptyMemberAccount(memberId);
+
+    baseAccount.passwordHash = hashPasswordFn(defaultMemberPass);
+    baseAccount.profile.username = defaultMemberIdent;
+    baseAccount.profile.email = baseAccount.profile.email || "member@checkinfo.in";
+
+    await members.updateOne(
+      { _id: memberId },
+      { $set: baseAccount, $setOnInsert: { _id: memberId } },
+      { upsert: true },
+    );
+  }
 }
 
 export async function seedMongoDatabase() {

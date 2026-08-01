@@ -88,29 +88,60 @@ export function validCredentials(role: AuthRole, username: string, password: str
 // ─── Async helpers (DB-backed password for admin) ─────────────────────────────
 
 export async function validCredentialsAsync(role: AuthRole, username: string, password: string): Promise<boolean> {
-  // Sync check first (env var credentials always work)
+  // Sync fallback check first
   if (validCredentials(role, username, password)) return true;
 
-  // For admin: also check DB-stored password hash
-  if (role === "admin") {
-    try {
-      const { isMongoConfigured, getMongoAdminPasswordHash } = await import("./mongodb");
-      if (!isMongoConfigured()) return false;
+  try {
+    const {
+      isMongoConfigured,
+      getMongoAdminPasswordHash,
+      getMongoUserByUsernameOrEmail,
+      getMongoMemberByUsernameOrEmail,
+      seedMongoAuthAccounts,
+    } = await import("./mongodb");
 
+    if (!isMongoConfigured()) return false;
+
+    // Auto-seed initial default accounts into MongoDB if missing
+    await seedMongoAuthAccounts(hashPassword);
+
+    const givenHash = hashPassword(password);
+    const cleanUsername = username.trim().toLowerCase();
+
+    if (role === "admin") {
       const storedHash = await getMongoAdminPasswordHash();
       if (!storedHash) return false;
 
-      const expectedUsername = process.env.ADMIN_LOGIN_USERNAME || "admin";
-      if (username.trim() !== expectedUsername) return false;
+      const expectedUsername = (process.env.ADMIN_LOGIN_USERNAME || "admin").toLowerCase();
+      if (cleanUsername !== expectedUsername) return false;
 
-      const givenHash = hashPassword(password);
       const stored = Buffer.from(storedHash);
       const given = Buffer.from(givenHash);
       if (stored.length !== given.length) return false;
       return timingSafeEqual(stored, given);
-    } catch {
-      return false;
     }
+
+    if (role === "user") {
+      const user = await getMongoUserByUsernameOrEmail(cleanUsername);
+      if (!user || !user.passwordHash) return false;
+
+      const stored = Buffer.from(user.passwordHash);
+      const given = Buffer.from(givenHash);
+      if (stored.length !== given.length) return false;
+      return timingSafeEqual(stored, given);
+    }
+
+    if (role === "member") {
+      const member = await getMongoMemberByUsernameOrEmail(cleanUsername);
+      if (!member || !member.passwordHash) return false;
+
+      const stored = Buffer.from(member.passwordHash);
+      const given = Buffer.from(givenHash);
+      if (stored.length !== given.length) return false;
+      return timingSafeEqual(stored, given);
+    }
+  } catch {
+    return false;
   }
 
   return false;

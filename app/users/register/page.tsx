@@ -1,3 +1,5 @@
+import { hashPassword } from "@/backend/auth";
+import { createMongoUser, isMongoConfigured } from "@/backend/mongodb";
 import { redirect } from "next/navigation";
 
 export default function UserRegisterPage() {
@@ -26,9 +28,20 @@ export default function UserRegisterPage() {
             const name = String(formData.get("name") || "Registered User");
             const email = String(formData.get("email") || "");
             const phone = String(formData.get("phone") || "");
-            
-            // In server action, redirect to login with registered flag
-            redirect(`/users/login?registered=true&email=${encodeURIComponent(email)}`);
+            const password = String(formData.get("password") || "");
+            const username = email.split("@")[0] || email || "user";
+
+            if (isMongoConfigured() && email && password) {
+              await createMongoUser({
+                email,
+                name,
+                passwordHash: hashPassword(password),
+                phone,
+                username,
+              });
+            }
+
+            redirect(`/login?registered=true&email=${encodeURIComponent(email)}`);
           }}
           style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
         >

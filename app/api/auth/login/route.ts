@@ -1,4 +1,4 @@
-import { createSessionToken, getAuthCookieName, validCredentials, type AuthRole } from "@/backend/auth";
+import { createSessionToken, getAuthCookieName, validCredentialsAsync, type AuthRole } from "@/backend/auth";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
   if (!isAuthRole(role)) redirect("/members/login?error=Invalid login role");
 
-  if (!validCredentials(role, username, password)) {
+  if (!(await validCredentialsAsync(role, username, password))) {
     redirect(loginPath(role, "Invalid username or password"));
   }
 
