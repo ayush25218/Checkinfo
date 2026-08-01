@@ -116,10 +116,9 @@ export function CategoryTransitionGrid({ categories }: CategoryTransitionGridPro
               </span>
               <span>
                 <strong>{category.name}</strong>
-                <small>Open category</small>
               </span>
             </span>
-            <span className="check-category-action" aria-hidden="true">View</span>
+            <span className="check-category-action" aria-hidden="true" />
           </a>
         ))}
       </div>
