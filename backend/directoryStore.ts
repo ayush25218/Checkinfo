@@ -300,12 +300,33 @@ export function getAdminResource(resource = "dashboard") {
   const business = buildBusinessFromMembers(members);
 
   if (resource === "dashboard") {
+    const catDistributionMap: Record<string, number> = {};
+    business.forEach((b) => {
+      if (b.category) {
+        catDistributionMap[b.category] = (catDistributionMap[b.category] || 0) + 1;
+      }
+    });
+
+    const categoryDistribution = Object.entries(catDistributionMap)
+      .map(([name, count]) => ({ count, name }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+
     return {
       activeMembers: members.filter((member) => member.profile.status === "Active").length,
-      categories: categories.length,
-      members: members.length,
+      categoriesCount: categories.length,
+      categoryDistribution,
+      membersCount: members.length,
       pendingBusiness: business.filter((listing) => listing.status === "Pending").length,
+      recentEnquiries: [],
+      systemHealth: {
+        dbName: "local_memory",
+        isMongoConfigured: false,
+        lastSync: new Date().toISOString(),
+      },
       totalBusiness: business.length,
+      totalEnquiries: 0,
+      totalUsers: 0,
     };
   }
 
@@ -528,12 +549,64 @@ export async function getAdminResourceAsync(resource = "dashboard") {
   const business = buildBusinessFromMembers(members);
 
   if (resource === "dashboard") {
+    let mongoCategoriesCount = categories.length;
+    let mongoEnquiries: EnquiryRecord[] = [];
+    let mongoUsersCount = 0;
+
+    try {
+      const cats = await listMongoCategories();
+      if (cats.length > 0) mongoCategoriesCount = cats.length;
+    } catch {}
+
+    try {
+      mongoEnquiries = await listMongoEnquiries();
+    } catch {}
+
+    try {
+      const { getMongoCollections } = await import("./mongodb");
+      const collections = await getMongoCollections();
+      mongoUsersCount = await collections.users.countDocuments();
+    } catch {}
+
+    // Compute real category distribution from active listings
+    const catDistributionMap: Record<string, number> = {};
+    business.forEach((b) => {
+      if (b.category) {
+        catDistributionMap[b.category] = (catDistributionMap[b.category] || 0) + 1;
+      }
+    });
+
+    const categoryDistribution = Object.entries(catDistributionMap)
+      .map(([name, count]) => ({ count, name }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+
+    const recentEnquiries = mongoEnquiries.slice(0, 5).map((e) => ({
+      email: e.email,
+      id: e._id,
+      message: e.message,
+      name: e.name,
+      phone: e.phone,
+      receivedAt: e.receivedAt,
+      status: e.status,
+      type: e.type,
+    }));
+
     return {
       activeMembers: members.filter((member) => member.profile.status === "Active").length,
-      categories: categories.length,
-      members: members.length,
+      categoriesCount: mongoCategoriesCount,
+      categoryDistribution,
+      membersCount: members.length,
       pendingBusiness: business.filter((listing) => listing.status === "Pending").length,
+      recentEnquiries,
+      systemHealth: {
+        dbName: process.env.MONGODB_DB?.trim() || "checkinfo",
+        isMongoConfigured: isMongoConfigured(),
+        lastSync: new Date().toISOString(),
+      },
       totalBusiness: business.length,
+      totalEnquiries: mongoEnquiries.length,
+      totalUsers: mongoUsersCount,
     };
   }
 
