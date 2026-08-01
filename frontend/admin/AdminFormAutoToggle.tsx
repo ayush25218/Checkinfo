@@ -3,11 +3,30 @@
 import { useEffect } from "react";
 
 function formLabel(editor: HTMLElement) {
+  const path = window.location.pathname;
+  if (path.includes("newsletter")) return "Add Newsletter";
+  if (path.includes("static-pages")) return "Add Static Page";
+  if (path.includes("contact-enquiries")) return "Reply Contact Enquiry";
+  if (path.includes("business-enquiries")) return "Reply Business Enquiry";
+  if (path.includes("career-enquiries")) return "Reply Career Enquiry";
+  if (path.includes("advertise-enquiries")) return "Reply Advertise Enquiry";
+  if (path.includes("banners")) return "Add Banner";
+  if (path.includes("header-images")) return "Add Header Image";
+  if (path.includes("testimonials")) return "Add Testimonial";
+  if (path.includes("faqs")) return "Add FAQ";
+  if (path.includes("states")) return "Add State";
+  if (path.includes("cities")) return "Add City";
+  if (path.includes("locations")) return "Add Location";
+  if (path.includes("admin-password")) return "Change Password";
+  if (path.includes("admin-settings")) return "Manage Admin Settings";
+  if (path.includes("subadmins")) return "Add Subadmin";
+  if (path.includes("meta")) return "Add Meta Tag";
+  if (path.includes("business")) return "Add Business";
+  if (path.includes("members")) return "Add Member";
+
   if (editor.classList.contains("admin-editor-business")) return "Add Business";
   if (editor.classList.contains("admin-editor-members")) return "Add Member";
   if (editor.classList.contains("admin-editor-location")) {
-    if (window.location.pathname.includes("states")) return "Add State";
-    if (window.location.pathname.includes("cities")) return "Add City";
     return "Add Location";
   }
   if (editor.classList.contains("admin-editor-meta")) return "Add Meta Tag";
@@ -15,16 +34,6 @@ function formLabel(editor: HTMLElement) {
   if (editor.classList.contains("admin-editor-settings")) return "Manage Admin Settings";
   if (editor.classList.contains("admin-editor-password")) return "Change Password";
   if (editor.classList.contains("admin-editor-content")) {
-    const path = window.location.pathname;
-    if (path.includes("static-pages")) return "Add Static Page";
-    if (path.includes("contact-enquiries")) return "Reply Contact Enquiry";
-    if (path.includes("business-enquiries")) return "Reply Business Enquiry";
-    if (path.includes("career-enquiries")) return "Reply Career Enquiry";
-    if (path.includes("advertise-enquiries")) return "Reply Advertise Enquiry";
-    if (path.includes("banners")) return "Add Banner";
-    if (path.includes("header-images")) return "Add Header Image";
-    if (path.includes("testimonials")) return "Add Testimonial";
-    if (path.includes("faqs")) return "Add FAQ";
     const firstLabel = editor.querySelector("label span")?.textContent?.trim();
     return firstLabel ? `Add ${firstLabel}` : "Add Record";
   }
@@ -56,7 +65,7 @@ export function AdminFormAutoToggle() {
           const willOpen = editor.classList.contains("admin-editor-collapsed");
           editor.classList.toggle("admin-editor-collapsed", !willOpen);
           row.classList.toggle("is-open", willOpen);
-          button.textContent = willOpen ? `Hide ${formLabel(editor)}` : formLabel(editor);
+          button.textContent = willOpen ? `Hide ${formLabel(editor)} Form` : formLabel(editor);
         });
 
         row.appendChild(button);
