@@ -81,15 +81,48 @@ export function getExpectedCredentials(role: AuthRole) {
 }
 
 export function validCredentials(role: AuthRole, username: string, password: string) {
-  const expected = getExpectedCredentials(role);
-  return username.trim() === expected.username && password === expected.password;
+  const cleanUsername = username.trim().toLowerCase();
+
+  if (role === "admin") {
+    const expectedUsername = (process.env.ADMIN_LOGIN_USERNAME || "admin").toLowerCase();
+    const envPassword = process.env.ADMIN_LOGIN_PASSWORD;
+    if (cleanUsername === expectedUsername || cleanUsername === "admin") {
+      if (password === "admin123" || (envPassword && password === envPassword)) {
+        return true;
+      }
+    }
+  }
+
+  if (role === "user") {
+    const expectedUsername = (process.env.USER_LOGIN_USERNAME || "user").toLowerCase();
+    const envPassword = process.env.USER_LOGIN_PASSWORD;
+    if (cleanUsername === expectedUsername || cleanUsername === "user" || cleanUsername === "user@checkinfo.in") {
+      if (password === "user123" || (envPassword && password === envPassword)) {
+        return true;
+      }
+    }
+  }
+
+  if (role === "member") {
+    const expectedUsername = (process.env.MEMBER_LOGIN_USERNAME || "member").toLowerCase();
+    const envPassword = process.env.MEMBER_LOGIN_PASSWORD;
+    if (cleanUsername === expectedUsername || cleanUsername === "member" || cleanUsername === "member@checkinfo.in") {
+      if (password === "member123" || (envPassword && password === envPassword)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
-// ─── Async helpers (DB-backed password for admin) ─────────────────────────────
+// ─── Async helpers (DB-backed password for admin, user, member) ──────────────
 
 export async function validCredentialsAsync(role: AuthRole, username: string, password: string): Promise<boolean> {
-  // Sync fallback check first
-  if (validCredentials(role, username, password)) return true;
+  const cleanUsername = username.trim().toLowerCase();
+
+  // 1. Sync check (accepts "admin123"/"user123"/"member123" OR process.env values)
+  if (validCredentials(role, cleanUsername, password)) return true;
 
   try {
     const {
@@ -102,43 +135,39 @@ export async function validCredentialsAsync(role: AuthRole, username: string, pa
 
     if (!isMongoConfigured()) return false;
 
-    // Auto-seed initial default accounts into MongoDB if missing
-    await seedMongoAuthAccounts(hashPassword);
+    // Seed MongoDB auth accounts in background
+    void seedMongoAuthAccounts(hashPassword).catch(() => undefined);
 
     const givenHash = hashPassword(password);
-    const cleanUsername = username.trim().toLowerCase();
 
     if (role === "admin") {
       const storedHash = await getMongoAdminPasswordHash();
       if (!storedHash) return false;
 
       const expectedUsername = (process.env.ADMIN_LOGIN_USERNAME || "admin").toLowerCase();
-      if (cleanUsername !== expectedUsername) return false;
+      if (cleanUsername !== expectedUsername && cleanUsername !== "admin") return false;
 
       const stored = Buffer.from(storedHash);
       const given = Buffer.from(givenHash);
-      if (stored.length !== given.length) return false;
-      return timingSafeEqual(stored, given);
+      if (stored.length === given.length && timingSafeEqual(stored, given)) return true;
     }
 
     if (role === "user") {
       const user = await getMongoUserByUsernameOrEmail(cleanUsername);
-      if (!user || !user.passwordHash) return false;
-
-      const stored = Buffer.from(user.passwordHash);
-      const given = Buffer.from(givenHash);
-      if (stored.length !== given.length) return false;
-      return timingSafeEqual(stored, given);
+      if (user && user.passwordHash) {
+        const stored = Buffer.from(user.passwordHash);
+        const given = Buffer.from(givenHash);
+        if (stored.length === given.length && timingSafeEqual(stored, given)) return true;
+      }
     }
 
     if (role === "member") {
       const member = await getMongoMemberByUsernameOrEmail(cleanUsername);
-      if (!member || !member.passwordHash) return false;
-
-      const stored = Buffer.from(member.passwordHash);
-      const given = Buffer.from(givenHash);
-      if (stored.length !== given.length) return false;
-      return timingSafeEqual(stored, given);
+      if (member && member.passwordHash) {
+        const stored = Buffer.from(member.passwordHash);
+        const given = Buffer.from(givenHash);
+        if (stored.length === given.length && timingSafeEqual(stored, given)) return true;
+      }
     }
   } catch {
     return false;
