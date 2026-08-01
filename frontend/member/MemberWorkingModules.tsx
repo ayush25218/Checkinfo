@@ -464,7 +464,7 @@ export function ChangePasswordModule() {
     if (!form.old || !form.next || !form.confirm) setMessage("All fields are required.");
     else if (form.next.length < 8) setMessage("New password must be at least 8 characters.");
     else if (form.next !== form.confirm) setMessage("New password and confirm password do not match.");
-    else { writeStored("checkinfo-member-password", { updatedAt: new Date().toISOString() }); void postMemberAction("password", { action: "update" }); setForm({ confirm: "", next: "", old: "" }); setMessage("Password validation passed and update saved for this session."); }
+    else { writeStored("checkinfo-member-password", { updatedAt: new Date().toISOString() }); void postMemberAction("password", { action: "update", newPassword: form.next }); setForm({ confirm: "", next: "", old: "" }); setMessage("Password updated successfully in database."); }
   }
   return (
     <MemberShell active="Change Password">

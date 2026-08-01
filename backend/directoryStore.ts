@@ -240,7 +240,12 @@ function mutateMemberAction(account: MemberAccount, resource: string, payload: R
 
   if (resource === "password") {
     account.passwordUpdatedAt = new Date().toISOString();
-    return { passwordUpdatedAt: account.passwordUpdatedAt };
+    const newPass = String(payload.newPassword ?? payload.next ?? payload.password ?? "");
+    if (newPass) {
+      const { hashPassword } = require("./auth");
+      account.passwordHash = hashPassword(newPass);
+    }
+    return { passwordHash: account.passwordHash, passwordUpdatedAt: account.passwordUpdatedAt };
   }
 
   if (resource === "logout") {
@@ -868,6 +873,15 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
       });
       await saveMongoMember(account);
       return { business: await getAdminResourceAsync("business") };
+    }
+  }
+
+  if (resource === "admin-password") {
+    const newPassword = String(payload.newPassword ?? payload.password ?? "");
+    if (newPassword) {
+      const { updateAdminPasswordInDb } = await import("./auth");
+      const ok = await updateAdminPasswordInDb(newPassword);
+      return { ok, saved: ok };
     }
   }
 
