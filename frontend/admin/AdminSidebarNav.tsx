@@ -5,13 +5,13 @@ import { useState } from "react";
 type AdminGroup = readonly [string, readonly (readonly [string, string])[]];
 
 const groupMarks: Record<string, string> = {
-  Dashboard: "DB",
-  "Business Management": "BM",
-  "Members Management": "MM",
-  Newsletter: "NL",
-  "Manage Admin": "AD",
-  "Locations Management": "LM",
-  "Other Management": "OM",
+  Dashboard: "dashboard",
+  "Business Management": "business",
+  "Members Management": "members",
+  Newsletter: "newsletter",
+  "Manage Admin": "settings",
+  "Locations Management": "locations",
+  "Other Management": "folder",
 };
 
 export function AdminSidebarNav({
@@ -49,7 +49,10 @@ export function AdminSidebarNav({
               type="button"
             >
               <span className="admin-nav-label">
-                <i aria-hidden="true">{groupMarks[group] ?? group.slice(0, 2).toUpperCase()}</i>
+                <i
+                  aria-hidden="true"
+                  className={`admin-nav-icon admin-nav-icon-${groupMarks[group] ?? "folder"}`}
+                />
                 <span>{group}</span>
               </span>
               <b aria-hidden="true">+</b>

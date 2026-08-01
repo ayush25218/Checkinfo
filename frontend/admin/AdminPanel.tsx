@@ -15,6 +15,10 @@ export function AdminShell({
   return (
     <main className="admin-shell">
       <aside className="admin-sidebar">
+        <button className="admin-sidebar-close" type="button" aria-label="Close admin sidebar">
+          <span />
+          <span />
+        </button>
         <AdminSidebarNav active={active} groups={adminGroups} />
       </aside>
       <section className="admin-workspace">
