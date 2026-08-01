@@ -5,6 +5,7 @@ import {
   AdminShell,
 } from "@/frontend/admin/AdminPanel";
 import {
+  AdminDashboardModule,
   ChangeAdminPasswordModule,
   ManageAdminSettingsModule,
   ManageEnquiriesModule,
@@ -36,7 +37,9 @@ export default async function AdminPage({
   return (
     <AdminShell active={active}>
       <AdminHeader page={page} />
-      {active === "categories" ? (
+      {active === "dashboard" ? (
+        <AdminDashboardModule />
+      ) : active === "categories" ? (
         <ManageCategoriesModule />
       ) : active === "business" ? (
         <ManageBusinessModule />
