@@ -31,6 +31,14 @@ function transformHtml(html: string) {
   const body = bodyMatch?.[1] ?? html;
 
   return body
+    .replace(
+      /<li class="menu-item has-children"><a href="index\.html"[^>]*>Home<\/a>\s*<ul class="sub-menu">[\s\S]*?<\/ul>\s*<\/li>/gi,
+      '<li class="menu-item"><a href="index.html" class="active">Home</a></li>',
+    )
+    .replace(
+      /<li class="menu-item has-children"><a href="#">Listings<\/a>\s*<ul class="sub-menu">[\s\S]*?<\/ul>\s*<\/li>/gi,
+      '<li class="menu-item"><a href="listing-grid.html">Listing Grid</a></li>',
+    )
     .replace(/<script\b[\s\S]*?<\/script>/gi, "")
     .replace(/(href|src)=["']assets\//gi, '$1="/fioxen/assets/')
     .replace(/url\(["']?assets\//gi, 'url("/fioxen/assets/')
