@@ -4242,6 +4242,28 @@ cite {
   color: #111111;
 }
 
+.admin-form-toggle-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.admin-form-toggle-button {
+  min-height: 38px;
+  border: 1px solid #1f91d0;
+  border-radius: 3px;
+  background: #1f91d0;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 16px;
+}
+
+.admin-form-toggle-button:hover {
+  border-color: #176fa2;
+  background: #176fa2;
+}
+
 .admin-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.45;

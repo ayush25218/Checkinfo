@@ -305,6 +305,7 @@ export function ManageCategoriesModule() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All");
   const [editing, setEditing] = useState<CategoryRecord | null>(null);
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [form, setForm] = useState({
     image: "Image",
     name: "",
@@ -363,6 +364,7 @@ export function ManageCategoriesModule() {
 
   function resetForm() {
     setEditing(null);
+    setShowCategoryForm(false);
     setForm({
       image: "Image",
       name: "",
@@ -411,6 +413,7 @@ export function ManageCategoriesModule() {
 
   function editRecord(record: CategoryRecord) {
     setEditing(record);
+    setShowCategoryForm(true);
     setForm({
       image: record.image,
       name: record.name,
@@ -546,47 +549,62 @@ export function ManageCategoriesModule() {
         </div>
       </div>
 
-      <div className="admin-editor">
-        <label>
-          <span>Category Name</span>
-          <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-        </label>
-        <label>
-          <span>Image</span>
-          <input value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} placeholder="Emoji, icon text, image URL, or file name" />
-        </label>
-        <label>
-          <span>Upload Icon</span>
-          <input accept="image/*" type="file" onChange={(event) => uploadCategoryImage(event.target.files?.[0])} />
-        </label>
-        <div className="admin-category-preview">
-          <span>Preview</span>
-          <strong>
-            {isImageValue(form.image) ? <img alt="" src={categoryImageSource(form.image)} /> : form.image && form.image !== "Image" ? form.image.slice(0, 3) : "Icon"}
-          </strong>
-        </div>
-        <label>
-          <span>Display Order</span>
-          <input value={form.order} onChange={(event) => setForm({ ...form, order: event.target.value })} />
-        </label>
-        <label>
-          <span>Status</span>
-          <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as "Active" | "Inactive" })}>
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
-        </label>
-        <label className="admin-check">
-          <input type="checkbox" checked={form.homeTop} onChange={(event) => setForm({ ...form, homeTop: event.target.checked })} />
-          <span>Home Top</span>
-        </label>
-        <label className="admin-check">
-          <input type="checkbox" checked={form.homeBottom} onChange={(event) => setForm({ ...form, homeBottom: event.target.checked })} />
-          <span>Home Bottom</span>
-        </label>
-        <button type="button" onClick={saveRecord}>{editing ? "Update Category" : "Add Category"}</button>
-        {editing ? <button type="button" className="admin-light-button" onClick={resetForm}>Cancel</button> : null}
+      <div className="admin-form-toggle-row">
+        <button
+          className="admin-form-toggle-button"
+          onClick={() => {
+            if (showCategoryForm && editing) resetForm();
+            else setShowCategoryForm((current) => !current);
+          }}
+          type="button"
+        >
+          {showCategoryForm ? "Hide Category Form" : "Add Category Name"}
+        </button>
       </div>
+
+      {showCategoryForm ? (
+        <div className="admin-editor">
+          <label>
+            <span>Category Name</span>
+            <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+          </label>
+          <label>
+            <span>Image</span>
+            <input value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} placeholder="Emoji, icon text, image URL, or file name" />
+          </label>
+          <label>
+            <span>Upload Icon</span>
+            <input accept="image/*" type="file" onChange={(event) => uploadCategoryImage(event.target.files?.[0])} />
+          </label>
+          <div className="admin-category-preview">
+            <span>Preview</span>
+            <strong>
+              {isImageValue(form.image) ? <img alt="" src={categoryImageSource(form.image)} /> : form.image && form.image !== "Image" ? form.image.slice(0, 3) : "Icon"}
+            </strong>
+          </div>
+          <label>
+            <span>Display Order</span>
+            <input value={form.order} onChange={(event) => setForm({ ...form, order: event.target.value })} />
+          </label>
+          <label>
+            <span>Status</span>
+            <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as "Active" | "Inactive" })}>
+              <option>Active</option>
+              <option>Inactive</option>
+            </select>
+          </label>
+          <label className="admin-check">
+            <input type="checkbox" checked={form.homeTop} onChange={(event) => setForm({ ...form, homeTop: event.target.checked })} />
+            <span>Home Top</span>
+          </label>
+          <label className="admin-check">
+            <input type="checkbox" checked={form.homeBottom} onChange={(event) => setForm({ ...form, homeBottom: event.target.checked })} />
+            <span>Home Bottom</span>
+          </label>
+          <button type="button" onClick={saveRecord}>{editing ? "Update Category" : "Add Category"}</button>
+          <button type="button" className="admin-light-button" onClick={resetForm}>Cancel</button>
+        </div>
+      ) : null}
 
       <div className="admin-actions">
         <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Activate</button>
