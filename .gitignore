@@ -42,3 +42,9 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+
+# local template imports
+/.codex-temp/
+*.zip
+/public/fioxen/assets/php/
+/public/fioxen/assets/scss/

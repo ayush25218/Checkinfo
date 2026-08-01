@@ -1,7 +1,5 @@
-import { HomePage } from "@/frontend/web/HomePage";
-
-export const dynamic = "force-dynamic";
+import { FioxenPage } from "@/frontend/fioxen/FioxenPage";
 
 export default function Page() {
-  return <HomePage />;
+  return <FioxenPage file="index.html" />;
 }
