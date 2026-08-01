@@ -3,6 +3,7 @@ import { CategoryTransitionGrid } from "./CategoryTransitionGrid";
 import { getAllCategoryExperiences } from "./categoryExperience";
 import { BusinessCard } from "./BusinessCard";
 import { getApprovedListings } from "./listingCollections";
+import { DUMMY_BUSINESS_IMAGE } from "./dummyImages";
 import { LocationSearchForm } from "./LocationSearchForm";
 
 import { HeaderUserProfileDropdown } from "./HeaderUserProfileDropdown";
@@ -22,10 +23,10 @@ const cityHighlights = [
 ];
 
 const templateFeatures = [
-  ["Verified discovery", "Buyer-ready business pages with city and subcity SEO slugs."],
-  ["Owner panel", "Business owners can submit and manage listings from a protected panel."],
-  ["Admin approval", "Admin reviews every submitted business before it appears publicly."],
-  ["Search-first UX", "Category, city, and trending search pages stay connected."],
+  ["Business profiles", "Clean listing pages for contact, services, city, and enquiry details."],
+  ["Member submission", "Owners can add a business from the member panel without document pressure."],
+  ["Admin review", "Every new listing stays pending until admin verifies and publishes it."],
+  ["Search reach", "Category, city, and location pages help customers discover the right business faster."],
 ];
 
 function GoogleAdSlot({ label, slot }: { label: string; slot: string }) {
@@ -106,13 +107,12 @@ export async function HomePage() {
 
       <section className="check-template-mix" aria-label="Featured local discovery">
         <div className="check-template-copy">
-          <p className="eyebrow">New directory experience</p>
-          <h2>Old Checkinfo trust, new premium listing discovery.</h2>
+          <p className="eyebrow">Corporate business discovery</p>
+          <h2>Verified local businesses, organized for faster customer decisions.</h2>
           <p>
-            Hero and footer keep the original Checkinfo identity, while the
-            middle journey now feels like a modern listing template with rich
-            images, city discovery, category paths, and admin-approved business
-            cards.
+            Checkinfo helps customers compare local businesses by category,
+            city, and service area while owners get a simple path to submit,
+            manage, and promote their listings after admin approval.
           </p>
           <div className="check-template-feature-grid">
             {templateFeatures.map(([title, text]) => (
@@ -128,7 +128,7 @@ export async function HomePage() {
           {featured.slice(0, 2).map((listing, index) => (
             <article className={`check-template-float-card float-${index + 1}`} key={listing.id}>
               <div className="check-template-float-image">
-                {listing.image ? <img src={listing.image} alt={listing.name || "Featured listing"} /> : <span>{(listing.name || "CI").slice(0, 2).toUpperCase()}</span>}
+                <img src={DUMMY_BUSINESS_IMAGE} alt="" />
               </div>
               <small>{listing.city || "India"} / {listing.badge || "Verified"}</small>
               <strong>{listing.name}</strong>
@@ -136,9 +136,9 @@ export async function HomePage() {
             </article>
           ))}
           <div className="check-template-search-card">
-            <span>Live discovery</span>
-            <strong>{business.length} approved businesses</strong>
-            <p>Search by business, category, city, or subcity.</p>
+            <span>Directory dashboard</span>
+            <strong>{business.length} listings ready</strong>
+            <p>Dummy visuals are active while final business images are prepared.</p>
           </div>
         </div>
       </section>

@@ -1,4 +1,5 @@
 import { listingLocationText, listingPublicPath, type PublicBusinessListing } from "@/backend/listingSeo";
+import { DUMMY_BUSINESS_IMAGE } from "./dummyImages";
 
 export function BusinessCard({ listing }: { listing: PublicBusinessListing }) {
   const location = listingLocationText(listing);
@@ -8,8 +9,8 @@ export function BusinessCard({ listing }: { listing: PublicBusinessListing }) {
   return (
     <article className="check-ad-card">
       <div className="check-ad-card-head">
-        <div className={listing.image ? "check-ad-image has-photo" : "check-ad-image blue"}>
-          {listing.image ? <img src={listing.image} alt="" loading="lazy" /> : <span>{(listing.name || "CI").slice(0, 2).toUpperCase()}</span>}
+        <div className="check-ad-image has-photo">
+          <img src={DUMMY_BUSINESS_IMAGE} alt="" loading="lazy" />
         </div>
         <b className="check-ad-badge">{listing.badge || "Verified"}</b>
       </div>
