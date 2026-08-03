@@ -6,6 +6,6 @@ deployment:
     - /bin/cp -R .next $DEPLOYPATH/
     - /bin/cp -R node_modules $DEPLOYPATH/
     - /bin/cp -R public $DEPLOYPATH/
-    - /bin/cp package.json server.js .htaccess Passengerfile.json $DEPLOYPATH/
+    - /bin/cp package.json server.js app.cjs .htaccess Passengerfile.json $DEPLOYPATH/
     - /bin/find $DEPLOYPATH -type d -exec /bin/chmod 0755 {} \;
     - /bin/find $DEPLOYPATH -type f -exec /bin/chmod 0644 {} \;
