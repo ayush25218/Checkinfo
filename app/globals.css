@@ -5869,6 +5869,384 @@ cite {
   color: #6f7b8c !important;
 }
 
+/* Polished member panel skin. Kept separate from admin so admin stays white/corporate. */
+.account-shell {
+  grid-template-columns: 294px minmax(0, 1fr);
+  min-height: 100vh;
+  background:
+    linear-gradient(135deg, rgba(22, 163, 184, 0.12), transparent 28%),
+    radial-gradient(circle at 86% 12%, rgba(37, 99, 235, 0.12), transparent 34%),
+    #f3f7fb;
+  color: #223044;
+  font-family: Inter, Calibri, "Segoe UI", Arial, sans-serif;
+}
+
+.account-sidebar {
+  padding: 22px 16px;
+  background:
+    linear-gradient(180deg, rgba(10, 28, 48, 0.98), rgba(18, 45, 62, 0.98)),
+    #0d2237;
+  box-shadow: 10px 0 30px rgba(15, 35, 55, 0.18);
+}
+
+.account-brand {
+  min-height: 72px;
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+  padding-bottom: 20px;
+}
+
+.account-brand-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #0f766e, #2aa7df);
+  box-shadow: 0 14px 26px rgba(20, 184, 166, 0.24);
+}
+
+.account-brand strong {
+  font-size: 17px;
+}
+
+.account-brand small {
+  color: #9bb4c9;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.member-card {
+  position: relative;
+  overflow: hidden;
+  height: auto;
+  min-height: 156px;
+  margin: 22px 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.035)),
+    rgba(8, 20, 34, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 36px rgba(0, 0, 0, 0.14);
+  padding: 18px;
+}
+
+.member-card::after {
+  content: "";
+  position: absolute;
+  right: -42px;
+  top: -42px;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.22), transparent 68%);
+}
+
+.member-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.member-card .avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #38bdf8, #0f766e);
+  box-shadow: 0 14px 28px rgba(8, 145, 178, 0.25);
+  font-size: 13px;
+}
+
+.member-card strong {
+  color: #f8fbff;
+  font-size: 18px;
+  margin-top: 12px;
+}
+
+.member-card span,
+.member-card small {
+  color: #a9bdcf;
+  font-size: 12px;
+}
+
+.panel-nav {
+  gap: 6px;
+}
+
+.panel-nav a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: #c3d3e4;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 12px 13px;
+}
+
+.panel-nav a::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.38);
+  box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.08);
+}
+
+.panel-nav a.active,
+.panel-nav a[aria-current="page"],
+.panel-nav a:hover {
+  border-color: rgba(56, 189, 248, 0.32);
+  background: linear-gradient(135deg, rgba(14, 116, 144, 0.98), rgba(37, 99, 235, 0.92));
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(14, 116, 144, 0.22);
+}
+
+.panel-nav a.active::before,
+.panel-nav a[aria-current="page"]::before,
+.panel-nav a:hover::before {
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.16);
+}
+
+.account-workspace {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0)),
+    transparent;
+}
+
+.member-topbar {
+  min-height: 72px;
+  border-bottom: 1px solid rgba(203, 213, 225, 0.72);
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 10px 28px rgba(15, 38, 62, 0.08);
+}
+
+.member-topbar strong {
+  color: #163047;
+  font-size: 15px;
+}
+
+.member-topbar span {
+  color: #64748b;
+}
+
+.member-topbar-actions a {
+  border-radius: 10px;
+  border-color: #cbd8e7;
+  background: #ffffff;
+  color: #26384f;
+  font-weight: 700;
+  padding: 10px 14px;
+}
+
+.member-topbar-actions a:last-child {
+  border-color: #172033;
+  background: #172033;
+}
+
+.account-main {
+  gap: 20px;
+  padding: clamp(20px, 3.4vw, 34px);
+}
+
+.account-topbar {
+  position: relative;
+  overflow: hidden;
+  min-height: 138px;
+  border: 1px solid rgba(203, 213, 225, 0.82);
+  border-left: 0;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(240, 249, 255, 0.92)),
+    #ffffff;
+  box-shadow: 0 22px 48px rgba(15, 38, 62, 0.1);
+  padding: 26px 28px;
+}
+
+.account-topbar::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(180deg, #14b8a6, #2563eb);
+}
+
+.account-topbar::after {
+  content: "";
+  position: absolute;
+  right: 190px;
+  top: -70px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.18), transparent 68%);
+  pointer-events: none;
+}
+
+.account-topbar .eyebrow,
+.panel-heading .eyebrow {
+  color: #0f8a9d;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.account-topbar h1 {
+  color: #172033;
+  font-size: clamp(26px, 2.4vw, 36px);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.account-topbar p {
+  color: #53647a;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.primary-button {
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0f766e, #2563eb);
+  box-shadow: 0 16px 32px rgba(37, 99, 235, 0.22);
+  padding: 13px 18px;
+}
+
+.primary-button:hover {
+  background: linear-gradient(135deg, #0d6b65, #1d4ed8);
+}
+
+.dashboard-grid {
+  gap: 14px;
+}
+
+.dashboard-card,
+.shortcut-card,
+.panel-section {
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 16px 34px rgba(15, 38, 62, 0.08);
+}
+
+.dashboard-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 150px;
+  padding: 22px;
+}
+
+.dashboard-card::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.18), rgba(37, 99, 235, 0.18));
+}
+
+.dashboard-card:nth-child(2)::before {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(99, 102, 241, 0.2));
+}
+
+.dashboard-card:nth-child(3)::before {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(20, 184, 166, 0.18));
+}
+
+.dashboard-card:nth-child(4)::before {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(15, 118, 110, 0.18));
+}
+
+.dashboard-card span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-card strong {
+  color: #162235;
+  font-size: 28px;
+  font-weight: 850;
+  margin-top: 18px;
+}
+
+.dashboard-card p {
+  color: #627084;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+.panel-section {
+  padding: 22px;
+}
+
+.panel-heading {
+  margin-bottom: 18px;
+}
+
+.panel-heading h2 {
+  color: #172033;
+  font-size: clamp(22px, 2vw, 30px);
+  font-weight: 750;
+}
+
+.shortcut-grid {
+  gap: 14px;
+}
+
+.shortcut-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 142px;
+  padding: 24px 22px;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.shortcut-card::before {
+  content: "";
+  display: block;
+  width: 34px;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #14b8a6, #2563eb);
+  margin-bottom: 18px;
+}
+
+.shortcut-card::after {
+  content: "";
+  position: absolute;
+  right: -34px;
+  bottom: -34px;
+  width: 94px;
+  height: 94px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.shortcut-card:hover,
+.dashboard-card:hover {
+  border-color: rgba(37, 99, 235, 0.36);
+  box-shadow: 0 22px 44px rgba(15, 38, 62, 0.12);
+  transform: translateY(-3px);
+}
+
+.shortcut-card strong {
+  color: #1f2d42;
+  font-size: 18px;
+  font-weight: 760;
+}
+
+.shortcut-card span {
+  color: #66758a;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.65;
+  max-width: 34ch;
+}
+
 @media (max-width: 980px) {
   .site-header {
     flex-wrap: wrap;
