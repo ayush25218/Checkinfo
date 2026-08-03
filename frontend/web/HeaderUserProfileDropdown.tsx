@@ -2,332 +2,151 @@
 
 import { useEffect, useRef, useState } from "react";
 
+type AccountMode = "guest" | "member" | "visitor";
+
 type VisitorProfile = {
   email: string;
   name: string;
   phone: string;
 };
 
+const defaultVisitor: VisitorProfile = {
+  email: "visitor@example.com",
+  name: "Guest Visitor",
+  phone: "",
+};
+
 function readStoredVisitor(): VisitorProfile {
-  if (typeof window === "undefined") return { email: "visitor@example.com", name: "Guest Visitor", phone: "" };
+  if (typeof window === "undefined") return defaultVisitor;
+
   try {
     const raw = window.localStorage.getItem("checkinfo_visitor_profile");
-    if (raw) return JSON.parse(raw) as VisitorProfile;
+    return raw ? (JSON.parse(raw) as VisitorProfile) : defaultVisitor;
   } catch {
-    // fallback
+    return defaultVisitor;
   }
-  return { email: "visitor@example.com", name: "Guest Visitor", phone: "" };
+}
+
+function initialsFor(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "VP";
+}
+
+function AccountIcon({ name }: { name: "add" | "dashboard" | "edit" | "login" | "logout" | "register" | "user" }) {
+  const paths = {
+    add: "M12 5v14M5 12h14",
+    dashboard: "M4 5h6v6H4V5Zm10 0h6v6h-6V5ZM4 15h6v4H4v-4Zm10 0h6v4h-6v-4Z",
+    edit: "M5 19h4l10-10-4-4L5 15v4Zm10-14 4 4",
+    login: "M10 7V5h9v14h-9v-2M5 12h10M12 9l3 3-3 3",
+    logout: "M14 7V5H5v14h9v-2M10 12h9M16 9l3 3-3 3",
+    register: "M12 5v6l4 2M5 19v-2a4 4 0 0 1 4-4h2M9 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6Zm8 5v5M14.5 18.5h5",
+    user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
+  };
+
+  return (
+    <svg aria-hidden="true" className="profile-menu-icon" fill="none" viewBox="0 0 24 24">
+      <path d={paths[name]} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+    </svg>
+  );
 }
 
 export function HeaderUserProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isVisitorLoggedIn, setIsVisitorLoggedIn] = useState(false);
-  const [isMemberLoggedIn, setIsMemberLoggedIn] = useState(false);
-  const [visitorProfile, setVisitorProfile] = useState<VisitorProfile>({ email: "", name: "", phone: "" });
-  const [editingProfile, setEditingProfile] = useState(false);
-  const [editForm, setEditForm] = useState({ email: "", name: "", phone: "" });
+  const [mode, setMode] = useState<AccountMode>("guest");
+  const [visitorProfile, setVisitorProfile] = useState<VisitorProfile>(defaultVisitor);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Check cookies / auth indicators
-    const cookies = typeof document !== "undefined" ? document.cookie : "";
+    const cookies = document.cookie || "";
     const hasVisitorAuth = cookies.includes("checkinfo_user_auth=true") || window.localStorage.getItem("checkinfo_user_auth") === "true";
-    const hasMemberAuth = cookies.includes("checkinfo_member_auth=true") || cookies.includes("checkinfo_member_id=") || Boolean(window.localStorage.getItem("checkinfo-member-id"));
+    const hasMemberAuth = cookies.includes("checkinfo_member_id=") || Boolean(window.localStorage.getItem("checkinfo-member-id"));
 
-    setIsVisitorLoggedIn(hasVisitorAuth);
-    setIsMemberLoggedIn(hasMemberAuth);
-
-    const saved = readStoredVisitor();
-    setVisitorProfile(saved);
-    setEditForm(saved);
+    setMode(hasMemberAuth ? "member" : hasVisitorAuth ? "visitor" : "guest");
+    setVisitorProfile(readStoredVisitor());
   }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        setEditingProfile(false);
-      }
+      if (!dropdownRef.current?.contains(event.target as Node)) setIsOpen(false);
     }
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  function saveVisitorProfile(e: React.FormEvent) {
-    e.preventDefault();
-    setVisitorProfile(editForm);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("checkinfo_visitor_profile", JSON.stringify(editForm));
-    }
-    setEditingProfile(false);
-  }
-
-  function handleVisitorLogout() {
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem("checkinfo_user_auth");
-      document.cookie = "checkinfo_user_auth=; path=/; max-age=0;";
-      window.location.href = "/api/auth/logout?role=user";
-    }
-  }
-
-  const initials = visitorProfile.name
-    ? visitorProfile.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : "VP";
+  const isSignedIn = mode !== "guest";
+  const buttonLabel = mode === "member" ? "Business Panel" : mode === "visitor" ? visitorProfile.name || "My Account" : "Account";
+  const avatarLabel = mode === "member" ? "BIZ" : mode === "visitor" ? initialsFor(visitorProfile.name) : "AC";
 
   return (
-    <div className="header-user-dropdown-wrap" ref={dropdownRef} style={{ position: "relative", display: "inline-block" }}>
+    <div className="header-user-dropdown-wrap" ref={dropdownRef}>
       <button
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        className={`check-profile-circle ${isSignedIn ? "is-active" : ""} ${mode === "member" ? "is-business" : ""}`}
+        onClick={() => setIsOpen((value) => !value)}
+        title={mode === "member" ? "Business panel menu" : "Account menu"}
         type="button"
-        className="check-profile-circle"
-        onClick={() => setIsOpen(!isOpen)}
-        title="Account Menu"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "8px",
-          padding: "5px 14px 5px 5px",
-          background: isVisitorLoggedIn || isMemberLoggedIn ? "#e0f2fe" : "#ffffff",
-          border: isVisitorLoggedIn || isMemberLoggedIn ? "1.5px solid #0284c7" : "1.5px solid #d1d5db",
-          borderRadius: "9999px",
-          color: "#0f172a",
-          fontSize: "14px",
-          fontWeight: "600",
-          cursor: "pointer",
-          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
-          transition: "all 0.2s ease",
-        }}
       >
-        <span
-          className="check-profile-avatar"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "32px",
-            height: "32px",
-            borderRadius: "50%",
-            background: isMemberLoggedIn ? "linear-gradient(135deg, #059669, #047857)" : "linear-gradient(135deg, #0284c7, #0369a1)",
-            color: "#ffffff",
-            fontSize: "13px",
-            fontWeight: "700",
-            position: "relative",
-          }}
-        >
-          {isVisitorLoggedIn ? initials : isMemberLoggedIn ? "BIZ" : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          )}
-          {(isVisitorLoggedIn || isMemberLoggedIn) && (
-            <span
-              style={{
-                position: "absolute",
-                bottom: "0",
-                right: "0",
-                width: "9px",
-                height: "9px",
-                borderRadius: "50%",
-                background: "#22c55e",
-                border: "2px solid #ffffff",
-              }}
-            />
-          )}
+        <span className="check-profile-avatar">
+          {avatarLabel}
+          {isSignedIn ? <span className="check-profile-status" /> : null}
         </span>
-        <span>{isVisitorLoggedIn ? (visitorProfile.name || "My Account") : isMemberLoggedIn ? "Business Account" : "My Profile"}</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
-          <path d="M6 9l6 6 6-6" />
+        <span className="check-profile-label">{buttonLabel}</span>
+        <svg aria-hidden="true" className="check-profile-chevron" fill="none" viewBox="0 0 24 24">
+          <path d="m6 9 6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
         </svg>
       </button>
 
-      {isOpen && (
-        <div
-          className="profile-dropdown-menu"
-          style={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            right: 0,
-            width: "300px",
-            background: "#ffffff",
-            borderRadius: "16px",
-            boxShadow: "0 20px 40px -15px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0,0,0,0.06)",
-            padding: "1rem",
-            zIndex: 100,
-            animation: "fadeIn 0.2s ease",
-          }}
-        >
-          {isVisitorLoggedIn ? (
-            /* ── Logged In Visitor Menu ── */
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem", paddingBottom: "0.75rem", borderBottom: "1px solid #f1f5f9" }}>
-                <div style={{ width: "42px", height: "42px", borderRadius: "50%", background: "#0284c7", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "700", fontSize: "16px" }}>
-                  {initials}
-                </div>
+      {isOpen ? (
+        <div className="profile-dropdown-menu" role="menu">
+          {mode === "member" ? (
+            <>
+              <div className="profile-menu-head">
+                <span className="profile-menu-avatar business">BIZ</span>
                 <div>
-                  <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: "700", color: "#0f172a" }}>{visitorProfile.name}</h4>
-                  <p style={{ margin: 0, fontSize: "0.8rem", color: "#64748b" }}>{visitorProfile.email || "Visitor Account"}</p>
-                  <span style={{ display: "inline-block", background: "#e0f2fe", color: "#0369a1", fontSize: "0.7rem", fontWeight: "700", padding: "2px 8px", borderRadius: "999px", marginTop: "4px" }}>
-                    Website Visitor
-                  </span>
+                  <strong>Business Account</strong>
+                  <small>Manage listings and enquiries</small>
                 </div>
               </div>
-
-              {editingProfile ? (
-                <form onSubmit={saveVisitorProfile} style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem", background: "#f8fafc", padding: "0.75rem", borderRadius: "8px" }}>
-                  <label style={{ fontSize: "0.75rem", fontWeight: "600", color: "#475569" }}>Full Name</label>
-                  <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} style={{ padding: "0.4rem 0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.85rem" }} required />
-                  <label style={{ fontSize: "0.75rem", fontWeight: "600", color: "#475569" }}>Email Address</label>
-                  <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} style={{ padding: "0.4rem 0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.85rem" }} required />
-                  <label style={{ fontSize: "0.75rem", fontWeight: "600", color: "#475569" }}>Phone Number</label>
-                  <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} style={{ padding: "0.4rem 0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.85rem" }} />
-                  <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
-                    <button type="submit" style={{ flex: 1, padding: "0.4rem", background: "#0284c7", color: "#fff", border: "none", borderRadius: "6px", fontWeight: "600", fontSize: "0.8rem", cursor: "pointer" }}>Save</button>
-                    <button type="button" onClick={() => setEditingProfile(false)} style={{ flex: 1, padding: "0.4rem", background: "#cbd5e1", color: "#334155", border: "none", borderRadius: "6px", fontWeight: "600", fontSize: "0.8rem", cursor: "pointer" }}>Cancel</button>
-                  </div>
-                </form>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", marginBottom: "0.75rem" }}>
-                  <button
-                    type="button"
-                    onClick={() => setEditingProfile(true)}
-                    style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.6rem", width: "100%", textAlign: "left", background: "none", border: "none", borderRadius: "8px", fontSize: "0.85rem", color: "#334155", fontWeight: "500", cursor: "pointer" }}
-                  >
-                    ✏️ Edit Visitor Profile
-                  </button>
-                  <a
-                    href="/#categories"
-                    onClick={() => setIsOpen(false)}
-                    style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.6rem", borderRadius: "8px", fontSize: "0.85rem", color: "#334155", fontWeight: "500", textDecoration: "none" }}
-                  >
-                    🔍 Browse Business Directory
-                  </a>
-                </div>
-              )}
-
-              <button
-                type="button"
-                onClick={handleVisitorLogout}
-                style={{ width: "100%", padding: "0.6rem", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: "8px", fontWeight: "600", fontSize: "0.85rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
-              >
-                Logout Visitor Session
-              </button>
-            </div>
-          ) : isMemberLoggedIn ? (
-            /* ── Logged In Business Owner Menu ── */
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem", paddingBottom: "0.75rem", borderBottom: "1px solid #f1f5f9" }}>
-                <div style={{ width: "42px", height: "42px", borderRadius: "50%", background: "#059669", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "700", fontSize: "16px" }}>
-                  BIZ
-                </div>
+              <a href="/members/myaccount" role="menuitem"><AccountIcon name="dashboard" />Dashboard</a>
+              <a href="/members/add_listing" role="menuitem"><AccountIcon name="add" />Post Your Ad</a>
+              <a href="/members/edit_account" role="menuitem"><AccountIcon name="edit" />Edit Business Profile</a>
+              <a className="danger" href="/api/auth/logout?role=member" role="menuitem"><AccountIcon name="logout" />Logout</a>
+            </>
+          ) : mode === "visitor" ? (
+            <>
+              <div className="profile-menu-head">
+                <span className="profile-menu-avatar">{initialsFor(visitorProfile.name)}</span>
                 <div>
-                  <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: "700", color: "#0f172a" }}>Business Owner</h4>
-                  <p style={{ margin: 0, fontSize: "0.8rem", color: "#64748b" }}>Command Center Active</p>
-                  <span style={{ display: "inline-block", background: "#dcfce7", color: "#15803d", fontSize: "0.7rem", fontWeight: "700", padding: "2px 8px", borderRadius: "999px", marginTop: "4px" }}>
-                    Verified Account
-                  </span>
+                  <strong>{visitorProfile.name || "Visitor Account"}</strong>
+                  <small>{visitorProfile.email || "Website visitor"}</small>
                 </div>
               </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", marginBottom: "0.75rem" }}>
-                <a href="/members/myaccount" onClick={() => setIsOpen(false)} style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.55rem 0.6rem", borderRadius: "8px", fontSize: "0.85rem", color: "#0f172a", fontWeight: "600", textDecoration: "none", background: "#f8fafc" }}>
-                  📊 Command Center Dashboard
-                </a>
-                <a href="/members/add_listing" onClick={() => setIsOpen(false)} style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.55rem 0.6rem", borderRadius: "8px", fontSize: "0.85rem", color: "#334155", fontWeight: "500", textDecoration: "none" }}>
-                  ➕ Post New Ad / Add Listing
-                </a>
-                <a href="/members/my_listings" onClick={() => setIsOpen(false)} style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.55rem 0.6rem", borderRadius: "8px", fontSize: "0.85rem", color: "#334155", fontWeight: "500", textDecoration: "none" }}>
-                  📁 My Business Listings
-                </a>
-                <a href="/members/enquirylisting" onClick={() => setIsOpen(false)} style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.55rem 0.6rem", borderRadius: "8px", fontSize: "0.85rem", color: "#334155", fontWeight: "500", textDecoration: "none" }}>
-                  📩 Buyer Leads & Enquiries
-                </a>
-                <a href="/members/edit_account" onClick={() => setIsOpen(false)} style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.55rem 0.6rem", borderRadius: "8px", fontSize: "0.85rem", color: "#334155", fontWeight: "500", textDecoration: "none" }}>
-                  ✏️ Edit Business Profile
-                </a>
-              </div>
-
-              <a
-                href="/api/auth/logout?role=member"
-                style={{ width: "100%", padding: "0.6rem", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: "8px", fontWeight: "600", fontSize: "0.85rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-              >
-                Logout Business Panel
-              </a>
-            </div>
+              <a href="/#categories" role="menuitem"><AccountIcon name="dashboard" />Browse Directory</a>
+              <a href="/members/login" role="menuitem"><AccountIcon name="login" />Business Owner Login</a>
+              <a className="danger" href="/api/auth/logout?role=user" role="menuitem"><AccountIcon name="logout" />Logout</a>
+            </>
           ) : (
-            /* ── Guest Visitor Menu (Matches checkinfo.in) ── */
-            <div>
-              <div style={{ marginBottom: "0.75rem", paddingBottom: "0.5rem", borderBottom: "1px solid #f1f5f9" }}>
-                <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: "700", color: "#0f172a" }}>My Profile</h4>
-                <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "#64748b" }}>Select login or register option</p>
+            <>
+              <div className="profile-menu-head">
+                <span className="profile-menu-avatar">AC</span>
+                <div>
+                  <strong>Account Access</strong>
+                  <small>Choose how you want to continue</small>
+                </div>
               </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-                <a
-                  href="/users/login"
-                  onClick={() => setIsOpen(false)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.6rem",
-                    padding: "0.55rem 0.75rem",
-                    background: "#f0f9ff",
-                    color: "#0369a1",
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    fontSize: "0.875rem",
-                    textDecoration: "none",
-                  }}
-                >
-                  🔑 Login
-                </a>
-                <a
-                  href="/users/register"
-                  onClick={() => setIsOpen(false)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.6rem",
-                    padding: "0.55rem 0.75rem",
-                    background: "#f8fafc",
-                    color: "#334155",
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    fontSize: "0.875rem",
-                    textDecoration: "none",
-                    border: "1px solid #e2e8f0",
-                  }}
-                >
-                  📝 Register Account
-                </a>
-                <div style={{ margin: "0.25rem 0", height: "1px", background: "#f1f5f9" }} />
-                <a
-                  href="/members/login"
-                  onClick={() => setIsOpen(false)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.6rem",
-                    padding: "0.55rem 0.75rem",
-                    background: "#ecfdf5",
-                    color: "#047857",
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    fontSize: "0.875rem",
-                    textDecoration: "none",
-                  }}
-                >
-                  💼 Business Owner Login
-                </a>
-              </div>
-            </div>
+              <a href="/users/login" role="menuitem"><AccountIcon name="login" />Visitor Login</a>
+              <a href="/users/register" role="menuitem"><AccountIcon name="register" />Create Visitor Account</a>
+              <a className="business-link" href="/members/login" role="menuitem"><AccountIcon name="user" />Business Owner Login</a>
+            </>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
