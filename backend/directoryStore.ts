@@ -12,6 +12,7 @@ import {
   isMongoConfigured,
   countMongoBusinessListings,
   countMongoMembers,
+  deleteMongoMembersByIds,
   listMongoBusinessListings,
   listMongoMembers,
   saveMongoMember,
@@ -744,6 +745,46 @@ export function handleAdminAction(resource: string, payload: Record<string, unkn
     const id = String(payload.id ?? "");
     const account = id ? getMemberAccount(id) : null;
 
+    if (action === "upsert" && payload.record && typeof payload.record === "object") {
+      const record = payload.record as Record<string, unknown>;
+      const username = String(record.username ?? "").trim().toLowerCase();
+      const memberId = String(record.id ?? username).trim().toLowerCase();
+
+      if (!memberId || !username) return { members: getAdminResource("members") };
+
+      const nextAccount = getMemberAccount(memberId);
+      const name = String(record.name ?? "").trim();
+      const email = String(record.email ?? "").trim().toLowerCase();
+      const phone = String(record.phone ?? "").trim();
+      const password = String(record.password ?? "");
+
+      nextAccount.profile.id = memberId;
+      nextAccount.profile.name = name || nextAccount.profile.name;
+      nextAccount.profile.initials = (name || username).slice(0, 2).toUpperCase();
+      nextAccount.profile.username = username;
+      nextAccount.profile.email = email;
+      nextAccount.profile.phone = phone;
+      nextAccount.profile.status = record.status === "Inactive" ? "Inactive" : "Active";
+      nextAccount.registeredAt = String(record.registeredAt ?? nextAccount.registeredAt);
+
+      if (password) {
+        const { hashPassword } = require("./auth");
+        nextAccount.passwordHash = hashPassword(password);
+        nextAccount.passwordUpdatedAt = new Date().toISOString();
+      }
+
+      return { members: getAdminResource("members") };
+    }
+
+    if (action === "delete") {
+      const ids = Array.isArray(payload.ids) ? payload.ids.map(String) : id ? [id] : [];
+      const localStore = getStore();
+      ids.forEach((memberId) => {
+        delete localStore.members[memberId];
+      });
+      return { members: getAdminResource("members") };
+    }
+
     if (account && ["Active", "Inactive"].includes(action)) {
       account.profile.status = action as MemberProfile["status"];
       return { members: getAdminResource("members") };
@@ -1067,6 +1108,45 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
   if (resource === "members") {
     const action = String(payload.action ?? "");
     const id = String(payload.id ?? "");
+
+    if (action === "upsert" && payload.record && typeof payload.record === "object") {
+      const record = payload.record as Record<string, unknown>;
+      const username = String(record.username ?? "").trim().toLowerCase();
+      const memberId = String(record.id ?? username).trim().toLowerCase();
+
+      if (!memberId || !username) return { members: await getAdminResourceAsync("members") };
+
+      const account = await getOrCreateMongoMember(memberId);
+      const name = String(record.name ?? "").trim();
+      const email = String(record.email ?? "").trim().toLowerCase();
+      const phone = String(record.phone ?? "").trim();
+      const password = String(record.password ?? "");
+
+      account.profile.id = memberId;
+      account.profile.name = name || account.profile.name;
+      account.profile.initials = (name || username).slice(0, 2).toUpperCase();
+      account.profile.username = username;
+      account.profile.email = email;
+      account.profile.phone = phone;
+      account.profile.status = record.status === "Inactive" ? "Inactive" : "Active";
+      account.registeredAt = String(record.registeredAt ?? account.registeredAt);
+
+      if (password) {
+        const { hashPassword } = await import("./auth");
+        account.passwordHash = hashPassword(password);
+        account.passwordUpdatedAt = new Date().toISOString();
+      }
+
+      await saveMongoMember(account);
+      return { members: await getAdminResourceAsync("members") };
+    }
+
+    if (action === "delete") {
+      const ids = Array.isArray(payload.ids) ? payload.ids.map((value) => String(value).trim().toLowerCase()).filter(Boolean) : id ? [id.trim().toLowerCase()] : [];
+      if (isMongoConfigured()) await deleteMongoMembersByIds(ids);
+      return { members: await getAdminResourceAsync("members") };
+    }
+
     const account = id ? await getOrCreateMongoMember(id) : null;
 
     if (account && ["Active", "Inactive"].includes(action)) {

@@ -135,8 +135,9 @@ export async function validCredentialsAsync(role: AuthRole, username: string, pa
 
     if (!isMongoConfigured()) return false;
 
-    // Seed MongoDB auth accounts in background
-    void seedMongoAuthAccounts(hashPassword).catch(() => undefined);
+    // Ensure default auth accounts exist before the lookup, otherwise a fresh
+    // Mongo database can reject the first valid login attempt.
+    await seedMongoAuthAccounts(hashPassword);
 
     const givenHash = hashPassword(password);
 
@@ -186,4 +187,3 @@ export async function updateAdminPasswordInDb(newPassword: string): Promise<bool
     return false;
   }
 }
-

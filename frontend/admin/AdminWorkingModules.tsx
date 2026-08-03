@@ -53,6 +53,7 @@ type MemberRecord = {
   id: string;
   email: string;
   name: string;
+  password?: string;
   phone: string;
   registeredAt: string;
   status: "Active" | "Inactive";
@@ -293,7 +294,7 @@ async function postAdminAction(resource: string, payload: Record<string, unknown
       headers: { "content-type": "application/json" },
       method: "POST",
     });
-    return await response.json() as { data?: { business?: BusinessRecord[]; imported?: number; members?: MemberRecord[] } };
+    return await response.json() as { data?: { business?: BusinessRecord[]; imported?: number; members?: MemberRecord[] }; members?: MemberRecord[] };
   } catch {
     return {};
   }
@@ -1065,6 +1066,7 @@ export function ManageMembersModule() {
   const [form, setForm] = useState({
     email: "",
     name: "",
+    password: "",
     phone: "",
     registeredAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
     status: "Active" as "Active" | "Inactive",
@@ -1094,6 +1096,7 @@ export function ManageMembersModule() {
     setForm({
       email: "",
       name: "",
+      password: "",
       phone: "",
       registeredAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
       status: "Active",
@@ -1101,8 +1104,9 @@ export function ManageMembersModule() {
     });
   }
 
-  function saveRecord() {
+  async function saveRecord() {
     if (!form.name.trim() || !form.username.trim()) return;
+    if (!editing && !form.password.trim()) return;
 
     const nextRecord: MemberRecord = {
       id: editing?.id ?? `mem-${Date.now()}`,
@@ -1111,16 +1115,26 @@ export function ManageMembersModule() {
       phone: form.phone.trim(),
       registeredAt: form.registeredAt,
       status: form.status,
-      username: form.username.trim(),
+      username: form.username.trim().toLowerCase(),
     };
 
     sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    const result = await postAdminAction("members", {
+      action: "upsert",
+      record: {
+        ...nextRecord,
+        id: nextRecord.id.startsWith("mem-") ? nextRecord.username : nextRecord.id,
+        password: form.password.trim(),
+      },
+    });
+    if (result.members) setRecords(result.members);
+    else if (result.data?.members) setRecords(result.data.members);
     resetForm();
   }
 
   function editRecord(record: MemberRecord) {
     setEditing(record);
-    setForm(record);
+    setForm({ ...record, password: "" });
   }
 
   function bulkStatus(nextStatus: "Active" | "Inactive") {
@@ -1131,6 +1145,7 @@ export function ManageMembersModule() {
 
   function deleteSelected() {
     sync(records.filter((record) => !selected.includes(record.id)));
+    void postAdminAction("members", { action: "delete", ids: selected });
     setSelected([]);
   }
 
@@ -1160,6 +1175,7 @@ export function ManageMembersModule() {
         <label><span>Name</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
         <label><span>Username</span><input value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} /></label>
         <label><span>Email</span><input value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
+        <label><span>{editing ? "New Password" : "Password"}</span><input type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} placeholder={editing ? "Leave blank to keep current" : "Set member password"} /></label>
         <label><span>Phone</span><input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
         <label><span>Registration Date</span><input value={form.registeredAt} onChange={(event) => setForm({ ...form, registeredAt: event.target.value })} /></label>
         <label>

@@ -517,6 +517,15 @@ export async function saveMongoMember(account: MemberAccount) {
   await syncMongoMemberListings(account);
 }
 
+export async function deleteMongoMembersByIds(ids: string[]) {
+  if (!ids.length) return;
+  const { businesses, members } = await getMongoCollections();
+  await Promise.all([
+    businesses.deleteMany({ ownerId: { $in: ids } }),
+    members.deleteMany({ _id: { $in: ids } }),
+  ]);
+}
+
 export async function listMongoMembers(options: { limit?: number } = {}) {
   const { members } = await getMongoCollections();
   const cursor = members.find({}).sort({ registeredAt: -1 });
