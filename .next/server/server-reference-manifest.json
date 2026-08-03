@@ -1,0 +1,24 @@
+{
+  "node": {
+    "40b1f10a35044987ccb9d1e170ad98016002f32b8b": {
+      "workers": {
+        "app/register/page": {
+          "moduleId": 68109,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_0",
+          "filename": "app/users/register/page.tsx"
+        },
+        "app/users/register/page": {
+          "moduleId": 48222,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_0",
+          "filename": "app/users/register/page.tsx"
+        }
+      },
+      "filename": "app/users/register/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_0"
+    }
+  },
+  "edge": {},
+  "encryptionKey": "PTBFrm38dGCrdJ/S1xI1h9oOmIDnGoWDWZtQ9X7Qijk="
+}

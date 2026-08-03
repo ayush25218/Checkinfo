@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/listing-grid/layout,_N_T_/listing-grid/page,_N_T_/listing-grid"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/listing-grid/__PAGE__",
+    "/listing-grid",
+    "/_index",
+    "/_head"
+  ]
+}
