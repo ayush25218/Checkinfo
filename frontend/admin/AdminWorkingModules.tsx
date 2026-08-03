@@ -33,7 +33,10 @@ type BusinessRecord = {
   city?: string;
   contact: string;
   details: string;
+  email?: string;
+  image?: string;
   location?: string;
+  mobile?: string;
   name: string;
   ownerEmail?: string;
   ownerId?: string;
@@ -43,6 +46,7 @@ type BusinessRecord = {
   status: Status;
   subcategory?: string;
   subcity?: string;
+  website?: string;
 };
 
 type MemberRecord = {
@@ -289,10 +293,108 @@ async function postAdminAction(resource: string, payload: Record<string, unknown
       headers: { "content-type": "application/json" },
       method: "POST",
     });
-    return await response.json() as { data?: { business?: BusinessRecord[]; members?: MemberRecord[] } };
+    return await response.json() as { data?: { business?: BusinessRecord[]; imported?: number; members?: MemberRecord[] } };
   } catch {
     return {};
   }
+}
+
+function parseCsvRows(text: string) {
+  const rows: string[][] = [];
+  let cell = "";
+  let row: string[] = [];
+  let quoted = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+
+    if (char === '"' && quoted && next === '"') {
+      cell += '"';
+      index += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === "," && !quoted) {
+      row.push(cell.trim());
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && next === "\n") index += 1;
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+
+  row.push(cell.trim());
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+}
+
+function normalizeHeader(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function recordValue(row: Record<string, unknown>, aliases: string[]) {
+  for (const alias of aliases) {
+    const value = row[alias];
+    if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
+  }
+  return "";
+}
+
+function rowsToBusinessRecords(rows: Array<Record<string, unknown>>) {
+  return rows.map((row, index) => {
+    const normalized = Object.fromEntries(
+      Object.entries(row).map(([key, value]) => [normalizeHeader(key), value]),
+    );
+    const name = recordValue(normalized, ["businessname", "name", "storename", "companyname", "firmname"]);
+
+    return {
+      id: `import-${Date.now()}-${index}`,
+      address: recordValue(normalized, ["address", "businessaddress", "fulladdress"]),
+      addressProofName: recordValue(normalized, ["addressproof", "addressproofname", "proof"]),
+      badge: recordValue(normalized, ["badge"]) || "Verified",
+      businessType: recordValue(normalized, ["businesstype", "type", "storetype"]),
+      category: recordValue(normalized, ["category", "maincategory"]) || categories[0] || "General",
+      city: recordValue(normalized, ["city", "district", "citydistrict"]),
+      contact: recordValue(normalized, ["contact", "contactdetails", "phone", "mobile", "number"]),
+      details: recordValue(normalized, ["details", "description", "about", "keywords"]),
+      email: recordValue(normalized, ["email", "mail"]),
+      image: recordValue(normalized, ["image", "photo", "logo"]),
+      mobile: recordValue(normalized, ["mobile", "phone", "contact", "number"]),
+      name,
+      ownerEmail: recordValue(normalized, ["owneremail", "email", "mail"]),
+      ownerName: recordValue(normalized, ["ownername", "contactperson", "person"]),
+      state: recordValue(normalized, ["state"]),
+      status: (recordValue(normalized, ["status"]) || "Pending") as Status,
+      subcategory: recordValue(normalized, ["subcategory", "subcat"]),
+      subcity: recordValue(normalized, ["subcity", "area", "locality", "location"]),
+      website: recordValue(normalized, ["website", "url"]),
+    } satisfies BusinessRecord;
+  }).filter((record) => record.name);
+}
+
+async function parseBusinessImportFile(file: File) {
+  const extension = file.name.split(".").pop()?.toLowerCase();
+
+  if (extension === "csv" || file.type.includes("csv")) {
+    const rows = parseCsvRows(await file.text());
+    const headers = rows[0] ?? [];
+    return rowsToBusinessRecords(
+      rows.slice(1).map((row) =>
+        Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""])),
+      ),
+    );
+  }
+
+  const XLSX = await import("xlsx");
+  const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+  return rowsToBusinessRecords(rows);
 }
 
 export function ManageCategoriesModule() {
@@ -646,6 +748,8 @@ export function ManageBusinessModule() {
   const [selected, setSelected] = useState<string[]>([]);
   const [filters, setFilters] = useState({ category: "All", name: "", status: "All", type: "" });
   const [editing, setEditing] = useState<BusinessRecord | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState("");
   const [form, setForm] = useState({
     address: "",
     badge: "Verified",
@@ -763,6 +867,29 @@ export function ManageBusinessModule() {
     setSelected([]);
   }
 
+  async function importStores(file: File | null) {
+    if (!file) return;
+    setImporting(true);
+    setImportMessage("Reading file...");
+
+    try {
+      const parsed = await parseBusinessImportFile(file);
+      if (!parsed.length) {
+        setImportMessage("No valid business rows found. Add a Business Name column and try again.");
+        return;
+      }
+
+      const response = await postAdminAction("business", { action: "bulk-import", records: parsed });
+      const fresh = await getAdminData<BusinessRecord[]>("business", []);
+      setRecords(fresh.length ? fresh : [...parsed, ...records]);
+      setImportMessage(`${response.data?.imported ?? parsed.length} stores imported and saved for admin review.`);
+    } catch (error) {
+      setImportMessage(error instanceof Error ? error.message : "Import failed. Please check the file format.");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <section className="admin-card">
       <div className="admin-filters">
@@ -801,6 +928,33 @@ export function ManageBusinessModule() {
           <input value={form.businessType} onChange={(event) => setForm({ ...form, businessType: event.target.value })} />
         </label>
         <button type="button" onClick={() => undefined}>Submit</button>
+      </div>
+
+      <div className="admin-business-import">
+        <div>
+          <strong>Bulk Add Stores</strong>
+          <span>Upload CSV or Excel with columns like Business Name, Phone, Email, State, City, Category, Business Type, Address, Details.</span>
+        </div>
+        <label>
+          <span>Select CSV / Excel File</span>
+          <input
+            accept=".csv,.xlsx,.xls"
+            disabled={importing}
+            type="file"
+            onChange={(event) => {
+              void importStores(event.currentTarget.files?.[0] ?? null);
+              event.currentTarget.value = "";
+            }}
+          />
+        </label>
+        <a
+          className="admin-light-button"
+          href={`data:text/csv;charset=utf-8,${encodeURIComponent("Business Name,Phone,Email,State,City,Subcity,Category,Subcategory,Business Type,Address,Details,Status\nDemo Store,9876543210,demo@example.com,Delhi,New Delhi,Dwarka,IT,Web Services,Website Developer,Dwarka New Delhi,Website design and support,Pending")}`}
+          download="checkinfo-store-import-sample.csv"
+        >
+          Download Sample CSV
+        </a>
+        {importMessage ? <p>{importMessage}</p> : null}
       </div>
 
       <div className="admin-editor admin-editor-business">

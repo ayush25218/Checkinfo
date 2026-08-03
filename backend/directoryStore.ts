@@ -299,6 +299,76 @@ function buildBusinessFromMembers(members: MemberAccount[]) {
   );
 }
 
+function importSlug(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 70);
+}
+
+function validListingStatus(value: string): MemberListing["status"] {
+  return ["Active", "Inactive", "Pending", "Draft", "Featured"].includes(value)
+    ? value as MemberListing["status"]
+    : "Pending";
+}
+
+async function bulkImportBusinesses(records: Array<Record<string, unknown>>) {
+  const imported: MemberListing[] = [];
+  const now = Date.now();
+
+  for (const [index, record] of records.entries()) {
+    const name = String(record.name ?? record.businessName ?? "").trim();
+    if (!name) continue;
+
+    const email = String(record.email ?? record.ownerEmail ?? "").trim().toLowerCase();
+    const phone = String(record.mobile ?? record.contact ?? record.phone ?? "").trim();
+    const ownerId = importSlug(String(record.ownerId || email || phone || `${name}-${now}-${index}`)) || `owner-${now}-${index}`;
+    const account = await getOrCreateMongoMember(ownerId);
+
+    account.profile.email = email || account.profile.email;
+    account.profile.name = String(record.ownerName ?? record.contactPerson ?? name).trim();
+    account.profile.phone = phone || account.profile.phone;
+    account.profile.username = account.profile.username || ownerId;
+    account.profile.status = "Active";
+
+    const listing: MemberListing = {
+      id: importSlug(String(record.id ?? `${name}-${now}-${index}`)) || `list-${now}-${index}`,
+      address: String(record.address ?? "").trim(),
+      addressProofName: String(record.addressProofName ?? record.proof ?? "").trim(),
+      businessType: String(record.businessType ?? "").trim(),
+      category: String(record.category ?? categories[0] ?? "General").trim(),
+      city: String(record.city ?? "").trim(),
+      contactPerson: String(record.contactPerson ?? record.ownerName ?? account.profile.name ?? "").trim(),
+      description: String(record.details ?? record.description ?? "").trim(),
+      email,
+      image: String(record.image ?? "").trim(),
+      keywords: String(record.keywords ?? record.details ?? record.description ?? "").trim(),
+      location: [record.subcity, record.city, record.state].map((part) => String(part ?? "").trim()).filter(Boolean).join(", "),
+      mobile: phone,
+      name,
+      state: String(record.state ?? "").trim(),
+      status: validListingStatus(String(record.status ?? "Pending")),
+      subcategory: String(record.subcategory ?? "").trim(),
+      subcity: String(record.subcity ?? record.area ?? record.location ?? "").trim(),
+      website: String(record.website ?? "").trim(),
+      youtube: String(record.youtube ?? "").trim(),
+    };
+
+    account.listings = [
+      ...account.listings.filter((item) => item.id !== listing.id),
+      listing,
+    ];
+    account.notifications.unshift({
+      id: `notif-${now}-${index}`,
+      text: "Your store was imported by Administrator and is waiting for review.",
+      time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+      title: "Store Imported",
+      unread: true,
+    });
+    await saveMongoMember(account);
+    imported.push(listing);
+  }
+
+  return imported.length;
+}
+
 export function getAdminResource(resource = "dashboard") {
   const store = getStore();
   const localMembers = Object.values(store.members);
@@ -656,6 +726,7 @@ export async function getAdminResourceAsync(resource = "dashboard") {
 export function handleAdminAction(resource: string, payload: Record<string, unknown>) {
   if (resource === "business") {
     const action = String(payload.action ?? "");
+
     const ownerId = String(payload.ownerId ?? "");
     const id = String(payload.id ?? "");
     const account = ownerId ? getMemberAccount(ownerId) : null;
@@ -948,6 +1019,15 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
       return { ok: true };
     }
     return { ok: true };
+  }
+
+  if (resource === "business") {
+    const action = String(payload.action ?? "");
+    if (action === "bulk-import" && Array.isArray(payload.records)) {
+      if (!isMongoConfigured()) return { imported: 0, message: "MongoDB is required for CSV/Excel store import." };
+      const imported = await bulkImportBusinesses(payload.records as Array<Record<string, unknown>>);
+      return { business: await getAdminResourceAsync("business"), imported };
+    }
   }
 
   if (!isMongoConfigured()) return handleAdminAction(resource, payload);

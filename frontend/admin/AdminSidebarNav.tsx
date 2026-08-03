@@ -21,7 +21,8 @@ export function AdminSidebarNav({
   active: string;
   groups: readonly AdminGroup[];
 }) {
-  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
+  const activeGroup = groups.find(([, items]) => items.some(([, slug]) => slug === active))?.[0] ?? "";
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(activeGroup ? [activeGroup] : []));
 
   function toggleGroup(group: string) {
     setOpenGroups((current) => {

@@ -6827,8 +6827,21 @@ cite {
   height: 30px !important;
   border: 0 !important;
   background: transparent !important;
-  cursor: default !important;
+  cursor: pointer !important;
   padding: 0 !important;
+}
+
+.admin-shell.admin-shell-sidebar-closed {
+  grid-template-columns: 0 minmax(0, 1fr) !important;
+}
+
+.admin-shell.admin-shell-sidebar-closed .admin-sidebar {
+  transform: translateX(-100%) !important;
+  pointer-events: none !important;
+}
+
+.admin-sidebar {
+  transition: transform 220ms ease !important;
 }
 
 .admin-sidebar-close span {
@@ -7077,6 +7090,46 @@ cite {
   color: #ffffff !important;
 }
 
+.admin-business-import {
+  display: grid !important;
+  grid-template-columns: minmax(260px, 1fr) minmax(240px, 360px) auto !important;
+  align-items: end !important;
+  gap: 14px !important;
+  border: 1px solid #d7dde8 !important;
+  background: #ffffff !important;
+  padding: 16px !important;
+}
+
+.admin-business-import div,
+.admin-business-import label {
+  display: grid !important;
+  gap: 5px !important;
+}
+
+.admin-business-import strong {
+  color: #111111 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+.admin-business-import span,
+.admin-business-import p {
+  color: #566274 !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+}
+
+.admin-business-import input {
+  border: 1px solid #c8d2df !important;
+  background: #f8fafc !important;
+  padding: 8px !important;
+}
+
+.admin-business-import p {
+  grid-column: 1 / -1 !important;
+  margin: 0 !important;
+}
+
 @media (max-width: 980px) {
   .admin-sidebar,
   .admin-sidebar nav,
@@ -7093,5 +7146,9 @@ cite {
   .admin-submenu {
     top: auto !important;
     left: auto !important;
+  }
+
+  .admin-business-import {
+    grid-template-columns: 1fr !important;
   }
 }
