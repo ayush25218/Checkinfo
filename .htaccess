@@ -1,0 +1,4 @@
+PassengerAppRoot /home4/checkinfo/beta.checkinfo.in
+PassengerBaseURI /
+PassengerAppType node
+PassengerStartupFile server.js
