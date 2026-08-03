@@ -3,11 +3,11 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home4/checkinfo/beta.checkinfo.in
     - /bin/mkdir -p $DEPLOYPATH
-    - /bin/rm -f $DEPLOYPATH/.htaccess $DEPLOYPATH/index.html $DEPLOYPATH/app.cjs $DEPLOYPATH/server.mjs
+    - /bin/rm -f $DEPLOYPATH/index.html $DEPLOYPATH/app.cjs $DEPLOYPATH/server.mjs
     - /bin/cp -R .next $DEPLOYPATH/
     - /bin/cp -R node_modules $DEPLOYPATH/
     - /bin/cp -R public $DEPLOYPATH/
-    - /bin/cp package.json app.js Passengerfile.json $DEPLOYPATH/
+    - /bin/cp package.json app.js Passengerfile.json .htaccess $DEPLOYPATH/
     - /bin/cp server.js $DEPLOYPATH/server.mjs
     - /bin/find $DEPLOYPATH -type d -exec /bin/chmod 0755 {} \;
     - /bin/find $DEPLOYPATH -type f -exec /bin/chmod 0644 {} \;
