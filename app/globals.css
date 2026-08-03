@@ -5871,61 +5871,63 @@ cite {
 
 /* Polished member panel skin. Kept separate from admin so admin stays white/corporate. */
 .account-shell {
-  grid-template-columns: 294px minmax(0, 1fr);
+  grid-template-columns: 286px minmax(0, 1fr);
   min-height: 100vh;
   background:
     linear-gradient(135deg, rgba(22, 163, 184, 0.12), transparent 28%),
     radial-gradient(circle at 86% 12%, rgba(37, 99, 235, 0.12), transparent 34%),
     #f3f7fb;
   color: #223044;
-  font-family: Inter, Calibri, "Segoe UI", Arial, sans-serif;
+  font-family: Calibri, "Segoe UI", Arial, sans-serif;
 }
 
 .account-sidebar {
-  padding: 22px 16px;
+  padding: 18px 16px;
   background:
-    linear-gradient(180deg, rgba(10, 28, 48, 0.98), rgba(18, 45, 62, 0.98)),
-    #0d2237;
-  box-shadow: 10px 0 30px rgba(15, 35, 55, 0.18);
+    linear-gradient(180deg, rgba(9, 28, 47, 0.99), rgba(15, 45, 60, 0.99)),
+    #0d2438;
+  box-shadow: 8px 0 28px rgba(15, 35, 55, 0.18);
 }
 
 .account-brand {
-  min-height: 72px;
+  min-height: 64px;
   border-bottom-color: rgba(255, 255, 255, 0.12);
-  padding-bottom: 20px;
+  padding: 0 4px 17px;
 }
 
 .account-brand-mark {
-  width: 46px;
-  height: 46px;
-  border-radius: 11px;
-  background: linear-gradient(135deg, #0f766e, #2aa7df);
-  box-shadow: 0 14px 26px rgba(20, 184, 166, 0.24);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #13736c, #2c8ecd);
+  box-shadow: 0 12px 24px rgba(20, 184, 166, 0.2);
 }
 
 .account-brand strong {
-  font-size: 17px;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .account-brand small {
   color: #9bb4c9;
-  font-size: 10px;
-  letter-spacing: 0.06em;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
 }
 
 .member-card {
   position: relative;
   overflow: hidden;
   height: auto;
-  min-height: 156px;
-  margin: 22px 0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  min-height: 128px;
+  margin: 20px 0 22px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 14px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.035)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
     rgba(8, 20, 34, 0.28);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 36px rgba(0, 0, 0, 0.14);
-  padding: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 34px rgba(0, 0, 0, 0.12);
+  padding: 17px;
 }
 
 .member-card::after {
@@ -5945,66 +5947,104 @@ cite {
 }
 
 .member-card .avatar {
-  width: 58px;
-  height: 58px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #38bdf8, #0f766e);
-  box-shadow: 0 14px 28px rgba(8, 145, 178, 0.25);
-  font-size: 13px;
+  width: 54px;
+  height: 54px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #35b6dc, #13736c);
+  box-shadow: 0 14px 28px rgba(8, 145, 178, 0.22);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .member-card strong {
   color: #f8fbff;
-  font-size: 18px;
-  margin-top: 12px;
+  font-size: 17px;
+  font-weight: 700;
+  margin-top: 13px;
 }
 
 .member-card span,
 .member-card small {
   color: #a9bdcf;
-  font-size: 12px;
+  font-size: 12.5px;
+  font-weight: 400;
 }
 
 .panel-nav {
-  gap: 6px;
+  gap: 5px;
+  padding: 0 4px 8px;
 }
 
 .panel-nav a {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
   border: 1px solid transparent;
-  border-radius: 12px;
-  color: #c3d3e4;
-  font-size: 13px;
+  border-radius: 11px;
+  color: #c9d7e6;
+  font-size: 14px;
   font-weight: 600;
-  padding: 12px 13px;
+  line-height: 1;
+  min-height: 42px;
+  padding: 8px 10px;
+  transition: background 170ms ease, border-color 170ms ease, box-shadow 170ms ease, color 170ms ease, transform 170ms ease;
 }
 
-.panel-nav a::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(148, 163, 184, 0.38);
-  box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.08);
+.panel-nav a span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panel-nav-icon {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+}
+
+.panel-nav a .panel-nav-icon {
+  display: grid;
+  place-items: center;
+  box-sizing: content-box;
+  width: 17px;
+  height: 17px;
+  border-radius: 9px;
+  background: rgba(148, 163, 184, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.14);
+  color: #98b5ce;
+  padding: 7px;
 }
 
 .panel-nav a.active,
 .panel-nav a[aria-current="page"],
 .panel-nav a:hover {
-  border-color: rgba(56, 189, 248, 0.32);
-  background: linear-gradient(135deg, rgba(14, 116, 144, 0.98), rgba(37, 99, 235, 0.92));
+  border-color: rgba(80, 184, 219, 0.34);
+  background: linear-gradient(135deg, rgba(18, 133, 148, 0.98), rgba(39, 112, 203, 0.96));
   color: #ffffff;
-  box-shadow: 0 12px 24px rgba(14, 116, 144, 0.22);
+  box-shadow: 0 13px 24px rgba(11, 117, 151, 0.22);
+  transform: translateX(2px);
 }
 
-.panel-nav a.active::before,
-.panel-nav a[aria-current="page"]::before,
-.panel-nav a:hover::before {
+.panel-nav a.active .panel-nav-icon,
+.panel-nav a[aria-current="page"] .panel-nav-icon,
+.panel-nav a:hover .panel-nav-icon {
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.panel-nav a.active::after,
+.panel-nav a[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
   background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.16);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.12);
 }
 
 .account-workspace {
