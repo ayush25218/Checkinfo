@@ -4,7 +4,9 @@ deployment:
     - export DEPLOYPATH=/home4/checkinfo/beta.checkinfo.in
     - /bin/mkdir -p $DEPLOYPATH
     - /bin/rm -f $DEPLOYPATH/.htaccess $DEPLOYPATH/app.cjs $DEPLOYPATH/server.mjs
+    - /bin/mkdir -p $DEPLOYPATH/_next
     - /bin/cp -R .next $DEPLOYPATH/
+    - /bin/cp -R .next/static $DEPLOYPATH/_next/
     - /bin/cp -R node_modules $DEPLOYPATH/
     - /bin/cp -R public $DEPLOYPATH/
     - /bin/cp package.json app.js Passengerfile.json index.html $DEPLOYPATH/
