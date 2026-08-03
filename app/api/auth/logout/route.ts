@@ -17,10 +17,12 @@ function logout() {
 
     if (activeRole === "member") {
       cookieStore.delete("checkinfo_member_id");
+      cookieStore.delete("checkinfo_member_name");
     }
 
     if (activeRole === "user") {
       cookieStore.delete("checkinfo_user_auth");
+      cookieStore.delete("checkinfo_user_name");
     }
 
     const redirectPath = activeRole === "admin" ? "/admin/login" : activeRole === "user" ? "/?logout=success" : "/members/login";

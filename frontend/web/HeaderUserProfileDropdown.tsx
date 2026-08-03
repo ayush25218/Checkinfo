@@ -11,10 +11,18 @@ type VisitorProfile = {
 };
 
 const defaultVisitor: VisitorProfile = {
-  email: "visitor@example.com",
-  name: "Guest Visitor",
+  email: "",
+  name: "",
   phone: "",
 };
+
+function getCookie(name: string): string {
+  if (typeof document === "undefined") return "";
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(";").shift() || "");
+  return "";
+}
 
 function readStoredVisitor(): VisitorProfile {
   if (typeof window === "undefined") return defaultVisitor;
@@ -28,12 +36,16 @@ function readStoredVisitor(): VisitorProfile {
 }
 
 function initialsFor(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) || "VP";
+  if (!name) return "U";
+  return (
+    name
+      .split(" ")
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "U"
+  );
 }
 
 function AccountIcon({ name }: { name: "add" | "dashboard" | "edit" | "login" | "logout" | "register" | "user" }) {
@@ -57,7 +69,7 @@ function AccountIcon({ name }: { name: "add" | "dashboard" | "edit" | "login" | 
 export function HeaderUserProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<AccountMode>("guest");
-  const [visitorProfile, setVisitorProfile] = useState<VisitorProfile>(defaultVisitor);
+  const [displayName, setDisplayName] = useState<string>("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -65,8 +77,19 @@ export function HeaderUserProfileDropdown() {
     const hasVisitorAuth = cookies.includes("checkinfo_user_auth=true") || window.localStorage.getItem("checkinfo_user_auth") === "true";
     const hasMemberAuth = cookies.includes("checkinfo_member_id=") || Boolean(window.localStorage.getItem("checkinfo-member-id"));
 
-    setMode(hasMemberAuth ? "member" : hasVisitorAuth ? "visitor" : "guest");
-    setVisitorProfile(readStoredVisitor());
+    if (hasMemberAuth) {
+      setMode("member");
+      const memberName = getCookie("checkinfo_member_name") || window.localStorage.getItem("checkinfo_member_name") || "Business Member";
+      setDisplayName(memberName);
+    } else if (hasVisitorAuth) {
+      setMode("visitor");
+      const visitor = readStoredVisitor();
+      const userName = getCookie("checkinfo_user_name") || visitor.name || window.localStorage.getItem("checkinfo_user_name") || "User Account";
+      setDisplayName(userName);
+    } else {
+      setMode("guest");
+      setDisplayName("");
+    }
   }, []);
 
   useEffect(() => {
@@ -79,17 +102,20 @@ export function HeaderUserProfileDropdown() {
   }, []);
 
   const isSignedIn = mode !== "guest";
-  const buttonLabel = mode === "member" ? "Business Panel" : mode === "visitor" ? visitorProfile.name || "My Account" : "Account";
-  const avatarLabel = mode === "member" ? "BIZ" : mode === "visitor" ? initialsFor(visitorProfile.name) : "AC";
+  
+  // When NOT logged in -> Label is "Login"
+  // When LOGGED IN -> Label is the User's / Member's Name!
+  const buttonLabel = !isSignedIn ? "Login" : displayName || (mode === "member" ? "Business Account" : "User Account");
+  const avatarLabel = !isSignedIn ? "LG" : mode === "member" ? (displayName && displayName !== "Business Member" ? initialsFor(displayName) : "BIZ") : initialsFor(displayName);
 
   return (
     <div className="header-user-dropdown-wrap" ref={dropdownRef}>
       <button
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        className={`check-profile-circle ${isSignedIn ? "is-active" : ""} ${mode === "member" ? "is-business" : ""}`}
+        className={`check-profile-circle ${isSignedIn ? "is-active" : "is-guest"} ${mode === "member" ? "is-business" : ""}`}
         onClick={() => setIsOpen((value) => !value)}
-        title={mode === "member" ? "Business panel menu" : "Account menu"}
+        title={!isSignedIn ? "Login or register account" : mode === "member" ? `Business Panel (${displayName})` : `User Account (${displayName})`}
         type="button"
       >
         <span className="check-profile-avatar">
@@ -107,10 +133,10 @@ export function HeaderUserProfileDropdown() {
           {mode === "member" ? (
             <>
               <div className="profile-menu-head">
-                <span className="profile-menu-avatar business">BIZ</span>
+                <span className="profile-menu-avatar business">{initialsFor(displayName)}</span>
                 <div>
-                  <strong>Business Account</strong>
-                  <small>Manage listings and enquiries</small>
+                  <strong>{displayName}</strong>
+                  <small>Business Member Panel</small>
                 </div>
               </div>
               <a href="/members/myaccount" role="menuitem"><AccountIcon name="dashboard" />Dashboard</a>
@@ -121,10 +147,10 @@ export function HeaderUserProfileDropdown() {
           ) : mode === "visitor" ? (
             <>
               <div className="profile-menu-head">
-                <span className="profile-menu-avatar">{initialsFor(visitorProfile.name)}</span>
+                <span className="profile-menu-avatar">{initialsFor(displayName)}</span>
                 <div>
-                  <strong>{visitorProfile.name || "Visitor Account"}</strong>
-                  <small>{visitorProfile.email || "Website visitor"}</small>
+                  <strong>{displayName}</strong>
+                  <small>Visitor User Account</small>
                 </div>
               </div>
               <a href="/#categories" role="menuitem"><AccountIcon name="dashboard" />Browse Directory</a>
@@ -134,13 +160,13 @@ export function HeaderUserProfileDropdown() {
           ) : (
             <>
               <div className="profile-menu-head">
-                <span className="profile-menu-avatar">AC</span>
+                <span className="profile-menu-avatar">LG</span>
                 <div>
-                  <strong>Account Access</strong>
-                  <small>Choose how you want to continue</small>
+                  <strong>Login Account</strong>
+                  <small>Sign in as Visitor or Business</small>
                 </div>
               </div>
-              <a href="/users/login" role="menuitem"><AccountIcon name="login" />Visitor Login</a>
+              <a href="/users/login" role="menuitem"><AccountIcon name="login" />Visitor / User Login</a>
               <a href="/users/register" role="menuitem"><AccountIcon name="register" />Create Visitor Account</a>
               <a className="business-link" href="/members/login" role="menuitem"><AccountIcon name="user" />Business Owner Login</a>
             </>

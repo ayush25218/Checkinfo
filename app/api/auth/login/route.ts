@@ -39,7 +39,15 @@ export async function POST(request: Request) {
   });
 
   if (role === "member") {
+    const cleanName = username.split("@")[0] || username || "Business Member";
     cookieStore.set("checkinfo_member_id", username.replace(/[^a-zA-Z0-9_-]/g, "") || "member", {
+      maxAge: 60 * 60 * 24 * 365,
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+    cookieStore.set("checkinfo_member_name", cleanName, {
+      httpOnly: false,
       maxAge: 60 * 60 * 24 * 365,
       path: "/",
       sameSite: "lax",
@@ -48,7 +56,15 @@ export async function POST(request: Request) {
   }
 
   if (role === "user") {
+    const cleanName = username.split("@")[0] || username || "User";
     cookieStore.set("checkinfo_user_auth", "true", {
+      httpOnly: false,
+      maxAge: 60 * 60 * 24 * 365,
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+    cookieStore.set("checkinfo_user_name", cleanName, {
       httpOnly: false,
       maxAge: 60 * 60 * 24 * 365,
       path: "/",
