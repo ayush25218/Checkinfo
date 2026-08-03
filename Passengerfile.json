@@ -1,5 +1,5 @@
 {
   "app_type": "node",
-  "startup_file": "app.cjs",
+  "startup_file": "app.js",
   "environment": "production"
 }

@@ -6,7 +6,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "start": "node app.cjs"
+    "start": "node app.js"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
@@ -33,6 +33,5 @@
     "vinext": "0.0.50",
     "vite": "8.0.13",
     "wrangler": "4.92.0"
-  },
-  "type": "module"
+  }
 }
