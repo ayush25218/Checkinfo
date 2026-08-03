@@ -155,7 +155,7 @@ export async function HomePage() {
         <div className="check-section-title centered">
           <p className="eyebrow">Explore by city</p>
           <h2>Find businesses across high-intent locations.</h2>
-          <p>Template-style image tiles for city pages, powered by the same Checkinfo search routes.</p>
+          <p>Real city discovery tiles connected with Checkinfo category, search, and location routes.</p>
         </div>
         <div className="check-city-grid">
           {cityHighlights.map(([city, text, href], index) => (

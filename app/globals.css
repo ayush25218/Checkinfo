@@ -1790,7 +1790,7 @@ cite {
   padding: clamp(52px, 7vw, 86px) clamp(18px, 6vw, 96px);
   background:
     linear-gradient(180deg, #06142a, rgba(7, 27, 61, 0.96)),
-    url("/checkinfo-dummy-wide.svg") center / cover no-repeat;
+    url("/city-images/mumbai-skyline.jpg") center / cover no-repeat;
   color: #ffffff;
 }
 
@@ -1864,19 +1864,19 @@ cite {
 }
 
 .check-city-card.city-1 {
-  --city-bg: url("/checkinfo-dummy-wide.svg");
+  --city-bg: url("/city-images/delhi-red-fort.jpg");
 }
 
 .check-city-card.city-2 {
-  --city-bg: url("/checkinfo-dummy-wide.svg");
+  --city-bg: url("/city-images/mumbai-skyline.jpg");
 }
 
 .check-city-card.city-3 {
-  --city-bg: url("/checkinfo-dummy-wide.svg");
+  --city-bg: url("/city-images/bengaluru-skyline.jpg");
 }
 
 .check-city-card.city-4 {
-  --city-bg: url("/checkinfo-dummy-wide.svg");
+  --city-bg: url("/city-images/hyderabad-charminar.jpg");
 }
 
 .check-city-card span {

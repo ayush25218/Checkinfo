@@ -10,8 +10,12 @@ import type {
 import {
   getOrCreateMongoMember,
   isMongoConfigured,
+  countMongoBusinessListings,
+  countMongoMembers,
+  listMongoBusinessListings,
   listMongoMembers,
   saveMongoMember,
+  updateMongoBusinessStatus,
   type MemberAccount,
   type MemberProfile,
   // Categories
@@ -542,13 +546,32 @@ export async function getAdminResourceAsync(resource = "dashboard") {
   }
 
   let members: MemberAccount[];
+  let business: ReturnType<typeof buildBusinessFromMembers>;
+  let totalBusinessCount = 0;
+  let totalMembersCount = 0;
   try {
-    members = await listMongoMembers();
+    members = await listMongoMembers({ limit: 5000 });
+    totalMembersCount = await countMongoMembers();
   } catch {
     members = demoMemberAccounts;
+    totalMembersCount = members.length;
   }
   if (members.length === 0 || !members.some((member) => member.listings.length)) members = demoMemberAccounts;
-  const business = buildBusinessFromMembers(members);
+  try {
+    const mongoBusiness = await listMongoBusinessListings({ limit: 5000 });
+    business = mongoBusiness.length
+      ? mongoBusiness.map((listing) => ({
+        ...listing,
+        addressProofName: listing.addressProofName,
+        image: listing.image,
+        publicPath: listing.publicPath || listingPublicPath(listing),
+      })) as ReturnType<typeof buildBusinessFromMembers>
+      : buildBusinessFromMembers(members);
+    totalBusinessCount = mongoBusiness.length ? await countMongoBusinessListings() : business.length;
+  } catch {
+    business = buildBusinessFromMembers(members);
+    totalBusinessCount = business.length;
+  }
 
   if (resource === "dashboard") {
     let mongoCategoriesCount = categories.length;
@@ -595,10 +618,10 @@ export async function getAdminResourceAsync(resource = "dashboard") {
     }));
 
     return {
-      activeMembers: members.filter((member) => member.profile.status === "Active").length,
+      activeMembers: isMongoConfigured() ? await countMongoMembers({ "profile.status": "Active" }) : members.filter((member) => member.profile.status === "Active").length,
       categoriesCount: mongoCategoriesCount,
       categoryDistribution,
-      membersCount: members.length,
+      membersCount: totalMembersCount,
       pendingBusiness: business.filter((listing) => listing.status === "Pending").length,
       recentEnquiries,
       systemHealth: {
@@ -606,7 +629,7 @@ export async function getAdminResourceAsync(resource = "dashboard") {
         isMongoConfigured: isMongoConfigured(),
         lastSync: new Date().toISOString(),
       },
-      totalBusiness: business.length,
+      totalBusiness: totalBusinessCount,
       totalEnquiries: mongoEnquiries.length,
       totalUsers: mongoUsersCount,
     };
@@ -946,6 +969,7 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
         title: "Listing Status Update",
         unread: true,
       });
+      await updateMongoBusinessStatus(ownerId, id, action as MemberListing["status"]);
       await saveMongoMember(account);
       return { business: await getAdminResourceAsync("business") };
     }

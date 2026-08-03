@@ -1,5 +1,6 @@
 import { MongoClient, type Collection, type Db } from "mongodb";
 import { categories } from "./checkinfo";
+import { listingLocationText, listingPublicPath } from "./listingSeo";
 import type {
   MemberEnquiry,
   MemberListing,
@@ -43,6 +44,19 @@ export type MemberAccount = {
   registeredAt: string;
   reviews: MemberReview[];
   tickets: SupportTicket[];
+};
+
+export type BusinessListingRecord = MemberListing & {
+  _id: string;
+  badge: "Featured" | "Verified";
+  contact: string;
+  createdAt: string;
+  details: string;
+  ownerEmail: string;
+  ownerId: string;
+  ownerName: string;
+  publicPath: string;
+  updatedAt: string;
 };
 
 type CategoryRecord = {
@@ -193,6 +207,7 @@ export async function getMongoCollections() {
 
   return {
     adminSettings: db.collection<AdminSettingsExtended>("admin_settings"),
+    businesses: db.collection<BusinessListingRecord>("businesses"),
     categories: db.collection<CategoryRecord>("categories"),
     enquiries: db.collection<EnquiryRecord>("enquiries"),
     faqs: db.collection<FaqRecord>("faqs"),
@@ -242,6 +257,11 @@ function slugify(value: string) {
 
 async function ensureIndexes(collections: Awaited<ReturnType<typeof getMongoCollections>>) {
   await Promise.all([
+    collections.businesses.createIndex({ ownerId: 1, updatedAt: -1 }),
+    collections.businesses.createIndex({ status: 1, updatedAt: -1 }),
+    collections.businesses.createIndex({ category: 1, status: 1, updatedAt: -1 }),
+    collections.businesses.createIndex({ state: 1, city: 1, subcity: 1, status: 1 }),
+    collections.businesses.createIndex({ name: "text", category: "text", subcategory: "text", businessType: "text", city: "text", subcity: "text", state: "text", keywords: "text" }),
     collections.categories.createIndex({ slug: 1 }, { unique: true }),
     collections.categories.createIndex({ status: 1, displayOrder: 1 }),
     collections.enquiries.createIndex({ createdAt: -1 }),
@@ -402,6 +422,13 @@ export async function seedMongoDatabase() {
     );
   }
 
+  if ((await collections.businesses.countDocuments()) === 0) {
+    const memberDocs = await collections.members.find({ "listings.0": { $exists: true } }).toArray();
+    for (const member of memberDocs) {
+      await syncMongoMemberListings(member);
+    }
+  }
+
   await collections.settings.updateOne(
     { _id: "site" },
     {
@@ -432,15 +459,95 @@ export async function getOrCreateMongoMember(memberId: string) {
   return account;
 }
 
+function businessId(ownerId: string, listingId: string) {
+  return `${ownerId}::${listingId}`;
+}
+
+function businessRecordFromListing(account: MemberAccount, listing: MemberListing): Omit<BusinessListingRecord, "createdAt"> {
+  return {
+    ...listing,
+    _id: businessId(account.profile.id, listing.id),
+    address: listing.address || listingLocationText(listing),
+    badge: listing.status === "Featured" ? "Featured" : "Verified",
+    contact: listing.mobile || listing.email,
+    details: listing.description || listing.keywords,
+    location: listingLocationText(listing),
+    ownerEmail: account.profile.email,
+    ownerId: account.profile.id,
+    ownerName: account.profile.name,
+    publicPath: listingPublicPath(listing),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export async function syncMongoMemberListings(account: MemberAccount) {
+  const { businesses } = await getMongoCollections();
+  const listingIds = account.listings.map((listing) => businessId(account.profile.id, listing.id));
+
+  if (account.listings.length) {
+    await businesses.bulkWrite(
+      account.listings.map((listing) => {
+        const record = businessRecordFromListing(account, listing);
+        const { _id, ...fields } = record;
+        return {
+          updateOne: {
+            filter: { _id },
+            update: {
+              $set: fields,
+              $setOnInsert: { _id, createdAt: new Date().toISOString() },
+            },
+            upsert: true,
+          },
+        };
+      }),
+      { ordered: false },
+    );
+  }
+
+  await businesses.deleteMany({
+    ownerId: account.profile.id,
+    ...(listingIds.length ? { _id: { $nin: listingIds } } : {}),
+  });
+}
+
 export async function saveMongoMember(account: MemberAccount) {
   const { members } = await getMongoCollections();
   const { _id, ...record } = account;
   await members.updateOne({ _id: account.profile.id }, { $set: record, $setOnInsert: { _id: _id ?? account.profile.id } }, { upsert: true });
+  await syncMongoMemberListings(account);
 }
 
-export async function listMongoMembers() {
+export async function listMongoMembers(options: { limit?: number } = {}) {
   const { members } = await getMongoCollections();
-  return members.find({}).sort({ registeredAt: -1 }).toArray();
+  const cursor = members.find({}).sort({ registeredAt: -1 });
+  if (options.limit && options.limit > 0) cursor.limit(options.limit);
+  return cursor.toArray();
+}
+
+export async function countMongoMembers(filter: Record<string, unknown> = {}) {
+  const { members } = await getMongoCollections();
+  return members.countDocuments(filter);
+}
+
+export async function listMongoBusinessListings(options: { limit?: number; status?: MemberListing["status"] } = {}) {
+  const { businesses } = await getMongoCollections();
+  const filter: Partial<Pick<BusinessListingRecord, "status">> = options.status ? { status: options.status } : {};
+  const cursor = businesses.find(filter).sort({ updatedAt: -1 });
+  if (options.limit && options.limit > 0) cursor.limit(options.limit);
+  return cursor.toArray();
+}
+
+export async function countMongoBusinessListings(filter: Record<string, unknown> = {}) {
+  const { businesses } = await getMongoCollections();
+  return businesses.countDocuments(filter);
+}
+
+export async function updateMongoBusinessStatus(ownerId: string, listingId: string, status: MemberListing["status"]) {
+  const { businesses } = await getMongoCollections();
+  await businesses.updateOne(
+    { _id: businessId(ownerId, listingId) },
+    { $set: { status, badge: status === "Featured" ? "Featured" : "Verified", updatedAt: new Date().toISOString() } },
+  );
 }
 
 export async function saveNewsletterSubscription(email: string, source = "website") {
@@ -893,4 +1000,3 @@ export type MongoCollectionMap = {
   subadmins: import("mongodb").Collection<SubadminRecord>;
   testimonials: import("mongodb").Collection<TestimonialRecord>;
 };
-
