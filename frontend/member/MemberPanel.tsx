@@ -207,6 +207,8 @@ export function MemberShell({
   active: string;
   children: ReactNode;
 }) {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
   const isListingActive =
     active === "My Business Listing" ||
     active === "Add Listing" ||
@@ -214,11 +216,41 @@ export function MemberShell({
     active === "Edit Detail";
 
   return (
-    <main className="account-shell">
+    <main className={`account-shell ${isSidebarCollapsed ? "collapsed-sidebar" : ""}`}>
+      {isSidebarCollapsed ? (
+        <button
+          type="button"
+          className="floating-sidebar-open-btn"
+          onClick={() => setIsSidebarCollapsed(false)}
+          title="Open Navigation Menu"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+          Open Menu
+        </button>
+      ) : null}
+
       <aside className="account-sidebar">
-        <a className="brand account-brand" href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", padding: "0.5rem 0" }}>
-          <img src="/logo.png" alt="Checkinfo" style={{ height: "38px", width: "auto", objectFit: "contain" }} />
-        </a>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", padding: "0.25rem 0 0.75rem", borderBottom: "1px solid rgba(255,255,255,0.1)", marginBottom: "0.5rem" }}>
+          <a className="brand account-brand" href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", borderBottom: "none", minHeight: "auto", padding: 0 }}>
+            <img src="/logo.png" alt="Checkinfo" style={{ height: "36px", width: "auto", objectFit: "contain" }} />
+          </a>
+          <button
+            type="button"
+            className="sidebar-toggle-btn"
+            onClick={() => setIsSidebarCollapsed(true)}
+            title="Close Sidebar Menu"
+            aria-label="Close Sidebar Menu"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
 
         <SidebarDigitalVisitingCard />
 

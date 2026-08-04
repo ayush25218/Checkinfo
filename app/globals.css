@@ -6158,6 +6158,11 @@ cite {
     #f3f7fb;
   color: #223044;
   font-family: Calibri, "Segoe UI", Arial, sans-serif;
+  transition: grid-template-columns 250ms ease-in-out;
+}
+
+.account-shell.collapsed-sidebar {
+  grid-template-columns: 0px minmax(0, 1fr);
 }
 
 .account-sidebar {
@@ -6166,6 +6171,61 @@ cite {
     linear-gradient(180deg, rgba(9, 28, 47, 0.99), rgba(15, 45, 60, 0.99)),
     #0d2438;
   box-shadow: 8px 0 28px rgba(15, 35, 55, 0.18);
+  transition: transform 250ms ease-in-out, opacity 200ms ease-in-out;
+}
+
+.account-shell.collapsed-sidebar .account-sidebar {
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  padding: 0;
+}
+
+.sidebar-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease;
+  flex-shrink: 0;
+}
+
+.sidebar-toggle-btn:hover {
+  background: rgba(239, 68, 68, 0.22);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.floating-sidebar-open-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 999;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.floating-sidebar-open-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.45);
 }
 
 .account-brand {
