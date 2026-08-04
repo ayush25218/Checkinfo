@@ -45,24 +45,8 @@ function NavIcon({ name }: { name: (typeof accountNav)[number]["icon"] }) {
   );
 }
 
-export function MemberShell({
-  active,
-  children,
-}: {
-  active: string;
-  children: ReactNode;
-}) {
-  const [profile, setProfile] = useState<{
-    name: string;
-    role: string;
-    email: string;
-    initials: string;
-  }>({
-    name: memberProfile.name,
-    role: memberProfile.role,
-    email: memberProfile.email,
-    initials: memberProfile.initials,
-  });
+export function SidebarDigitalVisitingCard() {
+  const [listing, setListing] = useState<any>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -70,31 +54,150 @@ export function MemberShell({
       const memberId = window.localStorage.getItem("checkinfo-member-id") || "member-default";
       const raw = window.localStorage.getItem(`${memberId}-checkinfo-member-listings`);
       if (raw) {
-        const listings = JSON.parse(raw);
-        if (Array.isArray(listings) && listings.length > 0) {
-          const first = listings[0];
-          const ownerName = first.contactPerson || first.name || memberProfile.name;
-          const businessRole = first.name ? `${first.name} (${first.category})` : memberProfile.role;
-          const ownerEmail = first.email || memberProfile.email;
-          const initials = ownerName
-            .split(" ")
-            .map((w: string) => w[0])
-            .filter(Boolean)
-            .slice(0, 2)
-            .join("")
-            .toUpperCase() || "BO";
-
-          setProfile({
-            name: ownerName,
-            role: businessRole,
-            email: ownerEmail,
-            initials,
-          });
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setListing(parsed[0]);
         }
       }
     } catch {}
   }, []);
 
+  const name = listing?.contactPerson || listing?.name || memberProfile.name;
+  const companyName = listing?.name || "YOUR BUSINESS";
+  const email = listing?.email || memberProfile.email;
+  const phone = listing?.mobile || "+91 98765 43210";
+  const address = listing?.subcity ? `${listing.subcity}, ${listing.city}` : listing?.city || listing?.address || "India";
+  const website = listing?.website || "www.checkinfo.in";
+
+  const listingPageUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/search?q=${encodeURIComponent(companyName)}`
+    : `https://checkinfo.in/search?q=${encodeURIComponent(companyName)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(listingPageUrl)}`;
+
+  return (
+    <div
+      className="sidebar-visiting-card"
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "155px",
+        borderRadius: "14px",
+        overflow: "hidden",
+        background: "#ffffff",
+        boxShadow: "0 10px 25px rgba(0, 0, 0, 0.25)",
+        border: "1px solid rgba(255, 255, 255, 0.15)",
+        fontFamily: "Arial, sans-serif",
+        display: "flex",
+        margin: "0.75rem 0 1.25rem",
+        textDecoration: "none",
+      }}
+      title="Digital Business Visiting Card"
+    >
+      <div
+        style={{
+          position: "absolute",
+          inset: "0 auto 0 0",
+          width: "59%",
+          background: "linear-gradient(135deg, #4c1d95 0%, #5b21b6 50%, #6d28d9 100%)",
+          clipPath: "ellipse(98% 140% at 0% 50%)",
+          zIndex: 1,
+          padding: "0.85rem 0.75rem",
+          color: "#ffffff",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+        }}
+      >
+        <div>
+          <h4
+            style={{
+              margin: 0,
+              fontSize: "0.825rem",
+              fontWeight: "800",
+              color: "#ffffff",
+              textTransform: "uppercase",
+              lineHeight: "1.1",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {name}
+          </h4>
+          <span style={{ fontSize: "0.625rem", color: "#ddd6fe", display: "block", marginTop: "1px" }}>
+            Business Owner
+          </span>
+        </div>
+
+        <div style={{ display: "grid", gap: "0.25rem", fontSize: "0.6rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+            <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", fontSize: "0.55rem", flexShrink: 0 }}>✉</span>
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "95px" }}>{email}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+            <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", fontSize: "0.55rem", flexShrink: 0 }}>📞</span>
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "95px" }}>{phone}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+            <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", fontSize: "0.55rem", flexShrink: 0 }}>📍</span>
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "95px" }}>{address}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+            <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", fontSize: "0.55rem", flexShrink: 0 }}>🌐</span>
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "95px" }}>{website}</span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          marginLeft: "auto",
+          width: "46%",
+          padding: "0.6rem 0.4rem",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+          zIndex: 2,
+        }}
+      >
+        <img src="/logo.png" alt="Checkinfo" style={{ height: "15px", width: "auto", marginBottom: "2px" }} />
+        <strong
+          style={{
+            fontSize: "0.65rem",
+            fontWeight: "800",
+            color: "#1e1b4b",
+            textTransform: "uppercase",
+            lineHeight: "1.1",
+            maxHeight: "24px",
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+          }}
+        >
+          {companyName}
+        </strong>
+        <span style={{ fontSize: "0.45rem", fontWeight: "800", letterSpacing: "0.04em", color: "#64748b", margin: "1px 0 4px", textTransform: "uppercase" }}>
+          VERIFIED ON CHECKINFO
+        </span>
+
+        <div style={{ padding: "3px", background: "#ffffff", borderRadius: "6px", border: "1px solid #cbd5e1" }}>
+          <img src={qrUrl} alt="Business Listing QR Code" style={{ width: "52px", height: "52px", display: "block" }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function MemberShell({
+  active,
+  children,
+}: {
+  active: string;
+  children: ReactNode;
+}) {
   const isListingActive =
     active === "My Business Listing" ||
     active === "Add Listing" ||
@@ -108,14 +211,7 @@ export function MemberShell({
           <img src="/logo.png" alt="Checkinfo" style={{ height: "38px", width: "auto", objectFit: "contain" }} />
         </a>
 
-        <div className="member-card">
-          <div className="avatar" style={{ background: "linear-gradient(135deg, #0284c7, #0f766e)", display: "grid", placeItems: "center", fontWeight: "800", color: "#fff", fontSize: "14px" }}>
-            {profile.initials}
-          </div>
-          <strong>{profile.name}</strong>
-          <span>{profile.role}</span>
-          <small>{profile.email}</small>
-        </div>
+        <SidebarDigitalVisitingCard />
 
         <nav className="panel-nav" aria-label="Member panel navigation">
           {accountNav.map(({ href, icon, label }) => {
