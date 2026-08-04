@@ -51,8 +51,10 @@ export function SidebarDigitalVisitingCard() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const memberId = window.localStorage.getItem("checkinfo-member-id") || "member-default";
-      const raw = window.localStorage.getItem(`${memberId}-checkinfo-member-listings`);
+      const raw =
+        window.localStorage.getItem("checkinfo-checkinfo-member-listings") ||
+        window.localStorage.getItem("backup-checkinfo-checkinfo-member-listings") ||
+        window.localStorage.getItem("checkinfo-member-listings");
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {

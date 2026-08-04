@@ -85,32 +85,48 @@ const packageSeed = [
   ["City Leader", "Rs 2499", "Trending placement, wider city reach, weekly performance report"],
 ] as const;
 
-function readStored<T>(key: string, fallback: T) {
+function readStored<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try {
     const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
+    if (raw) return JSON.parse(raw) as T;
+
+    // Auto-restore from backup key if primary key was ever cleared
+    const backupRaw = window.localStorage.getItem(`backup-${key}`);
+    if (backupRaw) {
+      const parsed = JSON.parse(backupRaw) as T;
+      window.localStorage.setItem(key, backupRaw);
+      return parsed;
+    }
+  } catch {}
+  return fallback;
 }
 
 function writeStored<T>(key: string, value: T) {
-  if (typeof window !== "undefined") window.localStorage.setItem(key, JSON.stringify(value));
+  if (typeof window !== "undefined") {
+    try {
+      const serialized = JSON.stringify(value);
+      window.localStorage.setItem(key, serialized);
+      window.localStorage.setItem(`backup-${key}`, serialized);
+    } catch {}
+  }
 }
 
 function getMemberId() {
-  if (typeof window === "undefined") return "member-default";
-  const urlMemberId = new URLSearchParams(window.location.search).get("memberId");
+  if (typeof window === "undefined") return "member-default-account";
   const stored = window.localStorage.getItem("checkinfo-member-id");
-  const memberId = urlMemberId || stored || `member-${crypto.randomUUID()}`;
-  window.localStorage.setItem("checkinfo-member-id", memberId);
-  document.cookie = `checkinfo_member_id=${encodeURIComponent(memberId)}; path=/; max-age=31536000; samesite=lax`;
+  if (stored && stored.length > 5) return stored;
+
+  const memberId = "member-primary-account";
+  try {
+    window.localStorage.setItem("checkinfo-member-id", memberId);
+    document.cookie = `checkinfo_member_id=${encodeURIComponent(memberId)}; path=/; max-age=31536000; samesite=lax`;
+  } catch {}
   return memberId;
 }
 
 function memberStorageKey(key: string) {
-  return `${getMemberId()}-${key}`;
+  return `checkinfo-${key}`;
 }
 
 function postMemberAction(resource: string, payload: Record<string, unknown>) {

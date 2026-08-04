@@ -87,13 +87,11 @@ export function HeaderUserProfileDropdown() {
       const userName = getCookie("checkinfo_user_name") || visitor.name || window.localStorage.getItem("checkinfo_user_name") || "User Account";
       setDisplayName(userName);
     } else {
-      // Cookies are absent -> Clean up any stale localStorage items
+      // Cookies are absent -> Reset header display mode without clearing business listings
       try {
         window.localStorage.removeItem("checkinfo_user_auth");
         window.localStorage.removeItem("checkinfo_user_name");
         window.localStorage.removeItem("checkinfo_member_name");
-        window.localStorage.removeItem("checkinfo-member-id");
-        window.localStorage.removeItem("checkinfo-member-session");
       } catch {}
       setMode("guest");
       setDisplayName("");
@@ -106,7 +104,6 @@ export function HeaderUserProfileDropdown() {
       "checkinfo_admin_auth",
       "checkinfo_member_auth",
       "checkinfo_user_auth",
-      "checkinfo_member_id",
       "checkinfo_member_name",
       "checkinfo_user_name",
     ];
