@@ -299,9 +299,9 @@ function downloadVisitingCardPng(listing: MemberListing) {
 
   // 2. Draw Left Curved Wave Gradient Background
   const grad = ctx.createLinearGradient(0, 0, 650, 600);
-  grad.addColorStop(0, "#4c1d95");
-  grad.addColorStop(0.5, "#5b21b6");
-  grad.addColorStop(1, "#6d28d9");
+  grad.addColorStop(0, "#581c87");
+  grad.addColorStop(0.5, "#6b21a8");
+  grad.addColorStop(1, "#5b21b6");
 
   ctx.beginPath();
   ctx.moveTo(0, 0);
@@ -464,7 +464,7 @@ function DigitalVisitingCard({ listing }: { listing: MemberListing }) {
             position: "absolute",
             inset: "0 auto 0 0",
             width: "58%",
-            background: "linear-gradient(135deg, #4c1d95 0%, #5b21b6 50%, #6d28d9 100%)",
+            background: "linear-gradient(135deg, #581c87 0%, #6b21a8 50%, #5b21b6 100%)",
             clipPath: "ellipse(95% 140% at 0% 50%)",
             zIndex: 1,
             padding: "2rem",

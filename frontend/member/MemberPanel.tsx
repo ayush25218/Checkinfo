@@ -98,7 +98,7 @@ export function SidebarDigitalVisitingCard() {
           position: "absolute",
           inset: "0 auto 0 0",
           width: "59%",
-          background: "linear-gradient(135deg, #4c1d95 0%, #5b21b6 50%, #6d28d9 100%)",
+          background: "linear-gradient(135deg, #581c87 0%, #6b21a8 50%, #5b21b6 100%)",
           clipPath: "ellipse(98% 140% at 0% 50%)",
           zIndex: 1,
           padding: "0.85rem 0.75rem",
