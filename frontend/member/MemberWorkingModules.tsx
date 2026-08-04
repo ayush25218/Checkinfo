@@ -1064,7 +1064,6 @@ export function LogoutModule() {
       "checkinfo_admin_auth",
       "checkinfo_member_auth",
       "checkinfo_user_auth",
-      "checkinfo_member_id",
       "checkinfo_member_name",
       "checkinfo_user_name",
     ];
@@ -1075,9 +1074,6 @@ export function LogoutModule() {
       window.localStorage.removeItem("checkinfo_user_auth");
       window.localStorage.removeItem("checkinfo_user_name");
       window.localStorage.removeItem("checkinfo_member_name");
-      window.localStorage.removeItem("checkinfo-member-id");
-      window.localStorage.removeItem("checkinfo_visitor_profile");
-      window.localStorage.removeItem("checkinfo-member-session");
     } catch {}
     setLoggedOut(true);
     window.location.href = "/api/auth/logout?role=member";

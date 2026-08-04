@@ -247,20 +247,30 @@ const faqSeed: FaqRecord[] = [
   { answer: "Business owners can post an ad from the website or member panel.", id: "faq-2", order: 20, question: "How to list my business?", status: "Active" },
 ];
 
-function readStored<T>(key: string, fallback: T) {
+function readStored<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
 
   try {
     const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
+    if (raw) return JSON.parse(raw) as T;
+
+    const backupRaw = window.localStorage.getItem(`backup-${key}`);
+    if (backupRaw) {
+      const parsed = JSON.parse(backupRaw) as T;
+      window.localStorage.setItem(key, backupRaw);
+      return parsed;
+    }
+  } catch {}
+  return fallback;
 }
 
 function writeStored<T>(key: string, value: T) {
   if (typeof window !== "undefined") {
-    window.localStorage.setItem(key, JSON.stringify(value));
+    try {
+      const serialized = JSON.stringify(value);
+      window.localStorage.setItem(key, serialized);
+      window.localStorage.setItem(`backup-${key}`, serialized);
+    } catch {}
   }
 }
 

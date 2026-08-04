@@ -110,14 +110,11 @@ export function HeaderUserProfileDropdown() {
     for (const name of allAuthCookies) {
       document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=lax`;
     }
-    // 2. Clear localStorage keys
+    // 2. Clear auth session flags
     try {
       window.localStorage.removeItem("checkinfo_user_auth");
       window.localStorage.removeItem("checkinfo_user_name");
       window.localStorage.removeItem("checkinfo_member_name");
-      window.localStorage.removeItem("checkinfo-member-id");
-      window.localStorage.removeItem("checkinfo_visitor_profile");
-      window.localStorage.removeItem("checkinfo-member-session");
     } catch {}
     // 3. Reset local state
     setMode("guest");

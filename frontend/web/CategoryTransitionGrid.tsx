@@ -91,7 +91,9 @@ export function CategoryTransitionGrid({ categories }: CategoryTransitionGridPro
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem("checkinfo-admin-categories");
+      const raw =
+        window.localStorage.getItem("checkinfo-admin-categories") ||
+        window.localStorage.getItem("backup-checkinfo-admin-categories");
       if (!raw) return;
 
       const records = JSON.parse(raw) as Array<{ image?: string; name?: string; order?: number; status?: string }>;
