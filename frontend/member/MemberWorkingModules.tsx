@@ -114,9 +114,23 @@ function writeStored<T>(key: string, value: T) {
 
 function getMemberId() {
   if (typeof window === "undefined") return "member-default-account";
-  const stored = window.localStorage.getItem("checkinfo-member-id");
-  if (stored && stored.length > 5) return stored;
 
+  // 1. First try the server-set cookie (checkinfo_member_id) — set at login to actual username
+  const cookieMatch = document.cookie.match(/checkinfo_member_id=([^;]+)/);
+  if (cookieMatch?.[1]) {
+    const fromCookie = decodeURIComponent(cookieMatch[1]).replace(/[^a-zA-Z0-9_-]/g, "");
+    if (fromCookie.length > 2) {
+      // Keep localStorage in sync
+      try { window.localStorage.setItem("checkinfo-member-id", fromCookie); } catch {}
+      return fromCookie;
+    }
+  }
+
+  // 2. Fallback: localStorage (already stored from prior session)
+  const stored = window.localStorage.getItem("checkinfo-member-id");
+  if (stored && stored.length > 2 && stored !== "member-primary-account") return stored;
+
+  // 3. Last resort: use a stable key (only if truly unknown — should never happen after login)
   const memberId = "member-primary-account";
   try {
     window.localStorage.setItem("checkinfo-member-id", memberId);
@@ -126,7 +140,9 @@ function getMemberId() {
 }
 
 function memberStorageKey(key: string) {
-  return `checkinfo-${key}`;
+  // Scope storage keys to logged-in member so multiple businesses on same browser don't mix data
+  const mid = getMemberId();
+  return `checkinfo-${mid}-${key}`;
 }
 
 function postMemberAction(resource: string, payload: Record<string, unknown>) {
