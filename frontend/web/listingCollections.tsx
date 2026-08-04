@@ -1,8 +1,6 @@
 import { getAdminResourceAsync } from "@/backend/directoryStore";
 import type { PublicBusinessListing } from "@/backend/listingSeo";
-import { BusinessCard } from "./BusinessCard";
 import { slugifyCategory } from "./categoryExperience";
-import { SiteHeader } from "./SiteHeader";
 
 export type ListingCollectionKind = "featured" | "new" | "trending" | "category";
 
@@ -38,36 +36,4 @@ export function filterTaxonomyListings(
   });
 }
 
-export function ListingCollectionPage({
-  eyebrow,
-  listings,
-  subtitle,
-  title,
-}: {
-  eyebrow: string;
-  listings: PublicBusinessListing[];
-  subtitle: string;
-  title: string;
-}) {
-  return (
-    <main className="listing-collection-page">
-      <SiteHeader />
-
-      <section className="listing-collection-hero">
-        <p className="eyebrow">{eyebrow}</p>
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
-        <span>{listings.length} listings</span>
-      </section>
-
-      <section className="listing-collection-grid">
-        {listings.length ? listings.map((listing) => <BusinessCard listing={listing} key={`${listing.ownerId}-${listing.id}`} />) : (
-          <article className="check-empty-listing">
-            <strong>No listings found</strong>
-            <span>Approved businesses will appear here after admin review.</span>
-          </article>
-        )}
-      </section>
-    </main>
-  );
-}
+export { ListingCollectionPage } from "./ListingCollectionClientPage";

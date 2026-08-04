@@ -917,6 +917,9 @@ export function ManageBusinessModule() {
     subcity: "",
   });
 
+  const pageSize = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+
   const filtered = useMemo(() => {
     return records
       .filter((record) => record.name.toLowerCase().includes(filters.name.toLowerCase()))
@@ -924,6 +927,17 @@ export function ManageBusinessModule() {
       .filter((record) => filters.category === "All" || record.category === filters.category)
       .filter((record) => filters.status === "All" || record.status === filters.status);
   }, [filters, records]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedListings = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, safePage]);
 
   useEffect(() => {
     void getAdminData<BusinessRecord[]>("business", businessSeed).then(setRecords);
@@ -1209,7 +1223,7 @@ export function ManageBusinessModule() {
           <span>Current Status</span>
           <span>Action</span>
         </div>
-        {filtered.map((record) => (
+        {paginatedListings.map((record) => (
           <div className="admin-real-row" key={record.id}>
             <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
             <span>{record.name}<small>{[record.category, record.subcategory, record.businessType].filter(Boolean).join(" / ")}{record.ownerName ? ` / ${record.ownerName}` : ""}</small></span>
@@ -1234,6 +1248,58 @@ export function ManageBusinessModule() {
             </span>
           </div>
         ))}
+      </div>
+
+      {/* Dynamic 20 Items Per Page Pagination Controls */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderTop: "1px solid #e2e8f0", flexWrap: "wrap", gap: "0.75rem", background: "#f8fafc", borderRadius: "0 0 12px 12px" }}>
+        <span style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: "500" }}>
+          Showing {filtered.length > 0 ? (safePage - 1) * pageSize + 1 : 0} to {Math.min(safePage * pageSize, filtered.length)} of {filtered.length} entries (20 per page)
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+          <button
+            type="button"
+            disabled={safePage <= 1}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", background: safePage <= 1 ? "#f1f5f9" : "#ffffff", color: safePage <= 1 ? "#94a3b8" : "#0f172a", cursor: safePage <= 1 ? "not-allowed" : "pointer", fontSize: "0.8rem", fontWeight: "600" }}
+          >
+            ← Previous
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
+            .map((pageNum, idx, arr) => {
+              const prev = arr[idx - 1];
+              const showEllipsis = prev && pageNum - prev > 1;
+              return (
+                <span key={pageNum} style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+                  {showEllipsis ? <span style={{ padding: "0 4px", fontSize: "0.85rem", color: "#64748b" }}>...</span> : null}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(pageNum)}
+                    style={{
+                      padding: "6px 11px",
+                      borderRadius: "6px",
+                      border: pageNum === safePage ? "1px solid #2563eb" : "1px solid #cbd5e1",
+                      background: pageNum === safePage ? "#2563eb" : "#ffffff",
+                      color: pageNum === safePage ? "#ffffff" : "#0f172a",
+                      cursor: "pointer",
+                      fontSize: "0.8rem",
+                      fontWeight: pageNum === safePage ? "700" : "500",
+                    }}
+                  >
+                    {pageNum}
+                  </button>
+                </span>
+              );
+            })}
+          <button
+            type="button"
+            disabled={safePage >= totalPages}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", background: safePage >= totalPages ? "#f1f5f9" : "#ffffff", color: safePage >= totalPages ? "#94a3b8" : "#0f172a", cursor: safePage >= totalPages ? "not-allowed" : "pointer", fontSize: "0.8rem", fontWeight: "600" }}
+          >
+            Next →
+          </button>
+        </div>
       </div>
     </section>
   );
