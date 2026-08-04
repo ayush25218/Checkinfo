@@ -201,12 +201,15 @@ export function HeaderUserProfileDropdown() {
                 <span className="profile-menu-avatar">LG</span>
                 <div>
                   <strong>Login Account</strong>
-                  <small>Sign in as Visitor or Business</small>
+                  <small>Select your account type to login</small>
                 </div>
               </div>
               <a href="/users/login" role="menuitem"><AccountIcon name="login" />Visitor / User Login</a>
-              <a href="/users/register" role="menuitem"><AccountIcon name="register" />Create Visitor Account</a>
               <a className="business-link" href="/members/login" role="menuitem"><AccountIcon name="user" />Business Owner Login</a>
+              <div className="profile-menu-footer">
+                <span>Don&apos;t have an account?</span>
+                <a href="/users/register">Sign Up / Create Account</a>
+              </div>
             </>
           )}
         </div>
