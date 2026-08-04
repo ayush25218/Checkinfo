@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, useState, type ReactNode } from "react";
 import { categories as backendCategories, memberProfile } from "@/backend/checkinfo";
 
 export const imageSlots = [
@@ -50,6 +52,49 @@ export function MemberShell({
   active: string;
   children: ReactNode;
 }) {
+  const [profile, setProfile] = useState<{
+    name: string;
+    role: string;
+    email: string;
+    initials: string;
+  }>({
+    name: memberProfile.name,
+    role: memberProfile.role,
+    email: memberProfile.email,
+    initials: memberProfile.initials,
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const memberId = window.localStorage.getItem("checkinfo-member-id") || "member-default";
+      const raw = window.localStorage.getItem(`${memberId}-checkinfo-member-listings`);
+      if (raw) {
+        const listings = JSON.parse(raw);
+        if (Array.isArray(listings) && listings.length > 0) {
+          const first = listings[0];
+          const ownerName = first.contactPerson || first.name || memberProfile.name;
+          const businessRole = first.name ? `${first.name} (${first.category})` : memberProfile.role;
+          const ownerEmail = first.email || memberProfile.email;
+          const initials = ownerName
+            .split(" ")
+            .map((w: string) => w[0])
+            .filter(Boolean)
+            .slice(0, 2)
+            .join("")
+            .toUpperCase() || "BO";
+
+          setProfile({
+            name: ownerName,
+            role: businessRole,
+            email: ownerEmail,
+            initials,
+          });
+        }
+      }
+    } catch {}
+  }, []);
+
   const isListingActive =
     active === "My Business Listing" ||
     active === "Add Listing" ||
@@ -64,10 +109,12 @@ export function MemberShell({
         </a>
 
         <div className="member-card">
-          <div className="avatar">{memberProfile.initials}</div>
-          <strong>{memberProfile.name}</strong>
-          <span>{memberProfile.role}</span>
-          <small>{memberProfile.email}</small>
+          <div className="avatar" style={{ background: "linear-gradient(135deg, #0284c7, #0f766e)", display: "grid", placeItems: "center", fontWeight: "800", color: "#fff", fontSize: "14px" }}>
+            {profile.initials}
+          </div>
+          <strong>{profile.name}</strong>
+          <span>{profile.role}</span>
+          <small>{profile.email}</small>
         </div>
 
         <nav className="panel-nav" aria-label="Member panel navigation">

@@ -384,11 +384,14 @@ function downloadVisitingCardPng(listing: MemberListing) {
   ctx.font = "bold 13px Arial, sans-serif";
   ctx.fillText("VERIFIED ON CHECKINFO.IN", 820, 210);
 
-  // 6. Draw QR Code image
+  // 6. Draw QR Code image pointing directly to business listing page on website
+  const listingPageUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/search?q=${encodeURIComponent(listing.name)}`
+    : `https://checkinfo.in/search?q=${encodeURIComponent(listing.name)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(listingPageUrl)}`;
+
   const qrImg = new Image();
   qrImg.crossOrigin = "anonymous";
-  const targetUrl = website.startsWith("http") ? website : "https://" + (website || "checkinfo.in");
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(targetUrl)}`;
 
   function triggerDownload() {
     const link = document.createElement("a");
@@ -416,8 +419,10 @@ function DigitalVisitingCard({ listing }: { listing: MemberListing }) {
   const phone = listing.mobile || "+91 98765 43210";
   const address = listing.address || listing.location || "Business Address, India";
   const website = listing.website || "www.checkinfo.in";
-  const targetUrl = website.startsWith("http") ? website : "https://" + (website || "checkinfo.in");
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(targetUrl)}`;
+  const listingPageUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/search?q=${encodeURIComponent(listing.name)}`
+    : `https://checkinfo.in/search?q=${encodeURIComponent(listing.name)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(listingPageUrl)}`;
 
   return (
     <div className="visiting-card-container" style={{ marginBottom: "2rem", display: "grid", gap: "1.25rem" }}>
