@@ -74,23 +74,61 @@ export function HeaderUserProfileDropdown() {
 
   useEffect(() => {
     const cookies = document.cookie || "";
-    const hasVisitorAuth = cookies.includes("checkinfo_user_auth=true") || window.localStorage.getItem("checkinfo_user_auth") === "true";
-    const hasMemberAuth = cookies.includes("checkinfo_member_id=") || Boolean(window.localStorage.getItem("checkinfo-member-id"));
+    const hasMemberCookie = cookies.includes("checkinfo_member_id=") || cookies.includes("checkinfo_member_auth=");
+    const hasUserCookie = cookies.includes("checkinfo_user_auth=true") || cookies.includes("checkinfo_user_auth=");
 
-    if (hasMemberAuth) {
+    if (hasMemberCookie) {
       setMode("member");
       const memberName = getCookie("checkinfo_member_name") || window.localStorage.getItem("checkinfo_member_name") || "Business Member";
       setDisplayName(memberName);
-    } else if (hasVisitorAuth) {
+    } else if (hasUserCookie) {
       setMode("visitor");
       const visitor = readStoredVisitor();
       const userName = getCookie("checkinfo_user_name") || visitor.name || window.localStorage.getItem("checkinfo_user_name") || "User Account";
       setDisplayName(userName);
     } else {
+      // Cookies are absent -> Clean up any stale localStorage items
+      try {
+        window.localStorage.removeItem("checkinfo_user_auth");
+        window.localStorage.removeItem("checkinfo_user_name");
+        window.localStorage.removeItem("checkinfo_member_name");
+        window.localStorage.removeItem("checkinfo-member-id");
+        window.localStorage.removeItem("checkinfo-member-session");
+      } catch {}
       setMode("guest");
       setDisplayName("");
     }
   }, []);
+
+  function handlePerformLogout(role: "member" | "user" | "admin") {
+    // 1. Expire all auth cookies on client side
+    const allAuthCookies = [
+      "checkinfo_admin_auth",
+      "checkinfo_member_auth",
+      "checkinfo_user_auth",
+      "checkinfo_member_id",
+      "checkinfo_member_name",
+      "checkinfo_user_name",
+    ];
+    for (const name of allAuthCookies) {
+      document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=lax`;
+    }
+    // 2. Clear localStorage keys
+    try {
+      window.localStorage.removeItem("checkinfo_user_auth");
+      window.localStorage.removeItem("checkinfo_user_name");
+      window.localStorage.removeItem("checkinfo_member_name");
+      window.localStorage.removeItem("checkinfo-member-id");
+      window.localStorage.removeItem("checkinfo_visitor_profile");
+      window.localStorage.removeItem("checkinfo-member-session");
+    } catch {}
+    // 3. Reset local state
+    setMode("guest");
+    setDisplayName("");
+    setIsOpen(false);
+    // 4. Redirect to server logout endpoint
+    window.location.href = `/api/auth/logout?role=${role}`;
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -142,7 +180,7 @@ export function HeaderUserProfileDropdown() {
               <a href="/members/myaccount" role="menuitem"><AccountIcon name="dashboard" />Dashboard</a>
               <a href="/members/add_listing" role="menuitem"><AccountIcon name="add" />Post Your Ad</a>
               <a href="/members/edit_account" role="menuitem"><AccountIcon name="edit" />Edit Business Profile</a>
-              <a className="danger" href="/api/auth/logout?role=member" role="menuitem"><AccountIcon name="logout" />Logout</a>
+              <a className="danger" href="/api/auth/logout?role=member" onClick={(e) => { e.preventDefault(); handlePerformLogout("member"); }} role="menuitem"><AccountIcon name="logout" />Logout</a>
             </>
           ) : mode === "visitor" ? (
             <>
@@ -155,7 +193,7 @@ export function HeaderUserProfileDropdown() {
               </div>
               <a href="/#categories" role="menuitem"><AccountIcon name="dashboard" />Browse Directory</a>
               <a href="/members/login" role="menuitem"><AccountIcon name="login" />Business Owner Login</a>
-              <a className="danger" href="/api/auth/logout?role=user" role="menuitem"><AccountIcon name="logout" />Logout</a>
+              <a className="danger" href="/api/auth/logout?role=user" onClick={(e) => { e.preventDefault(); handlePerformLogout("user"); }} role="menuitem"><AccountIcon name="logout" />Logout</a>
             </>
           ) : (
             <>

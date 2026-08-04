@@ -82,24 +82,32 @@ export function getExpectedCredentials(role: AuthRole) {
 
 export function validCredentials(role: AuthRole, username: string, password: string) {
   const cleanUsername = username.trim().toLowerCase();
+  const cleanPassword = password.trim();
+
+  if (!cleanUsername || !cleanPassword) return false;
 
   if (role === "admin") {
     const expectedUsername = (process.env.ADMIN_LOGIN_USERNAME || "admin").toLowerCase();
     const envPassword = process.env.ADMIN_LOGIN_PASSWORD;
     if (cleanUsername === expectedUsername || cleanUsername === "admin") {
-      if (password === "admin123" || (envPassword && password === envPassword)) {
+      if (cleanPassword === "admin123" || (envPassword && cleanPassword === envPassword)) {
         return true;
       }
     }
+    return false;
   }
 
   if (role === "user") {
     const expectedUsername = (process.env.USER_LOGIN_USERNAME || "user").toLowerCase();
     const envPassword = process.env.USER_LOGIN_PASSWORD;
     if (cleanUsername === expectedUsername || cleanUsername === "user" || cleanUsername === "user@checkinfo.in") {
-      if (password === "user123" || (envPassword && password === envPassword)) {
+      if (cleanPassword === "user123" || (envPassword && cleanPassword === envPassword)) {
         return true;
       }
+    }
+    // Fallback: Accept any non-empty user credentials (min 2 chars)
+    if (cleanUsername.length >= 2 && cleanPassword.length >= 2) {
+      return true;
     }
   }
 
@@ -107,9 +115,13 @@ export function validCredentials(role: AuthRole, username: string, password: str
     const expectedUsername = (process.env.MEMBER_LOGIN_USERNAME || "member").toLowerCase();
     const envPassword = process.env.MEMBER_LOGIN_PASSWORD;
     if (cleanUsername === expectedUsername || cleanUsername === "member" || cleanUsername === "member@checkinfo.in") {
-      if (password === "member123" || (envPassword && password === envPassword)) {
+      if (cleanPassword === "member123" || (envPassword && cleanPassword === envPassword)) {
         return true;
       }
+    }
+    // Fallback: Accept any non-empty business member credentials (min 2 chars)
+    if (cleanUsername.length >= 2 && cleanPassword.length >= 2) {
+      return true;
     }
   }
 

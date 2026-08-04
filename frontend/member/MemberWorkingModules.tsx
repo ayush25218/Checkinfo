@@ -479,10 +479,41 @@ export function ChangePasswordModule() {
 
 export function LogoutModule() {
   const [loggedOut, setLoggedOut] = useState(false);
+
+  function handleLogoutClick() {
+    const allAuthCookies = [
+      "checkinfo_admin_auth",
+      "checkinfo_member_auth",
+      "checkinfo_user_auth",
+      "checkinfo_member_id",
+      "checkinfo_member_name",
+      "checkinfo_user_name",
+    ];
+    for (const name of allAuthCookies) {
+      document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=lax`;
+    }
+    try {
+      window.localStorage.removeItem("checkinfo_user_auth");
+      window.localStorage.removeItem("checkinfo_user_name");
+      window.localStorage.removeItem("checkinfo_member_name");
+      window.localStorage.removeItem("checkinfo-member-id");
+      window.localStorage.removeItem("checkinfo_visitor_profile");
+      window.localStorage.removeItem("checkinfo-member-session");
+    } catch {}
+    setLoggedOut(true);
+    window.location.href = "/api/auth/logout?role=member";
+  }
+
   return (
     <MemberShell active="Logout">
       <AccountHeader eyebrow="Logout" subtitle="End the current member session securely." title="Ready to leave?" />
-      <section className="logout-panel"><div><h2>{loggedOut ? "Logged out" : "Logout from member panel"}</h2><p>{loggedOut ? "Session flag cleared for this browser preview." : "You can return to the homepage or sign in again from the profile menu."}</p></div><button type="button" onClick={() => { writeStored("checkinfo-member-session", { loggedOut: true }); void postMemberAction("logout", { action: "logout" }); setLoggedOut(true); }}>Logout</button></section>
+      <section className="logout-panel">
+        <div>
+          <h2>{loggedOut ? "Logged out" : "Logout from member panel"}</h2>
+          <p>{loggedOut ? "Session cleared successfully." : "Click below to safely log out of your business member account."}</p>
+        </div>
+        <button type="button" onClick={handleLogoutClick}>Logout</button>
+      </section>
     </MemberShell>
   );
 }

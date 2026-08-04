@@ -1,4 +1,4 @@
-import { getAuthCookieName, type AuthRole } from "@/backend/auth";
+import { type AuthRole } from "@/backend/auth";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -13,19 +13,32 @@ function logout() {
   return async (request: Request) => {
     const activeRole = getRole(request);
     const cookieStore = await cookies();
-    cookieStore.delete(getAuthCookieName(activeRole));
 
-    if (activeRole === "member") {
-      cookieStore.delete("checkinfo_member_id");
-      cookieStore.delete("checkinfo_member_name");
+    const allAuthCookies = [
+      "checkinfo_admin_auth",
+      "checkinfo_member_auth",
+      "checkinfo_user_auth",
+      "checkinfo_member_id",
+      "checkinfo_member_name",
+      "checkinfo_user_name",
+    ];
+
+    for (const cookieName of allAuthCookies) {
+      try {
+        cookieStore.delete({
+          name: cookieName,
+          path: "/",
+        });
+      } catch {}
     }
 
-    if (activeRole === "user") {
-      cookieStore.delete("checkinfo_user_auth");
-      cookieStore.delete("checkinfo_user_name");
-    }
+    const redirectPath =
+      activeRole === "admin"
+        ? "/admin/login"
+        : activeRole === "user"
+        ? "/?logout=success"
+        : "/members/login";
 
-    const redirectPath = activeRole === "admin" ? "/admin/login" : activeRole === "user" ? "/?logout=success" : "/members/login";
     redirect(redirectPath);
   };
 }
