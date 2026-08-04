@@ -262,13 +262,12 @@ export function MemberDashboardModule() {
   const dashboardCards = [
     ["Profile status", `${Math.min(100, 55 + listings.length * 12)}%`, "Complete media, category, and service tags"],
     ["Listings", `${activeListings} active`, "Manage free and featured business ads"],
+    ["My Business Listing", listings.length > 0 ? `${listings[0]?.name} (${listings[0]?.status})` : "Not created", "View, manage, or update your 1 business profile listing"],
     ["Enquiries", `${newEnquiries} new`, "Track buyer leads from your listing"],
     ["Reach score", listings.some((listing) => listing.status === "Featured") ? "Boosted" : "Starter", "Upgrade package to boost search ranking"],
   ];
   const quickActions = [
-    ["Add Listing", "Create a new business profile with media, location, and services.", "/members/add_listing"],
-    ["My Listings", "View active, pending, draft, and featured ads in one place.", "/members/my_listings"],
-    ["Edit Detail", "Update business profile, media, contact details, and category.", "/members/edit_account"],
+    ["My Business Listing", "View, manage, or update your 1 business profile listing.", "/members/my_listings"],
     ["My Enquiries", "Filter and manage buyer enquiries received from listings.", "/members/enquirylisting"],
     ["Manage Reviews", "View customer feedback and moderate reviews.", "/members/reviewlisting"],
     ["Featured Packages", "Compare visibility plans and promotional placements.", "/members/packages"],
@@ -279,30 +278,17 @@ export function MemberDashboardModule() {
 
   return (
     <MemberShell active="Dashboard">
-      <AccountHeader action={<a className="primary-button" href="/members/add_listing">Post Your Ad</a>} eyebrow="Welcome to your account" subtitle="Manage listings, visibility, enquiries, reviews, support, and security from dedicated pages." title="Your business command center" />
+      <AccountHeader action={<a className="primary-button" href="/members/my_listings">{listings.length > 0 ? "My Business Listing" : "Add Business Listing"}</a>} eyebrow="Welcome to your account" subtitle="Manage listings, visibility, enquiries, reviews, support, and security from dedicated pages." title="Your business command center" />
       <section className="dashboard-grid">{dashboardCards.map(([title, value, note]) => <article className="dashboard-card" key={title}><span>{title}</span><strong>{value}</strong><p>{note}</p></article>)}</section>
       <section className="panel-section"><div className="panel-heading"><div><p className="eyebrow">Account Shortcuts</p><h2>Choose a panel section</h2></div></div><div className="shortcut-grid">{quickActions.map(([title, text, href]) => <a className="shortcut-card" href={href} key={title}><strong>{title}</strong><span>{text}</span></a>)}</div></section>
     </MemberShell>
   );
 }
 
-export function AddListingModule() {
+export function MyBusinessListingModule() {
   const [listings, setListings] = useStoredState("checkinfo-member-listings", listingSeed);
+  const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState("");
-  return (
-    <MemberShell active="Add Listing">
-      <AccountHeader eyebrow="Post Your Ad" subtitle="Create a fresh business listing for Checkinfo search and category pages." title="Add New Listing" />
-      <PanelSection eyebrow="Listing Setup" title="Business information">
-        <ListingForm buttonLabel="Save Listing" onSave={(record) => { const listing = { ...record, id: `list-${Date.now()}`, status: "Pending" as const }; setListings([...listings, listing]); void postMemberAction("listing", { action: "create", record }); setMessage("Listing saved and sent for admin review."); }} />
-        {message ? <div className="member-notice">{message}</div> : null}
-      </PanelSection>
-    </MemberShell>
-  );
-}
-
-export function MyListingsModule() {
-  const [listings, setListings] = useStoredState("checkinfo-member-listings", listingSeed);
-  const [query, setQuery] = useState("");
 
   useEffect(() => {
     void getMemberData<MemberListing[]>("listings", []).then((data) => {
@@ -310,42 +296,184 @@ export function MyListingsModule() {
     });
   }, [setListings]);
 
-  const filtered = useMemo(() => listings.filter((listing) => [listing.name, listing.category, listing.location].join(" ").toLowerCase().includes(query.toLowerCase())), [listings, query]);
-  function remove(id: string) {
-    setListings(listings.filter((listing) => listing.id !== id));
-    void postMemberAction("listing", { action: "delete", id });
+  const hasListing = listings.length > 0;
+  const currentListing = listings[0];
+
+  function handleSaveListing(record: Omit<MemberListing, "id" | "status">) {
+    if (hasListing && currentListing) {
+      const updated: MemberListing = { ...currentListing, ...record, status: "Pending" };
+      setListings([updated]);
+      void postMemberAction("listing", { action: "update", id: currentListing.id, record });
+      setMessage("Business details updated successfully and sent for review.");
+    } else {
+      const newListing: MemberListing = {
+        ...record,
+        id: `list-${Date.now()}`,
+        status: "Pending",
+      };
+      setListings([newListing]);
+      void postMemberAction("listing", { action: "create", record });
+      setMessage("Your business listing has been created successfully!");
+    }
+    setIsEditing(false);
   }
-  function publish(id: string) {
-    setListings(listings.map((listing) => listing.id === id ? { ...listing, status: "Pending" } : listing));
-    void postMemberAction("listing", { action: "submit-review", id });
+
+  if (!hasListing) {
+    return (
+      <MemberShell active="My Business Listing">
+        <AccountHeader
+          eyebrow="Create Your Business Profile"
+          subtitle="One business account can manage 1 listing. Fill in your business details below to publish."
+          title="Add Business Listing"
+        />
+        <PanelSection eyebrow="Listing Setup" title="Business Information">
+          {message ? <div className="member-notice" style={{ marginBottom: "1rem" }}>{message}</div> : null}
+          <ListingForm
+            buttonLabel="Save & Publish Business Listing"
+            onSave={handleSaveListing}
+          />
+        </PanelSection>
+      </MemberShell>
+    );
   }
+
+  if (isEditing) {
+    return (
+      <MemberShell active="My Business Listing">
+        <AccountHeader
+          action={
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => { setIsEditing(false); setMessage(""); }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "#f8fafc", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}
+            >
+              ← Back to View Details
+            </button>
+          }
+          eyebrow="Edit Business Profile"
+          subtitle="Modify your business identity, category, contact info, address, or description."
+          title={`Edit: ${currentListing.name}`}
+        />
+        <PanelSection eyebrow="Update Details" title="Business Information">
+          {message ? <div className="member-notice" style={{ marginBottom: "1rem" }}>{message}</div> : null}
+          <ListingForm
+            buttonLabel="Save & Update Changes"
+            initial={currentListing}
+            onSave={handleSaveListing}
+          />
+        </PanelSection>
+      </MemberShell>
+    );
+  }
+
   return (
-    <MemberShell active="My Listings">
-      <AccountHeader action={<a className="primary-button" href="/members/add_listing">Add Listing</a>} eyebrow="My Listings" subtitle="Track every business profile from draft to featured placement." title="Listing Manager" />
-      <PanelSection eyebrow="Business Ads" title="Your listing portfolio">
-        <div className="member-filter"><label className="panel-field"><span>Search Listing</span><input value={query} onChange={(event) => setQuery(event.target.value)} /></label></div>
-        <div className="data-table member-table-listings" role="table" aria-label="Business listings">
-          <div className="data-row data-head" role="row"><span>Business</span><span>Status</span><span>Category</span><span>Location</span><span>Action</span></div>
-          {filtered.map((listing) => <div className="data-row" role="row" key={listing.id}><strong>{listing.name}</strong><span className={`status-pill ${listing.status.toLowerCase()}`}>{listing.status}</span><span>{listing.category}</span><span>{listing.location || listing.address}</span><span className="row-actions"><button type="button" onClick={() => publish(listing.id)}>Submit Review</button><button type="button" onClick={() => remove(listing.id)}>Delete</button></span></div>)}
+    <MemberShell active="My Business Listing">
+      <AccountHeader
+        action={
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => { setIsEditing(true); setMessage(""); }}
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "9px 22px", borderRadius: "8px", background: "linear-gradient(135deg, #1e293b, #0f172a)", color: "#fff", border: "none", cursor: "pointer", fontSize: "13.5px", fontWeight: "600", boxShadow: "0 4px 12px rgba(15,23,42,0.18)" }}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+            Edit Details ✏️
+          </button>
+        }
+        eyebrow="My Business Listing"
+        subtitle="View your business listing details. Click the Edit button to modify details."
+        title={currentListing.name}
+      />
+      
+      {message ? <div className="member-notice" style={{ marginBottom: "1.25rem" }}>{message}</div> : null}
+
+      <PanelSection eyebrow="Business Details View" title="Listing Overview">
+        <div className="business-view-card" style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "14px", padding: "1.5rem", display: "grid", gap: "1.5rem", boxShadow: "0 4px 20px rgba(15,23,42,0.05)" }}>
+          
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", borderBottom: "1px solid #e2e8f0", paddingBottom: "1rem" }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: "700", color: "#0f172a" }}>{currentListing.name}</h2>
+              <p style={{ margin: "0.25rem 0 0", fontSize: "0.875rem", color: "#64748b" }}>
+                {currentListing.category} &rsaquo; {currentListing.subcategory} ({currentListing.businessType})
+              </p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <span className={`status-pill ${currentListing.status.toLowerCase()}`} style={{ padding: "4px 12px", borderRadius: "999px", fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase" }}>
+                {currentListing.status}
+              </span>
+              <button
+                type="button"
+                onClick={() => { setIsEditing(true); setMessage(""); }}
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 14px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "#f8fafc", cursor: "pointer", fontSize: "0.85rem", fontWeight: "600", color: "#0f172a" }}
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+                Edit Details
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.25rem" }}>
+            <div>
+              <span style={{ display: "block", fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "#64748b", marginBottom: "0.25rem" }}>Contact Person</span>
+              <strong style={{ fontSize: "0.95rem", color: "#1e293b" }}>{currentListing.contactPerson || "N/A"}</strong>
+            </div>
+            <div>
+              <span style={{ display: "block", fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "#64748b", marginBottom: "0.25rem" }}>Mobile Number</span>
+              <strong style={{ fontSize: "0.95rem", color: "#1e293b" }}>{currentListing.mobile || "N/A"}</strong>
+            </div>
+            <div>
+              <span style={{ display: "block", fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "#64748b", marginBottom: "0.25rem" }}>Email ID</span>
+              <strong style={{ fontSize: "0.95rem", color: "#1e293b" }}>{currentListing.email || "N/A"}</strong>
+            </div>
+            <div>
+              <span style={{ display: "block", fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "#64748b", marginBottom: "0.25rem" }}>Website</span>
+              <strong style={{ fontSize: "0.95rem", color: "#0284c7" }}>{currentListing.website || "N/A"}</strong>
+            </div>
+            <div>
+              <span style={{ display: "block", fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "#64748b", marginBottom: "0.25rem" }}>City & State</span>
+              <strong style={{ fontSize: "0.95rem", color: "#1e293b" }}>{[currentListing.subcity, currentListing.city, currentListing.state].filter(Boolean).join(", ") || "N/A"}</strong>
+            </div>
+            <div>
+              <span style={{ display: "block", fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "#64748b", marginBottom: "0.25rem" }}>YouTube Link</span>
+              <strong style={{ fontSize: "0.95rem", color: "#1e293b" }}>{currentListing.youtube || "N/A"}</strong>
+            </div>
+          </div>
+
+          <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "1rem", display: "grid", gap: "1rem" }}>
+            <div>
+              <span style={{ display: "block", fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "#64748b", marginBottom: "0.25rem" }}>Full Business Address</span>
+              <p style={{ margin: 0, fontSize: "0.9rem", color: "#334155" }}>{currentListing.address || "N/A"}</p>
+            </div>
+            <div>
+              <span style={{ display: "block", fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "#64748b", marginBottom: "0.25rem" }}>Service Keywords</span>
+              <p style={{ margin: 0, fontSize: "0.9rem", color: "#334155" }}>{currentListing.keywords || "N/A"}</p>
+            </div>
+            <div>
+              <span style={{ display: "block", fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase", color: "#64748b", marginBottom: "0.25rem" }}>Business Description</span>
+              <p style={{ margin: 0, fontSize: "0.9rem", color: "#334155", lineHeight: "1.5" }}>{currentListing.description || "N/A"}</p>
+            </div>
+          </div>
         </div>
       </PanelSection>
     </MemberShell>
   );
 }
 
+export function AddListingModule() {
+  return <MyBusinessListingModule />;
+}
+
+export function MyListingsModule() {
+  return <MyBusinessListingModule />;
+}
+
 export function EditAccountModule() {
-  const [listings, setListings] = useStoredState("checkinfo-member-listings", listingSeed);
-  const primary = listings[0];
-  const [message, setMessage] = useState("");
-  return (
-    <MemberShell active="Edit Detail">
-      <AccountHeader eyebrow="Edit Details" subtitle="Update business identity, media, contact information, address, category, and service description." title="Personal Info" />
-      <PanelSection eyebrow="Business Profile" title="Listing details">
-        <ListingForm buttonLabel="Update" initial={primary} onSave={(record) => { setListings(listings.map((listing, index) => index === 0 ? { ...listing, ...record, status: "Pending" } : listing)); void postMemberAction("listing", { action: "update", id: primary?.id, record }); setMessage("Profile updated and moved to pending review."); }} />
-        {message ? <div className="member-notice">{message}</div> : null}
-      </PanelSection>
-    </MemberShell>
-  );
+  return <MyBusinessListingModule />;
 }
 
 export function EnquiriesModule() {

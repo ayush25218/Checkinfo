@@ -178,8 +178,7 @@ export function HeaderUserProfileDropdown() {
                 </div>
               </div>
               <a href="/members/myaccount" role="menuitem"><AccountIcon name="dashboard" />Dashboard</a>
-              <a href="/members/add_listing" role="menuitem"><AccountIcon name="add" />Post Your Ad</a>
-              <a href="/members/edit_account" role="menuitem"><AccountIcon name="edit" />Edit Business Profile</a>
+              <a href="/members/my_listings" role="menuitem"><AccountIcon name="user" />My Business Listing</a>
               <a className="danger" href="/api/auth/logout?role=member" onClick={(e) => { e.preventDefault(); handlePerformLogout("member"); }} role="menuitem"><AccountIcon name="logout" />Logout</a>
             </>
           ) : mode === "visitor" ? (

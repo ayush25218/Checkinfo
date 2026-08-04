@@ -13,9 +13,7 @@ export const categories = backendCategories;
 
 const accountNav = [
   { icon: "dashboard", label: "Dashboard", href: "/members/myaccount" },
-  { icon: "add", label: "Add Listing", href: "/members/add_listing" },
-  { icon: "listings", label: "My Listings", href: "/members/my_listings" },
-  { icon: "edit", label: "Edit Detail", href: "/members/edit_account" },
+  { icon: "listings", label: "My Business Listing", href: "/members/my_listings" },
   { icon: "enquiries", label: "My Enquiries", href: "/members/enquirylisting" },
   { icon: "reviews", label: "Manage Reviews", href: "/members/reviewlisting" },
   { icon: "packages", label: "Featured Packages", href: "/members/packages" },
@@ -27,9 +25,7 @@ const accountNav = [
 
 function NavIcon({ name }: { name: (typeof accountNav)[number]["icon"] }) {
   const paths = {
-    add: "M12 5v14M5 12h14",
     dashboard: "M4 5h6v6H4V5Zm10 0h6v6h-6V5ZM4 15h6v4H4v-4Zm10 0h6v4h-6v-4Z",
-    edit: "M5 19h4l10-10-4-4L5 15v4Zm10-14 4 4",
     enquiries: "M4 5h16v10H8l-4 4V5Zm4 4h8M8 12h5",
     listings: "M5 6h14M5 12h14M5 18h14",
     logout: "M10 6H6v12h4M14 8l4 4-4 4M18 12H9",
@@ -54,6 +50,12 @@ export function MemberShell({
   active: string;
   children: ReactNode;
 }) {
+  const isListingActive =
+    active === "My Business Listing" ||
+    active === "Add Listing" ||
+    active === "My Listings" ||
+    active === "Edit Detail";
+
   return (
     <main className="account-shell">
       <aside className="account-sidebar">
@@ -69,17 +71,20 @@ export function MemberShell({
         </div>
 
         <nav className="panel-nav" aria-label="Member panel navigation">
-          {accountNav.map(({ href, icon, label }) => (
-            <a
-              aria-current={active === label ? "page" : undefined}
-              className={active === label ? "active" : undefined}
-              href={href}
-              key={label}
-            >
-              <NavIcon name={icon} />
-              <span>{label}</span>
-            </a>
-          ))}
+          {accountNav.map(({ href, icon, label }) => {
+            const isActive = active === label || (label === "My Business Listing" && isListingActive);
+            return (
+              <a
+                aria-current={isActive ? "page" : undefined}
+                className={isActive ? "active" : undefined}
+                href={href}
+                key={label}
+              >
+                <NavIcon name={icon} />
+                <span>{label}</span>
+              </a>
+            );
+          })}
         </nav>
       </aside>
 
