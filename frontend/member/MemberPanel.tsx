@@ -67,7 +67,8 @@ export function SidebarDigitalVisitingCard() {
   const email = listing?.email || memberProfile.email;
   const phone = listing?.mobile || "+91 98765 43210";
   const address = listing?.subcity ? `${listing.subcity}, ${listing.city}` : listing?.city || listing?.address || "India";
-  const website = listing?.website || "www.checkinfo.in";
+  const website = listing?.website?.trim();
+  const hasWebsite = Boolean(website && website.toLowerCase() !== "n/a" && website !== "undefined");
 
   const listingPageUrl = typeof window !== "undefined"
     ? `${window.location.origin}/search?q=${encodeURIComponent(companyName)}`
@@ -130,22 +131,30 @@ export function SidebarDigitalVisitingCard() {
         </div>
 
         <div style={{ display: "grid", gap: "0.25rem", fontSize: "0.6rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-            <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", fontSize: "0.55rem", flexShrink: 0 }}>✉</span>
-            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "95px" }}>{email}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-            <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", fontSize: "0.55rem", flexShrink: 0 }}>📞</span>
-            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "95px" }}>{phone}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-            <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", fontSize: "0.55rem", flexShrink: 0 }}>📍</span>
-            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "95px" }}>{address}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-            <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", fontSize: "0.55rem", flexShrink: 0 }}>🌐</span>
-            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "95px" }}>{website}</span>
-          </div>
+          {email ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", fontSize: "0.55rem", flexShrink: 0 }}>✉</span>
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "95px" }}>{email}</span>
+            </div>
+          ) : null}
+          {phone ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", fontSize: "0.55rem", flexShrink: 0 }}>📞</span>
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "95px" }}>{phone}</span>
+            </div>
+          ) : null}
+          {address ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", fontSize: "0.55rem", flexShrink: 0 }}>📍</span>
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "95px" }}>{address}</span>
+            </div>
+          ) : null}
+          {hasWebsite ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", fontSize: "0.55rem", flexShrink: 0 }}>🌐</span>
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "95px" }}>{website}</span>
+            </div>
+          ) : null}
         </div>
       </div>
 

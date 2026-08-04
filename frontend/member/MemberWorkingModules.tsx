@@ -328,7 +328,8 @@ function downloadVisitingCardPng(listing: MemberListing) {
   const email = listing.email || "info@checkinfo.in";
   const phone = listing.mobile || "+91 98765 43210";
   const address = listing.address || listing.location || "India";
-  const website = listing.website || "www.checkinfo.in";
+  const website = listing.website?.trim();
+  const hasWebsite = Boolean(website && website.toLowerCase() !== "n/a" && website !== "undefined");
 
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 34px Arial, sans-serif";
@@ -339,12 +340,11 @@ function downloadVisitingCardPng(listing: MemberListing) {
   ctx.font = "18px Arial, sans-serif";
   ctx.fillText(designation, 50, 115);
 
-  const items = [
-    { text: email, symbol: "✉" },
-    { text: phone, symbol: "📞" },
-    { text: address.length > 38 ? address.substring(0, 35) + "..." : address, symbol: "📍" },
-    { text: website, symbol: "🌐" },
-  ];
+  const items = [];
+  if (email) items.push({ text: email, symbol: "✉" });
+  if (phone) items.push({ text: phone, symbol: "📞" });
+  if (address) items.push({ text: address.length > 38 ? address.substring(0, 35) + "..." : address, symbol: "📍" });
+  if (hasWebsite) items.push({ text: website, symbol: "🌐" });
 
   let startY = 220;
   items.forEach((item) => {
@@ -418,7 +418,8 @@ function DigitalVisitingCard({ listing }: { listing: MemberListing }) {
   const email = listing.email || "owner@business.com";
   const phone = listing.mobile || "+91 98765 43210";
   const address = listing.address || listing.location || "Business Address, India";
-  const website = listing.website || "www.checkinfo.in";
+  const website = listing.website?.trim();
+  const hasWebsite = Boolean(website && website.toLowerCase() !== "n/a" && website !== "undefined");
   const listingPageUrl = typeof window !== "undefined"
     ? `${window.location.origin}/search?q=${encodeURIComponent(listing.name)}`
     : `https://checkinfo.in/search?q=${encodeURIComponent(listing.name)}`;
@@ -484,22 +485,30 @@ function DigitalVisitingCard({ listing }: { listing: MemberListing }) {
           </div>
 
           <div style={{ display: "grid", gap: "0.6rem", fontSize: "0.8rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-              <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "grid", placeItems: "center", fontSize: "0.75rem" }}>✉</span>
-              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "210px" }}>{email}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-              <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "grid", placeItems: "center", fontSize: "0.75rem" }}>📞</span>
-              <span>{phone}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-              <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "grid", placeItems: "center", fontSize: "0.75rem" }}>📍</span>
-              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "210px" }}>{address}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-              <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "grid", placeItems: "center", fontSize: "0.75rem" }}>🌐</span>
-              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "210px" }}>{website}</span>
-            </div>
+            {email ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "grid", placeItems: "center", fontSize: "0.75rem" }}>✉</span>
+                <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "210px" }}>{email}</span>
+              </div>
+            ) : null}
+            {phone ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "grid", placeItems: "center", fontSize: "0.75rem" }}>📞</span>
+                <span>{phone}</span>
+              </div>
+            ) : null}
+            {address ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "grid", placeItems: "center", fontSize: "0.75rem" }}>📍</span>
+                <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "210px" }}>{address}</span>
+              </div>
+            ) : null}
+            {hasWebsite ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "grid", placeItems: "center", fontSize: "0.75rem" }}>🌐</span>
+                <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "210px" }}>{website}</span>
+              </div>
+            ) : null}
           </div>
         </div>
 
