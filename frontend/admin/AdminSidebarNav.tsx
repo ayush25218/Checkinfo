@@ -56,12 +56,13 @@ export function AdminSidebarNav({
                 />
                 <span>{group}</span>
               </span>
-              <b aria-hidden="true">+</b>
+              <b aria-hidden="true">{isOpen ? "−" : "+"}</b>
             </button>
             <div className="admin-submenu" hidden={!isOpen}>
               {items.map(([label, slug]) => (
                 <a
                   aria-current={active === slug ? "page" : undefined}
+                  className={active === slug ? "is-active" : ""}
                   href={`/admin/${slug}`}
                   key={slug}
                 >

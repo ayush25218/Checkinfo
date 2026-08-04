@@ -34,7 +34,7 @@ export function getAuthCookieName(role: AuthRole) {
 
 export function createSessionToken(role: AuthRole, username: string) {
   const payload = base64Url(JSON.stringify({
-    exp: Date.now() + 1000 * 60 * 60 * 12,
+    exp: Date.now() + 1000 * 60 * 60 * 24, // 24 hours
     role,
     username,
   }));

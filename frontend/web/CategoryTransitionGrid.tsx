@@ -73,6 +73,7 @@ function CorporateCategoryIcon({ type }: { type: string }) {
 export function CategoryTransitionGrid({ categories }: CategoryTransitionGridProps) {
   const stripRef = useRef<HTMLDivElement | null>(null);
   const [adminCategories, setAdminCategories] = useState<CategoryExperience[]>([]);
+  const [isPaused, setIsPaused] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
   const [slideStep, setSlideStep] = useState(0);
   const [isResetting, setIsResetting] = useState(false);
@@ -112,28 +113,36 @@ export function CategoryTransitionGrid({ categories }: CategoryTransitionGridPro
   }, [visibleCategories.length]);
 
   useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout>;
     function measureSlideStep() {
       const card = stripRef.current?.querySelector<HTMLElement>(".check-category-card");
       if (!card) return;
-
       const gap = Number.parseFloat(window.getComputedStyle(stripRef.current as HTMLElement).columnGap || "14");
       setSlideStep(card.getBoundingClientRect().width + gap);
     }
 
+    function debouncedMeasure() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(measureSlideStep, 120);
+    }
+
     measureSlideStep();
-    window.addEventListener("resize", measureSlideStep);
-    return () => window.removeEventListener("resize", measureSlideStep);
+    window.addEventListener("resize", debouncedMeasure);
+    return () => {
+      window.removeEventListener("resize", debouncedMeasure);
+      clearTimeout(debounceTimer);
+    };
   }, [carouselCategories.length]);
 
   useEffect(() => {
-    if (visibleCategories.length < 2) return undefined;
+    if (visibleCategories.length < 2 || isPaused) return undefined;
 
     const timer = window.setInterval(() => {
       setSlideIndex((current) => current + 1);
     }, 3000);
 
     return () => window.clearInterval(timer);
-  }, [visibleCategories.length]);
+  }, [visibleCategories.length, isPaused]);
 
   useEffect(() => {
     if (!visibleCategories.length || slideIndex !== visibleCategories.length) return undefined;
@@ -159,6 +168,8 @@ export function CategoryTransitionGrid({ categories }: CategoryTransitionGridPro
         ref={stripRef}
         className={`check-category-strip${isResetting ? " is-resetting" : ""}`}
         style={{ transform: `translate3d(-${slideIndex * slideStep}px, 0, 0)` } as CSSProperties}
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
       >
         {carouselCategories.map((category, index) => (
           <a

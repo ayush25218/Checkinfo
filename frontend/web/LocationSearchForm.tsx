@@ -141,8 +141,14 @@ export function LocationSearchForm({
     navigator.geolocation.getCurrentPosition(
       (position) => submitWithPosition(form, position),
       () => {
+        // ✅ FIX: Do NOT call requestSubmit() here — that causes an infinite loop.
+        // Instead gracefully fall back to a normal search without coordinates.
         setIsLocating(false);
-        form.requestSubmit();
+        const params = new URLSearchParams();
+        for (const [key, value] of new FormData(form).entries()) {
+          params.set(key, String(value));
+        }
+        window.location.href = `/search?${params.toString()}`;
       },
       { enableHighAccuracy: true, maximumAge: 300000, timeout: 8000 },
     );

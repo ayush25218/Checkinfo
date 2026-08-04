@@ -879,11 +879,11 @@ const featuredPackagesData: PackagePlan[] = [
 ];
 
 export function PackagesModule() {
-  const [selectedPlan, setSelectedPlan] = useState(readStored("checkinfo-member-package", "Free Listing"));
+  const [selectedPlan, setSelectedPlan] = useState(() => readStored(memberStorageKey("member-package"), "Free Listing"));
 
   function choose(name: string) {
     setSelectedPlan(name);
-    writeStored("checkinfo-member-package", name);
+    writeStored(memberStorageKey("member-package"), name);
     void postMemberAction("package", { packageName: name });
   }
 

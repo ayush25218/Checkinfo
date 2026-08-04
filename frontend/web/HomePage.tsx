@@ -5,7 +5,7 @@ import { BusinessCard } from "./BusinessCard";
 import { getApprovedListings } from "./listingCollections";
 import { DUMMY_BUSINESS_IMAGE } from "./dummyImages";
 import { LocationSearchForm } from "./LocationSearchForm";
-
+import { LeadCallbackForm } from "./LeadCallbackForm";
 import { SiteHeader } from "./SiteHeader";
 
 const footerLinks = {
@@ -30,18 +30,19 @@ const templateFeatures = [
 ];
 
 function GoogleAdSlot({ label, slot }: { label: string; slot: string }) {
+  const adsenseId = process.env.NEXT_PUBLIC_ADSENSE_ID;
+  if (!adsenseId || adsenseId.includes("XXXXXXXX")) return null;
   return (
     <aside className="ad-slot" aria-label={label}>
       <div className="ad-slot-label">Advertisement</div>
       <ins
         className="adsbygoogle"
         style={{ display: "block" }}
-        data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+        data-ad-client={adsenseId}
         data-ad-slot={slot}
         data-ad-format="auto"
         data-full-width-responsive="true"
       />
-      <small>Replace client and slot code manually</small>
     </aside>
   );
 }
@@ -217,13 +218,8 @@ export async function HomePage() {
             <span>Featured placement</span>
           </div>
         </div>
-        <form className="lead-form" action="/api/web/lead" method="post">
-          <strong>Get a callback</strong>
-          <input name="business_name" placeholder="Business name" aria-label="Business name" />
-          <input name="phone" placeholder="Phone number" aria-label="Phone number" />
-          <input name="email" placeholder="Email address" aria-label="Email address" />
-          <button type="submit">Request Callback</button>
-        </form>
+        {/* ✅ FIX: Client Component handles fetch to avoid page reload to raw JSON */}
+        <LeadCallbackForm />
       </section>
 
       <footer className="check-footer" id="contact">
@@ -234,8 +230,24 @@ export async function HomePage() {
           <span className="check-footer-rod check-footer-rod-left-bottom" aria-hidden="true" />
           <span className="check-footer-rod check-footer-rod-right-bottom" aria-hidden="true" />
           <h3>Quick Links</h3>
-          {footerLinks.quick.map((link) => <a href={link === "About Us" ? "/about" : "#top"} key={link}>{link}</a>)}
-          <p><strong>Business Owner :</strong> Login | Register</p>
+          {footerLinks.quick.map((link) => {
+            const quickRoutes: Record<string, string> = {
+              "Home": "/",
+              "About Us": "/about",
+              "Business": "/new",
+              "Advertise with Us": "/#advertise",
+              "Testimonials": "/about#testimonials",
+              "Support": "/contact",
+              "Contact Us": "/contact",
+              "Sitemap": "/sitemap.xml",
+            };
+            return <a href={quickRoutes[link] ?? "/"} key={link}>{link}</a>;
+          })}
+          <p>
+            <strong>Business Owner:</strong>{" "}
+            <a href="/members/login">Login</a>{" | "}
+            <a href="/register">Register</a>
+          </p>
         </div>
         <div className="check-footer-card">
           <span className="check-footer-card-sheen" aria-hidden="true" />
@@ -244,7 +256,18 @@ export async function HomePage() {
           <span className="check-footer-rod check-footer-rod-left-bottom" aria-hidden="true" />
           <span className="check-footer-rod check-footer-rod-right-bottom" aria-hidden="true" />
           <h3>Info Links</h3>
-          {footerLinks.info.map((link) => <a href="#top" key={link}>{link}</a>)}
+          {footerLinks.info.map((link) => {
+            const infoRoutes: Record<string, string> = {
+              "How to buy": "/about",
+              "FAQs": "/contact",
+              "Career": "/contact",
+              "Privacy Policy": "/about",
+              "Legal Disclaimer": "/about",
+              "Terms And Conditions": "/about",
+              "Refer to Friend": "/register",
+            };
+            return <a href={infoRoutes[link] ?? "/"} key={link}>{link}</a>;
+          })}
         </div>
         <div className="check-footer-card">
           <span className="check-footer-card-sheen" aria-hidden="true" />
@@ -253,10 +276,10 @@ export async function HomePage() {
           <span className="check-footer-rod check-footer-rod-left-bottom" aria-hidden="true" />
           <span className="check-footer-rod check-footer-rod-right-bottom" aria-hidden="true" />
           <h3>Our Categories</h3>
-          {categories.map((category) => (
-            <a href="#categories" key={category}>{category}</a>
+          {categories.slice(0, 12).map((category) => (
+            <a href={`/category/${category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`} key={category}>{category}</a>
           ))}
-          <a href="#categories">View All</a>
+          <a href="/new">View All</a>
         </div>
         <div className="check-footer-card">
           <span className="check-footer-card-sheen" aria-hidden="true" />
@@ -269,7 +292,9 @@ export async function HomePage() {
           <a href="tel:9718290290">9718-290-290</a>
           <a href="mailto:info@checkinfo.in">info@checkinfo.in</a>
           <div className="check-socials" aria-label="Social links">
-            <span /><span /><span /><span /><span /><span />
+            <a href="https://facebook.com/checkinfo" aria-label="Facebook" target="_blank" rel="noopener noreferrer">f</a>
+            <a href="https://instagram.com/checkinfo" aria-label="Instagram" target="_blank" rel="noopener noreferrer">in</a>
+            <a href="https://youtube.com/@checkinfo" aria-label="YouTube" target="_blank" rel="noopener noreferrer">yt</a>
           </div>
         </div>
         <small>Copyright © 2026, Checkinfo. All rights reserved.</small>

@@ -10,6 +10,25 @@ type SiteHeaderProps = {
   className?: string;
 };
 
+function useIsMemberLoggedIn() {
+  const [loggedIn, setLoggedIn] = useState(false);
+  useEffect(() => {
+    const cookies = document.cookie || "";
+    const mid = cookies.match(/checkinfo_member_id=([^;]+)/)?.[1];
+    setLoggedIn(!!(mid?.trim() && mid.trim().length > 2));
+  }, []);
+  return loggedIn;
+}
+
+function ListBusinessButton() {
+  const isMember = useIsMemberLoggedIn();
+  return (
+    <a className="check-post-button" href={isMember ? "/members/my_listings" : "/members/login"}>
+      {isMember ? "My Listings" : "List Your Business"}
+    </a>
+  );
+}
+
 export function SiteHeader({ showSearch = true, activeNav, className = "" }: SiteHeaderProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -86,9 +105,7 @@ export function SiteHeader({ showSearch = true, activeNav, className = "" }: Sit
 
         {/* Header Action Buttons (List Business & Profile Dropdown) */}
         <div className="check-header-actions">
-          <a className="check-post-button" href="/members/login">
-            List Your Business
-          </a>
+          <ListBusinessButton />
           <HeaderUserProfileDropdown />
 
           {/* 3-Nav-Lines Hamburger Toggle (Visible <= 850px) */}

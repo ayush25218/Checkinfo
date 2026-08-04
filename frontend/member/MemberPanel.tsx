@@ -45,20 +45,28 @@ function NavIcon({ name }: { name: (typeof accountNav)[number]["icon"] }) {
   );
 }
 
+type AnyListing = Record<string, string | undefined>;
+
 export function SidebarDigitalVisitingCard() {
-  const [listing, setListing] = useState<any>(null);
+  const [listing, setListing] = useState<AnyListing | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
+      // Read member-scoped key (set based on logged-in username from cookie)
+      const cookieMatch = document.cookie.match(/checkinfo_member_id=([^;]+)/);
+      const mid = cookieMatch?.[1] ? decodeURIComponent(cookieMatch[1]).replace(/[^a-zA-Z0-9_-]/g, "") : null;
+
+      const scopedKey = mid ? `checkinfo-${mid}-member-listings` : null;
       const raw =
-        window.localStorage.getItem("checkinfo-checkinfo-member-listings") ||
-        window.localStorage.getItem("backup-checkinfo-checkinfo-member-listings") ||
-        window.localStorage.getItem("checkinfo-member-listings");
+        (scopedKey && window.localStorage.getItem(scopedKey)) ||
+        (scopedKey && window.localStorage.getItem(`backup-${scopedKey}`)) ||
+        window.localStorage.getItem("checkinfo-member-listings") ||
+        window.localStorage.getItem("checkinfo-checkinfo-member-listings");
       if (raw) {
-        const parsed = JSON.parse(raw);
+        const parsed = JSON.parse(raw) as unknown[];
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setListing(parsed[0]);
+          setListing(parsed[0] as AnyListing);
         }
       }
     } catch {}

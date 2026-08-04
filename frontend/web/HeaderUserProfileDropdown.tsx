@@ -74,8 +74,12 @@ export function HeaderUserProfileDropdown() {
 
   useEffect(() => {
     const cookies = document.cookie || "";
-    const hasMemberCookie = cookies.includes("checkinfo_member_id=") || cookies.includes("checkinfo_member_auth=");
-    const hasUserCookie = cookies.includes("checkinfo_user_auth=true") || cookies.includes("checkinfo_user_auth=");
+    // ✅ FIX: Use regex match to ensure cookie has a non-empty value (not just the key presence)
+    const memberIdMatch = cookies.match(/checkinfo_member_id=([^;]+)/);
+    const memberAuthMatch = cookies.match(/checkinfo_member_auth=([^;]+)/);
+    const userAuthMatch = cookies.match(/checkinfo_user_auth=([^;]+)/);
+    const hasMemberCookie = !!(memberIdMatch?.[1]?.trim() || memberAuthMatch?.[1]?.trim());
+    const hasUserCookie = !!(userAuthMatch?.[1]?.trim() && userAuthMatch[1] !== "false");
 
     if (hasMemberCookie) {
       setMode("member");

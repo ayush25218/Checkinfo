@@ -1269,14 +1269,15 @@ export function ManageMembersModule() {
     };
 
     sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
-    const result = await postAdminAction("members", {
-      action: "upsert",
-      record: {
-        ...nextRecord,
-        id: nextRecord.id.startsWith("mem-") ? nextRecord.username : nextRecord.id,
-        password: form.password.trim(),
-      },
-    });
+    const upsertPayload: Record<string, unknown> = {
+      ...nextRecord,
+      id: nextRecord.id.startsWith("mem-") ? nextRecord.username : nextRecord.id,
+    };
+    // ✅ FIX: Only include password if admin actually typed a new one — prevents wiping existing password
+    if (form.password.trim()) {
+      upsertPayload.password = form.password.trim();
+    }
+    const result = await postAdminAction("members", { action: "upsert", record: upsertPayload });
     if (result.members) setRecords(result.members);
     else if (result.data?.members) setRecords(result.data.members);
     resetForm();
