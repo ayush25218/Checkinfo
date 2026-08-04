@@ -446,6 +446,12 @@ export async function getAdminResourceAsync(resource = "dashboard") {
     }
   }
 
+  // Subcategories
+  if (resource === "subcategories") {
+    const globalRecs = (globalThis as typeof globalThis & { __checkinfoSubcategories?: unknown[] }).__checkinfoSubcategories ?? [];
+    return globalRecs;
+  }
+
   // Newsletter
   if (resource === "newsletter") {
     try {
