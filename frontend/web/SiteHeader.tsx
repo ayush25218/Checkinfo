@@ -157,7 +157,7 @@ export function SiteHeader({ showSearch = true, activeNav, className = "" }: Sit
 
             {showSearch ? (
               <div className="check-mobile-drawer-search">
-                <LocationSearchForm compact />
+                <LocationSearchForm className="check-top-search" compact />
               </div>
             ) : null}
 

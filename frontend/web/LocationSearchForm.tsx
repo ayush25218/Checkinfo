@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 type LocationSearchFormProps = {
-  className: string;
+  className?: string;
   compact?: boolean;
   defaultCategory?: string;
   defaultLocation?: string;
