@@ -1,5 +1,7 @@
 import { hashPassword } from "@/backend/auth";
 import { createMongoUser, isMongoConfigured } from "@/backend/mongodb";
+import { PasswordFieldWithToggle } from "@/frontend/web/PasswordFieldWithToggle";
+import { SocialLoginButtons } from "@/frontend/web/SocialLoginButtons";
 import { redirect } from "next/navigation";
 
 export default function UserRegisterPage() {
@@ -55,7 +57,12 @@ export default function UserRegisterPage() {
           </label>
           <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: "0.875rem", fontWeight: "500" }}>
             <span>Password *</span>
-            <input type="password" name="password" placeholder="Create a password" required style={{ padding: "0.65rem", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "0.95rem" }} />
+            <PasswordFieldWithToggle
+              name="password"
+              placeholder="Create a password"
+              required
+              inputStyle={{ padding: "0.65rem", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "0.95rem" }}
+            />
           </label>
 
           <button type="submit" style={{ padding: "0.75rem", borderRadius: "8px", background: "#0284c7", color: "#fff", fontWeight: "600", border: "none", cursor: "pointer", fontSize: "1rem", marginTop: "0.5rem" }}>
@@ -63,7 +70,9 @@ export default function UserRegisterPage() {
           </button>
         </form>
 
-        <div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9", textAlign: "center", fontSize: "0.85rem", color: "#64748b" }}>
+        <SocialLoginButtons role="user" title="Or Register / Sign Up With" />
+
+        <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9", textAlign: "center", fontSize: "0.85rem", color: "#64748b" }}>
           <span>Already have a user account? </span>
           <a href="/users/login" style={{ color: "#0284c7", fontWeight: "600", textDecoration: "none" }}>User Login</a>
         </div>

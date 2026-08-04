@@ -1,4 +1,5 @@
 import { getExpectedCredentials } from "@/backend/auth";
+import { PasswordFieldWithToggle } from "@/frontend/web/PasswordFieldWithToggle";
 
 export default async function AdminLoginPage({
   searchParams,
@@ -30,7 +31,7 @@ export default async function AdminLoginPage({
           </label>
           <label>
             <span>Password</span>
-            <input autoComplete="new-password" name="password" placeholder="Enter admin password" required type="password" />
+            <PasswordFieldWithToggle name="password" placeholder="Enter admin password" required />
           </label>
           <button type="submit">Login to Admin</button>
         </form>

@@ -1,4 +1,6 @@
 import { getExpectedCredentials } from "@/backend/auth";
+import { PasswordFieldWithToggle } from "@/frontend/web/PasswordFieldWithToggle";
+import { SocialLoginButtons } from "@/frontend/web/SocialLoginButtons";
 
 export default async function VisitorLoginPage({
   searchParams,
@@ -34,14 +36,21 @@ export default async function VisitorLoginPage({
           </label>
           <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: "0.875rem", fontWeight: "500" }}>
             <span>Password</span>
-            <input autoComplete="new-password" name="password" placeholder="Enter password" required type="password" style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.95rem" }} />
+            <PasswordFieldWithToggle
+              name="password"
+              placeholder="Enter password"
+              required
+              inputStyle={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.95rem" }}
+            />
           </label>
           <button type="submit" style={{ padding: "0.75rem", borderRadius: "6px", background: "#0284c7", color: "#fff", fontWeight: "600", border: "none", cursor: "pointer", fontSize: "1rem" }}>
             Login as Visitor
           </button>
         </form>
 
-        <div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9", textAlign: "center", fontSize: "0.85rem", color: "#64748b", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        <SocialLoginButtons role="user" title="Or Sign In With" />
+
+        <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9", textAlign: "center", fontSize: "0.85rem", color: "#64748b", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <div>
             <span>Don&apos;t have an account? </span>
             <a href="/users/register" style={{ color: "#0284c7", fontWeight: "700", textDecoration: "none" }}>Register / Create Account</a>

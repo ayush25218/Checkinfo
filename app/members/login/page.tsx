@@ -1,4 +1,6 @@
 import { getExpectedCredentials } from "@/backend/auth";
+import { PasswordFieldWithToggle } from "@/frontend/web/PasswordFieldWithToggle";
+import { SocialLoginButtons } from "@/frontend/web/SocialLoginButtons";
 
 export default async function MemberLoginPage({
   searchParams,
@@ -30,10 +32,13 @@ export default async function MemberLoginPage({
           </label>
           <label>
             <span>Password</span>
-            <input autoComplete="new-password" name="password" placeholder="Enter password" required type="password" />
+            <PasswordFieldWithToggle name="password" placeholder="Enter password" required />
           </label>
           <button type="submit">Login to Business Member Panel</button>
         </form>
+
+        <SocialLoginButtons role="member" title="Or Business Sign In With" />
+
         <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid #e2e8f0", textAlign: "center", fontSize: "0.85rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <div>
             <span>Don&apos;t have an account? </span>
