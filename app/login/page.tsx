@@ -45,9 +45,15 @@ export default async function VisitorLoginPage({
           </button>
         </form>
 
-        <div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9", textAlign: "center", fontSize: "0.85rem", color: "#64748b" }}>
-          <span>Looking to list your business? </span>
-          <a href="/members/login" style={{ color: "#0284c7", fontWeight: "600", textDecoration: "none" }}>List Your Business Login</a>
+        <div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9", textAlign: "center", fontSize: "0.85rem", color: "#64748b", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div>
+            <span>Don&apos;t have an account? </span>
+            <a href="/users/register" style={{ color: "#0284c7", fontWeight: "700", textDecoration: "none" }}>Register / Create Account</a>
+          </div>
+          <div>
+            <span>Looking to list your business? </span>
+            <a href="/members/login" style={{ color: "#0284c7", fontWeight: "600", textDecoration: "none" }}>List Your Business Login</a>
+          </div>
         </div>
       </section>
     </main>
