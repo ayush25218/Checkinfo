@@ -7,11 +7,7 @@ export default function UserRegisterPage() {
     <main className="auth-page auth-page-user" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", padding: "1.5rem" }}>
       <section className="auth-card" style={{ maxWidth: "440px", width: "100%", padding: "2rem", background: "#fff", borderRadius: "16px", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)", border: "1px solid #e2e8f0" }}>
         <a className="brand" href="/" style={{ textDecoration: "none", color: "#0f172a", display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
-          <span style={{ background: "#0284c7", color: "#fff", width: "40px", height: "40px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "800", fontSize: "1.1rem" }}>CI</span>
-          <span>
-            <strong style={{ display: "block", fontSize: "1.2rem" }}>Checkinfo</strong>
-            <small style={{ color: "#64748b" }}>User Registration</small>
-          </span>
+          <img src="/logo.png" alt="Checkinfo - Check Kiya Kya ?" style={{ height: "46px", width: "auto", objectFit: "contain" }} />
         </a>
         <div style={{ marginBottom: "1.5rem" }}>
           <p className="eyebrow" style={{ textTransform: "uppercase", fontSize: "0.75rem", letterSpacing: "0.05em", color: "#0284c7", fontWeight: "700" }}>Create Visitor Account</p>

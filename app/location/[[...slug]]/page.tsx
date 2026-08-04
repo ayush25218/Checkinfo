@@ -57,9 +57,7 @@ export default async function LocationListingPage({ params }: LocationPageProps)
     <main className="location-page">
       <header className="search-header">
         <a className="check-logo" href="/" aria-label="Checkinfo home">
-          <span>i</span>
-          <strong>Checkinfo</strong>
-          <small>Check kiya kya?</small>
+          <img src="/logo.png" alt="Checkinfo - Check Kiya Kya ?" className="check-logo-img" />
         </a>
         <div className="check-header-actions">
           <a className="check-post-button" href="/members/login">List Your Business</a>

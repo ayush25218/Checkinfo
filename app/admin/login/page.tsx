@@ -11,10 +11,8 @@ export default async function AdminLoginPage({
   return (
     <main className="auth-page auth-page-admin">
       <section className="auth-card">
-        <a className="check-logo auth-logo" href="/">
-          <span>i</span>
-          <strong>Checkinfo</strong>
-          <small>Administrator</small>
+        <a className="check-logo auth-logo" href="/" style={{ textDecoration: "none", display: "inline-block", marginBottom: "1rem" }}>
+          <img src="/logo.png" alt="Checkinfo Administrator" style={{ height: "46px", width: "auto", objectFit: "contain" }} />
         </a>
         <div>
           <p className="eyebrow">Secure admin access</p>

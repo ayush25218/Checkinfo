@@ -57,12 +57,8 @@ export function MemberShell({
   return (
     <main className="account-shell">
       <aside className="account-sidebar">
-        <a className="brand account-brand" href="/">
-          <span className="brand-mark account-brand-mark">CI</span>
-          <span>
-            <strong>Checkinfo</strong>
-            <small>Member panel</small>
-          </span>
+        <a className="brand account-brand" href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", padding: "0.5rem 0" }}>
+          <img src="/logo.png" alt="Checkinfo" style={{ height: "38px", width: "auto", objectFit: "contain" }} />
         </a>
 
         <div className="member-card">

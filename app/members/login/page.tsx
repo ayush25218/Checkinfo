@@ -11,12 +11,8 @@ export default async function MemberLoginPage({
   return (
     <main className="auth-page auth-page-member">
       <section className="auth-card">
-        <a className="brand auth-member-logo" href="/">
-          <span className="brand-mark">CI</span>
-          <span>
-            <strong>Checkinfo</strong>
-            <small>Business Member Panel</small>
-          </span>
+        <a className="brand auth-member-logo" href="/" style={{ textDecoration: "none", display: "inline-block", marginBottom: "1rem" }}>
+          <img src="/logo.png" alt="Checkinfo - Check Kiya Kya ?" style={{ height: "46px", width: "auto", objectFit: "contain" }} />
         </a>
         <div>
           <p className="eyebrow">List Your Business</p>

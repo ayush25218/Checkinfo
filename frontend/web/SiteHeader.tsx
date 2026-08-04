@@ -61,11 +61,7 @@ export function SiteHeader({ showSearch = true, activeNav, className = "" }: Sit
       <div className="check-header-container">
         {/* Brand Logo */}
         <a className="check-logo" href="/" aria-label="Checkinfo home">
-          <span>i</span>
-          <div className="check-logo-text">
-            <strong>Checkinfo</strong>
-            <small>Check kiya kya?</small>
-          </div>
+          <img src="/logo.png" alt="Checkinfo - Check Kiya Kya ?" className="check-logo-img" />
         </a>
 
         {/* Top Search Bar (visible on mid and large screens) */}
@@ -139,11 +135,7 @@ export function SiteHeader({ showSearch = true, activeNav, className = "" }: Sit
           >
             <div className="check-mobile-drawer-header">
               <a className="check-logo" href="/" onClick={() => setIsMobileOpen(false)}>
-                <span>i</span>
-                <div className="check-logo-text">
-                  <strong>Checkinfo</strong>
-                  <small>Check kiya kya?</small>
-                </div>
+                <img src="/logo.png" alt="Checkinfo - Check Kiya Kya ?" className="check-logo-img" />
               </a>
               <button
                 type="button"

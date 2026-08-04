@@ -44,12 +44,8 @@ export function AdminShellFrame({
               <span />
               <span />
             </button>
-            <a className="admin-logo" href="/admin">
-              <span className="admin-logo-symbol">i</span>
-              <span className="admin-logo-text">
-                <strong>Checkinfo</strong>
-                <small>CHECK KIYA KYA?</small>
-              </span>
+            <a href="/" style={{ display: "inline-flex", alignItems: "center", textDecoration: "none" }}>
+              <img src="/logo.png" alt="Checkinfo Admin" style={{ height: "36px", width: "auto", objectFit: "contain" }} />
             </a>
           </div>
           <div className="admin-topbar-actions">
