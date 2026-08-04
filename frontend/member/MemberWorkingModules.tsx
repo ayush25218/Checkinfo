@@ -661,10 +661,21 @@ export function MyBusinessListingModule() {
   const hasListing = listings.length > 0;
   const currentListing = listings[0];
 
+  function saveGlobalRegisteredListing(listing: MemberListing) {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("checkinfo-all-registered-listings");
+      const existing = raw ? (JSON.parse(raw) as MemberListing[]) : [];
+      const updated = [listing, ...existing.filter((item) => item.id !== listing.id)];
+      window.localStorage.setItem("checkinfo-all-registered-listings", JSON.stringify(updated));
+    } catch {}
+  }
+
   function handleSaveListing(record: Omit<MemberListing, "id" | "status">) {
     if (hasListing && currentListing) {
       const updated: MemberListing = { ...currentListing, ...record, status: "Pending" };
       setListings([updated]);
+      saveGlobalRegisteredListing(updated);
       void postMemberAction("listing", { action: "update", id: currentListing.id, record });
       setMessage("⏳ Business details updated successfully! Your listing has been submitted for Admin Review and will be updated on the website after approval.");
     } else {
@@ -674,7 +685,8 @@ export function MyBusinessListingModule() {
         status: "Pending",
       };
       setListings([newListing]);
-      void postMemberAction("listing", { action: "create", record });
+      saveGlobalRegisteredListing(newListing);
+      void postMemberAction("listing", { action: "create", record: newListing });
       setMessage("⏳ Business profile created successfully! It is now Pending Admin Approval and will go live on the website once approved by Administrator.");
     }
     setIsEditing(false);

@@ -939,8 +939,40 @@ export function ManageBusinessModule() {
     return filtered.slice(start, start + pageSize);
   }, [filtered, safePage]);
 
+function readGlobalRegisteredListings(): BusinessRecord[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem("checkinfo-all-registered-listings");
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as Array<Record<string, string>>;
+    return parsed.map((item) => ({
+      id: item.id || `biz-${Date.now()}`,
+      address: item.address || item.location || "",
+      addressProofName: item.addressProofName || "",
+      badge: item.status === "Featured" ? "Featured" : "Verified",
+      businessType: item.businessType || "",
+      category: item.category || "General",
+      city: item.city || "",
+      contact: item.mobile || item.email || "",
+      details: item.description || item.keywords || "",
+      name: item.name || "Registered Business",
+      state: item.state || "",
+      status: (item.status as Status) || "Pending",
+      subcategory: item.subcategory || "",
+      subcity: item.subcity || "",
+    }));
+  } catch {
+    return [];
+  }
+}
+
   useEffect(() => {
-    void getAdminData<BusinessRecord[]>("business", businessSeed).then(setRecords);
+    void getAdminData<BusinessRecord[]>("business", businessSeed).then((serverData) => {
+      const local = readGlobalRegisteredListings();
+      const map = new Map<string, BusinessRecord>();
+      [...serverData, ...local].forEach((item) => map.set(item.id, item));
+      setRecords(Array.from(map.values()));
+    });
   }, []);
 
   function sync(next: BusinessRecord[]) {

@@ -373,7 +373,13 @@ async function bulkImportBusinesses(records: Array<Record<string, unknown>>) {
 export function getAdminResource(resource = "dashboard") {
   const store = getStore();
   const localMembers = Object.values(store.members);
-  const members = localMembers.some((member) => member.listings.length) ? localMembers : demoMemberAccounts;
+  const allMembersMap = new Map<string, MemberAccount>();
+  [...demoMemberAccounts, ...localMembers].forEach((m) => {
+    if (m?.profile?.id || m?.profile?.username) {
+      allMembersMap.set(m.profile.id || m.profile.username, m);
+    }
+  });
+  const members = Array.from(allMembersMap.values());
   const business = buildBusinessFromMembers(members);
 
   if (resource === "dashboard") {
@@ -626,27 +632,44 @@ export async function getAdminResourceAsync(resource = "dashboard") {
   let business: ReturnType<typeof buildBusinessFromMembers>;
   let totalBusinessCount = 0;
   let totalMembersCount = 0;
+  const localMembers = Object.values(getStore().members);
+
   try {
     members = await listMongoMembers({ limit: 5000 });
     totalMembersCount = await countMongoMembers();
   } catch {
-    members = demoMemberAccounts;
+    members = localMembers;
     totalMembersCount = members.length;
   }
-  if (members.length === 0 || !members.some((member) => member.listings.length)) members = demoMemberAccounts;
+
+  const allMembersMap = new Map<string, MemberAccount>();
+  [...demoMemberAccounts, ...members, ...localMembers].forEach((m) => {
+    if (m?.profile?.id || m?.profile?.username) {
+      allMembersMap.set(m.profile.id || m.profile.username, m);
+    }
+  });
+  const mergedMembers = Array.from(allMembersMap.values());
+
   try {
     const mongoBusiness = await listMongoBusinessListings({ limit: 5000 });
+    const localMemberBusiness = buildBusinessFromMembers(mergedMembers);
+    const mongoIds = new Set(mongoBusiness.map((b) => b.id));
+    const extraLocal = localMemberBusiness.filter((b) => !mongoIds.has(b.id));
+
     business = mongoBusiness.length
-      ? mongoBusiness.map((listing) => ({
-        ...listing,
-        addressProofName: listing.addressProofName,
-        image: listing.image,
-        publicPath: listing.publicPath || listingPublicPath(listing),
-      })) as ReturnType<typeof buildBusinessFromMembers>
-      : buildBusinessFromMembers(members);
-    totalBusinessCount = mongoBusiness.length ? await countMongoBusinessListings() : business.length;
+      ? [
+          ...mongoBusiness.map((listing) => ({
+            ...listing,
+            addressProofName: listing.addressProofName,
+            image: listing.image,
+            publicPath: listing.publicPath || listingPublicPath(listing),
+          })),
+          ...extraLocal,
+        ] as ReturnType<typeof buildBusinessFromMembers>
+      : localMemberBusiness;
+    totalBusinessCount = business.length;
   } catch {
-    business = buildBusinessFromMembers(members);
+    business = buildBusinessFromMembers(mergedMembers);
     totalBusinessCount = business.length;
   }
 
