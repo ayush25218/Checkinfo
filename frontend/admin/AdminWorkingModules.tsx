@@ -939,31 +939,77 @@ export function ManageBusinessModule() {
     return filtered.slice(start, start + pageSize);
   }, [filtered, safePage]);
 
+function mapMemberListingToBusinessRecord(item: Record<string, unknown>): BusinessRecord {
+  const contactPerson = String(item.contactPerson ?? item.ownerName ?? "").trim();
+  const mobile = String(item.mobile ?? item.contact ?? "").trim();
+  const email = String(item.email ?? item.ownerEmail ?? "").trim();
+  const contactDisplay = contactPerson ? `${contactPerson} (${mobile || email})` : mobile || email;
+
+  return {
+    id: String(item.id || `biz-${Date.now()}`),
+    address: String(item.address || item.location || ""),
+    addressProofName: String(item.addressProofName || ""),
+    badge: item.status === "Featured" ? "Featured" : "Verified",
+    businessType: String(item.businessType || ""),
+    category: String(item.category || "General"),
+    city: String(item.city || ""),
+    contact: contactDisplay,
+    details: String(item.description || item.keywords || ""),
+    name: String(item.name || "Registered Business"),
+    ownerEmail: email,
+    ownerId: String(item.ownerId || item.id || ""),
+    ownerName: contactPerson,
+    state: String(item.state || ""),
+    status: (item.status as Status) || "Pending",
+    subcategory: String(item.subcategory || ""),
+    subcity: String(item.subcity || ""),
+  };
+}
+
 function readGlobalRegisteredListings(): BusinessRecord[] {
   if (typeof window === "undefined") return [];
+  const foundListings: BusinessRecord[] = [];
+  const seenIds = new Set<string>();
+
   try {
-    const raw = window.localStorage.getItem("checkinfo-all-registered-listings");
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as Array<Record<string, string>>;
-    return parsed.map((item) => ({
-      id: item.id || `biz-${Date.now()}`,
-      address: item.address || item.location || "",
-      addressProofName: item.addressProofName || "",
-      badge: item.status === "Featured" ? "Featured" : "Verified",
-      businessType: item.businessType || "",
-      category: item.category || "General",
-      city: item.city || "",
-      contact: item.mobile || item.email || "",
-      details: item.description || item.keywords || "",
-      name: item.name || "Registered Business",
-      state: item.state || "",
-      status: (item.status as Status) || "Pending",
-      subcategory: item.subcategory || "",
-      subcity: item.subcity || "",
-    }));
-  } catch {
-    return [];
-  }
+    const rawGlobal = window.localStorage.getItem("checkinfo-all-registered-listings");
+    if (rawGlobal) {
+      const parsed = JSON.parse(rawGlobal) as Array<Record<string, unknown>>;
+      parsed.forEach((item) => {
+        if (item && item.name) {
+          const rec = mapMemberListingToBusinessRecord(item);
+          if (!seenIds.has(rec.id)) {
+            seenIds.add(rec.id);
+            foundListings.push(rec);
+          }
+        }
+      });
+    }
+
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key && (key.includes("member-listings") || key.includes("member-listing"))) {
+        const raw = window.localStorage.getItem(key);
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            const items = Array.isArray(parsed) ? parsed : [parsed];
+            items.forEach((item: Record<string, unknown>) => {
+              if (item && item.name && typeof item.name === "string") {
+                const rec = mapMemberListingToBusinessRecord(item);
+                if (!seenIds.has(rec.id)) {
+                  seenIds.add(rec.id);
+                  foundListings.push(rec);
+                }
+              }
+            });
+          } catch {}
+        }
+      }
+    }
+  } catch {}
+
+  return foundListings;
 }
 
   useEffect(() => {
@@ -1057,6 +1103,28 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
   function setRecordStatus(record: BusinessRecord, nextStatus: Status) {
     sync(records.map((item) => (item.id === record.id ? { ...item, status: nextStatus } : item)));
     if (record.ownerId) void postAdminAction("business", { action: nextStatus, id: record.id, ownerId: record.ownerId });
+
+    if (typeof window !== "undefined") {
+      try {
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (key && (key.includes("member-listings") || key.includes("member-listing") || key.includes("registered-listings"))) {
+            const raw = window.localStorage.getItem(key);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              const items = Array.isArray(parsed) ? parsed : [parsed];
+              const updated = items.map((item: Record<string, unknown>) =>
+                item.id === record.id || item.name === record.name
+                  ? { ...item, status: nextStatus }
+                  : item
+              );
+              window.localStorage.setItem(key, JSON.stringify(updated));
+              window.localStorage.setItem(`backup-${key}`, JSON.stringify(updated));
+            }
+          }
+        }
+      } catch {}
+    }
   }
 
   function deleteSelected() {
