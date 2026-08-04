@@ -9,7 +9,7 @@ import {
   PanelSection,
 } from "@/frontend/member/MemberPanel";
 import { indiaDistricts, indiaStates, indiaSubdistricts } from "@/frontend/admin/indiaLocations";
-import { businessTaxonomy } from "@/backend/businessTaxonomy";
+import { businessTaxonomy, getEffectiveTaxonomy } from "@/backend/businessTaxonomy";
 
 type ListingStatus = "Draft" | "Pending" | "Active" | "Featured";
 
@@ -187,9 +187,10 @@ function ListingForm({
   onSave: (record: Omit<MemberListing, "id" | "status">) => void;
 }) {
   const [form, setForm] = useState({ ...initialListing(), ...initial });
+  const effectiveTaxonomy = useMemo(() => getEffectiveTaxonomy(), []);
   const selectedTaxonomy = useMemo(
-    () => businessTaxonomy.find((category) => category.name === form.category) ?? businessTaxonomy[0],
-    [form.category],
+    () => effectiveTaxonomy.find((category) => category.name === form.category) ?? effectiveTaxonomy[0],
+    [form.category, effectiveTaxonomy],
   );
   const selectedSubcategory = useMemo(
     () => selectedTaxonomy?.subcategories.find((subcategory) => subcategory.name === form.subcategory) ?? selectedTaxonomy?.subcategories[0],

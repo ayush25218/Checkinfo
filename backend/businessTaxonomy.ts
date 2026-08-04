@@ -12,7 +12,7 @@ export type BusinessMainCategory = BusinessTaxonomyNode & {
   subcategories: BusinessSubcategory[];
 };
 
-function slugify(text: string): string {
+export function slugify(text: string): string {
   return text
     .toLowerCase()
     .replace(/&/g, "and")
@@ -171,15 +171,57 @@ export const businessSubcategories = businessTaxonomy.flatMap((category) =>
   }))
 );
 
-export const businessTypes = businessTaxonomy.flatMap((category) =>
-  category.subcategories.flatMap((subcategory) =>
-    subcategory.businessTypes.map((businessType) => ({
-      categoryName: category.name,
-      categorySlug: category.slug,
-      name: businessType.name,
-      slug: businessType.slug,
-      subcategoryName: subcategory.name,
-      subcategorySlug: subcategory.slug,
-    }))
-  )
-);
+export type CustomSubcategoryRecord = {
+  id: string;
+  categoryName: string;
+  categorySlug: string;
+  name: string;
+  slug: string;
+  businessTypes: Array<{ name: string; slug: string }>;
+  createdAt: string;
+};
+
+export function getCustomSubcategories(): CustomSubcategoryRecord[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw =
+      window.localStorage.getItem("checkinfo-admin-subcategories") ||
+      window.localStorage.getItem("backup-checkinfo-admin-subcategories");
+    return raw ? (JSON.parse(raw) as CustomSubcategoryRecord[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomSubcategories(list: CustomSubcategoryRecord[]) {
+  if (typeof window !== "undefined") {
+    try {
+      const serialized = JSON.stringify(list);
+      window.localStorage.setItem("checkinfo-admin-subcategories", serialized);
+      window.localStorage.setItem("backup-checkinfo-admin-subcategories", serialized);
+    } catch {}
+  }
+}
+
+export function getEffectiveTaxonomy(customList: CustomSubcategoryRecord[] = getCustomSubcategories()): BusinessMainCategory[] {
+  const customMap = new Map<string, CustomSubcategoryRecord[]>();
+  for (const item of customList) {
+    const list = customMap.get(item.categorySlug) || [];
+    list.push(item);
+    customMap.set(item.categorySlug, list);
+  }
+
+  return businessTaxonomy.map((cat) => {
+    const customSubs = customMap.get(cat.slug) || [];
+    const formattedSubs = customSubs.map((sub) => ({
+      name: sub.name,
+      slug: sub.slug,
+      businessTypes: sub.businessTypes.length ? sub.businessTypes : [{ name: "General Provider", slug: "general-provider" }],
+    }));
+
+    return {
+      ...cat,
+      subcategories: [...cat.subcategories, ...formattedSubs],
+    };
+  });
+}

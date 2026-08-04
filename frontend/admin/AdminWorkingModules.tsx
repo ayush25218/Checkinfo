@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { categories } from "@/backend/checkinfo";
-import { businessTaxonomy } from "@/backend/businessTaxonomy";
+import {
+  businessTaxonomy,
+  getCustomSubcategories,
+  getEffectiveTaxonomy,
+  saveCustomSubcategories,
+  slugify,
+  type CustomSubcategoryRecord,
+} from "@/backend/businessTaxonomy";
 import {
   indiaCities,
   indiaDistricts,
@@ -419,6 +426,17 @@ export function ManageCategoriesModule() {
   const [status, setStatus] = useState("All");
   const [editing, setEditing] = useState<CategoryRecord | null>(null);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
+
+  // Subcategory management state
+  const [customSubcategories, setCustomSubcategories] = useState<CustomSubcategoryRecord[]>(() => getCustomSubcategories());
+  const [showSubForm, setShowSubForm] = useState(false);
+  const [subForm, setSubForm] = useState({ name: "", businessTypesStr: "" });
+
+  const effectiveTaxonomy = useMemo(
+    () => getEffectiveTaxonomy(customSubcategories),
+    [customSubcategories]
+  );
+
   const [form, setForm] = useState({
     image: "Image",
     name: "",
@@ -444,11 +462,12 @@ export function ManageCategoriesModule() {
       .filter((record) => status === "All" || record.status === status)
       .sort((a, b) => a.order - b.order);
   }, [query, records, status]);
+
   const visibleTaxonomy = useMemo(() => {
     const term = query.trim().toLowerCase();
     const recordByName = new Map(records.map((record) => [record.name, record]));
 
-    return businessTaxonomy
+    return effectiveTaxonomy
       .map((category) => ({ category, record: recordByName.get(category.name) }))
       .filter(({ category, record }) => {
         const statusMatch = status === "All" || (record?.status ?? "Active") === status;
@@ -461,18 +480,55 @@ export function ManageCategoriesModule() {
           ...category.subcategories.flatMap((subcategory) => subcategory.businessTypes.map((businessType) => businessType.name)),
         ].join(" ").toLowerCase().includes(term);
       });
-  }, [query, records, status]);
-  const activeMain = visibleTaxonomy.find((item) => item.category.slug === selectedMain)?.category ?? visibleTaxonomy[0]?.category ?? businessTaxonomy[0];
+  }, [query, records, status, effectiveTaxonomy]);
+
+  const activeMain = visibleTaxonomy.find((item) => item.category.slug === selectedMain)?.category ?? visibleTaxonomy[0]?.category ?? effectiveTaxonomy[0];
+  
   const categoryStats = {
-    main: businessTaxonomy.length,
-    subcategories: businessTaxonomy.reduce((total, category) => total + category.subcategories.length, 0),
-    types: businessTaxonomy.reduce((total, category) => total + category.subcategories.reduce((sum, subcategory) => sum + subcategory.businessTypes.length, 0), 0),
+    main: effectiveTaxonomy.length,
+    subcategories: effectiveTaxonomy.reduce((total, category) => total + category.subcategories.length, 0),
+    types: effectiveTaxonomy.reduce((total, category) => total + category.subcategories.reduce((sum, subcategory) => sum + subcategory.businessTypes.length, 0), 0),
   };
 
   function sync(next: CategoryRecord[]) {
     setRecords(next);
     writeStored("checkinfo-admin-categories-v2", next);
     writeStored("checkinfo-admin-categories", next);
+  }
+
+  function handleSaveSubcategory() {
+    if (!subForm.name.trim() || !activeMain) return;
+
+    const subName = subForm.name.trim();
+    const subSlug = slugify(subName);
+
+    const types = subForm.businessTypesStr
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .map((t) => ({ name: t, slug: slugify(t) }));
+
+    const newRecord: CustomSubcategoryRecord = {
+      id: `subcat-${Date.now()}`,
+      categoryName: activeMain.name,
+      categorySlug: activeMain.slug,
+      name: subName,
+      slug: subSlug,
+      businessTypes: types.length ? types : [{ name: "General Provider", slug: "general-provider" }],
+      createdAt: new Date().toISOString(),
+    };
+
+    const nextList = [...customSubcategories, newRecord];
+    setCustomSubcategories(nextList);
+    saveCustomSubcategories(nextList);
+    setSubForm({ name: "", businessTypesStr: "" });
+    setShowSubForm(false);
+  }
+
+  function handleDeleteSubcategory(id: string) {
+    const nextList = customSubcategories.filter((item) => item.id !== id);
+    setCustomSubcategories(nextList);
+    saveCustomSubcategories(nextList);
   }
 
   function resetForm() {
@@ -507,7 +563,6 @@ export function ManageCategoriesModule() {
         : [...records, nextRecord],
     );
 
-    // ── Backend sync ──────────────────────────────────────────────────────────
     void postAdminAction("categories", {
       action: "upsert",
       record: {
@@ -539,7 +594,6 @@ export function ManageCategoriesModule() {
 
   function bulkStatus(nextStatus: "Active" | "Inactive") {
     sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
-    // ── Backend sync ──────────────────────────────────────────────────────────
     void postAdminAction("categories", { action: "bulk-status", ids: selected, status: nextStatus });
     setSelected([]);
   }
@@ -547,7 +601,6 @@ export function ManageCategoriesModule() {
   function deleteSelected() {
     const toDelete = [...selected];
     sync(records.filter((record) => !selected.includes(record.id)));
-    // ── Backend sync ──────────────────────────────────────────────────────────
     void postAdminAction("categories", { action: "bulk-delete", ids: toDelete });
     setSelected([]);
   }
@@ -598,7 +651,7 @@ export function ManageCategoriesModule() {
         <div className="admin-location-tree-head">
           <div>
             <span>India Business Taxonomy</span>
-            <strong>Manage category hierarchy</strong>
+            <strong>Manage category hierarchy &amp; subcategories</strong>
           </div>
           <div className="admin-location-tree-stats">
             <span>Main</span><b>{categoryStats.main}</b>
@@ -617,7 +670,7 @@ export function ManageCategoriesModule() {
                 type="button"
               >
                 <span>{category.name}</span>
-                <b>{category.subcategories.length * 4}</b>
+                <b>{category.subcategories.length} subs</b>
                 <small>{record?.status ?? "Active"}</small>
               </button>
             ))}
@@ -625,31 +678,118 @@ export function ManageCategoriesModule() {
           <div className="admin-category-detail">
             {activeMain ? (
               <>
-                <div className="admin-category-detail-head">
+                <div className="admin-category-detail-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
                   <div>
                     <span>Main Category</span>
                     <strong>{activeMain.name}</strong>
                     <p>{activeMain.description}</p>
                   </div>
-                  <a href={`/category/${activeMain.slug}`} target="_blank" rel="noreferrer">Open Page</a>
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowSubForm((current) => !current)}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        borderRadius: "8px",
+                        background: showSubForm ? "#e2e8f0" : "linear-gradient(135deg, #0284c7, #0369a1)",
+                        color: showSubForm ? "#0f172a" : "#ffffff",
+                        border: "none",
+                        fontWeight: "700",
+                        fontSize: "0.85rem",
+                        cursor: "pointer",
+                        boxShadow: showSubForm ? "none" : "0 2px 8px rgba(2,132,199,0.25)",
+                      }}
+                    >
+                      {showSubForm ? "Cancel" : `➕ Add Subcategory`}
+                    </button>
+                    <a href={`/category/${activeMain.slug}`} target="_blank" rel="noreferrer" style={{ textDecoration: "none", fontSize: "0.85rem", fontWeight: "600", color: "#0284c7" }}>Open Page</a>
+                  </div>
                 </div>
-                <div className="admin-category-sub-list">
-                  {activeMain.subcategories.map((subcategory) => {
-                    const isOpen = openSubcategories[subcategory.slug] ?? false;
-                    return (
-                      <div className="admin-category-sub-card" key={subcategory.slug}>
-                        <button type="button" onClick={() => toggleSubcategory(subcategory.slug)}>
-                          <span>{subcategory.name}</span>
-                          <b>{subcategory.businessTypes.length} types</b>
+
+                {showSubForm ? (
+                  <div style={{ background: "#f8fafc", border: "1.5px solid #0284c7", borderRadius: "12px", padding: "1.25rem", margin: "1rem 0", boxShadow: "0 4px 12px rgba(2,132,199,0.08)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+                      <strong style={{ color: "#0f172a", fontSize: "0.95rem" }}>Create New Subcategory for &quot;{activeMain.name}&quot;</strong>
+                      <button type="button" onClick={() => setShowSubForm(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#64748b", fontWeight: "800" }}>✖</button>
+                    </div>
+                    <div style={{ display: "grid", gap: "0.75rem" }}>
+                      <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: "0.825rem", fontWeight: "600", color: "#334155" }}>
+                        <span>Subcategory Name *</span>
+                        <input
+                          value={subForm.name}
+                          onChange={(e) => setSubForm({ ...subForm, name: e.target.value })}
+                          placeholder="e.g. Split AC Installation, Bridal Makeup, React Developer"
+                          style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.9rem" }}
+                        />
+                      </label>
+                      <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: "0.825rem", fontWeight: "600", color: "#334155" }}>
+                        <span>Business Types (Optional, comma-separated)</span>
+                        <input
+                          value={subForm.businessTypesStr}
+                          onChange={(e) => setSubForm({ ...subForm, businessTypesStr: e.target.value })}
+                          placeholder="e.g. Installation, Repair, Maintenance Services"
+                          style={{ padding: "0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.9rem" }}
+                        />
+                      </label>
+                      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+                        <button
+                          type="button"
+                          onClick={handleSaveSubcategory}
+                          style={{ padding: "0.55rem 1.25rem", background: "#0284c7", color: "#ffffff", border: "none", borderRadius: "6px", fontWeight: "700", cursor: "pointer", fontSize: "0.875rem" }}
+                        >
+                          Save Subcategory
                         </button>
-                        {isOpen ? (
-                          <div className="admin-category-type-grid">
-                            {subcategory.businessTypes.map((businessType) => <span key={businessType.slug}>{businessType.name}</span>)}
-                          </div>
-                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => setShowSubForm(false)}
+                          style={{ padding: "0.55rem 1rem", background: "#e2e8f0", color: "#334155", border: "none", borderRadius: "6px", fontWeight: "600", cursor: "pointer", fontSize: "0.875rem" }}
+                        >
+                          Cancel
+                        </button>
                       </div>
-                    );
-                  })}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="admin-category-sub-list">
+                  {activeMain.subcategories.length === 0 ? (
+                    <div style={{ padding: "1.5rem 1rem", textAlign: "center", background: "#f8fafc", borderRadius: "10px", border: "1px dashed #cbd5e1", color: "#64748b", fontSize: "0.875rem" }}>
+                      No subcategories added yet for <strong>{activeMain.name}</strong>.<br />
+                      Click <strong>&quot;➕ Add Subcategory&quot;</strong> above to create the first subcategory!
+                    </div>
+                  ) : (
+                    activeMain.subcategories.map((subcategory) => {
+                      const isOpen = openSubcategories[subcategory.slug] ?? false;
+                      const customMatch = customSubcategories.find((c) => c.slug === subcategory.slug && c.categorySlug === activeMain.slug);
+
+                      return (
+                        <div className="admin-category-sub-card" key={subcategory.slug} style={{ position: "relative" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                            <button type="button" onClick={() => toggleSubcategory(subcategory.slug)} style={{ flex: 1, textAlign: "left" }}>
+                              <span>{subcategory.name}</span>
+                              {customMatch ? <b style={{ background: "#dcfce7", color: "#166534", padding: "2px 8px", borderRadius: "4px", fontSize: "0.75rem", marginRight: "6px" }}>Added</b> : null}
+                              <b>{subcategory.businessTypes.length} types</b>
+                            </button>
+                            {customMatch ? (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteSubcategory(customMatch.id)}
+                                style={{ background: "#fef2f2", border: "1px solid #fca5a5", color: "#dc2626", borderRadius: "6px", padding: "3px 8px", fontSize: "0.75rem", fontWeight: "700", cursor: "pointer", marginLeft: "8px" }}
+                                title="Delete Custom Subcategory"
+                              >
+                                Delete 🗑
+                              </button>
+                            ) : null}
+                          </div>
+                          {isOpen ? (
+                            <div className="admin-category-type-grid">
+                              {subcategory.businessTypes.map((businessType) => <span key={businessType.slug}>{businessType.name}</span>)}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </>
             ) : (
