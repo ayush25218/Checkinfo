@@ -285,6 +285,249 @@ export function MemberDashboardModule() {
   );
 }
 
+function downloadVisitingCardPng(listing: MemberListing) {
+  if (typeof window === "undefined") return;
+  const canvas = document.createElement("canvas");
+  canvas.width = 1050;
+  canvas.height = 600;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  // 1. Draw Right White Background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, 1050, 600);
+
+  // 2. Draw Left Curved Wave Gradient Background
+  const grad = ctx.createLinearGradient(0, 0, 650, 600);
+  grad.addColorStop(0, "#4c1d95");
+  grad.addColorStop(0.5, "#5b21b6");
+  grad.addColorStop(1, "#6d28d9");
+
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(540, 0);
+  ctx.bezierCurveTo(650, 180, 480, 420, 570, 600);
+  ctx.lineTo(0, 600);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // 3. Draw Soft Secondary Curve Overlay
+  ctx.beginPath();
+  ctx.moveTo(540, 0);
+  ctx.bezierCurveTo(670, 150, 500, 450, 620, 600);
+  ctx.lineTo(570, 600);
+  ctx.bezierCurveTo(480, 420, 650, 180, 540, 0);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(196, 181, 253, 0.4)";
+  ctx.fill();
+
+  // 4. Draw Left Side Text (Name & Details)
+  const name = (listing.contactPerson || listing.name || "Business Owner").toUpperCase();
+  const designation = "Business Owner";
+  const email = listing.email || "info@checkinfo.in";
+  const phone = listing.mobile || "+91 98765 43210";
+  const address = listing.address || listing.location || "India";
+  const website = listing.website || "www.checkinfo.in";
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 34px Arial, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(name, 50, 80);
+
+  ctx.fillStyle = "#ddd6fe";
+  ctx.font = "18px Arial, sans-serif";
+  ctx.fillText(designation, 50, 115);
+
+  const items = [
+    { text: email, symbol: "✉" },
+    { text: phone, symbol: "📞" },
+    { text: address.length > 38 ? address.substring(0, 35) + "..." : address, symbol: "📍" },
+    { text: website, symbol: "🌐" },
+  ];
+
+  let startY = 220;
+  items.forEach((item) => {
+    ctx.beginPath();
+    ctx.arc(75, startY - 6, 20, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "18px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(item.symbol, 75, startY);
+
+    ctx.textAlign = "left";
+    ctx.font = "18px Arial, sans-serif";
+    ctx.fillText(item.text, 115, startY);
+
+    startY += 80;
+  });
+
+  // 5. Draw Right Side Business Name & Checkinfo Brand
+  const companyName = (listing.name || "COMPANY NAME").toUpperCase();
+  ctx.fillStyle = "#1e1b4b";
+  ctx.font = "bold 30px Arial, sans-serif";
+  ctx.textAlign = "center";
+
+  if (companyName.length > 20) {
+    const words = companyName.split(" ");
+    const mid = Math.ceil(words.length / 2);
+    ctx.fillText(words.slice(0, mid).join(" "), 820, 130);
+    ctx.fillText(words.slice(mid).join(" "), 820, 175);
+  } else {
+    ctx.fillText(companyName, 820, 140);
+  }
+
+  ctx.fillStyle = "#64748b";
+  ctx.font = "bold 13px Arial, sans-serif";
+  ctx.fillText("VERIFIED ON CHECKINFO.IN", 820, 210);
+
+  // 6. Draw QR Code image
+  const qrImg = new Image();
+  qrImg.crossOrigin = "anonymous";
+  const targetUrl = website.startsWith("http") ? website : "https://" + (website || "checkinfo.in");
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(targetUrl)}`;
+
+  function triggerDownload() {
+    const link = document.createElement("a");
+    link.download = `${companyName.replace(/[^a-zA-Z0-9_-]/g, "_")}_Visiting_Card.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
+
+  qrImg.onload = () => {
+    ctx.drawImage(qrImg, 710, 260, 220, 220);
+    triggerDownload();
+  };
+
+  qrImg.onerror = () => {
+    triggerDownload();
+  };
+
+  qrImg.src = qrUrl;
+}
+
+function DigitalVisitingCard({ listing }: { listing: MemberListing }) {
+  const name = listing.contactPerson || listing.name || "Business Owner";
+  const companyName = listing.name || "Your Company Name";
+  const email = listing.email || "owner@business.com";
+  const phone = listing.mobile || "+91 98765 43210";
+  const address = listing.address || listing.location || "Business Address, India";
+  const website = listing.website || "www.checkinfo.in";
+  const targetUrl = website.startsWith("http") ? website : "https://" + (website || "checkinfo.in");
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(targetUrl)}`;
+
+  return (
+    <div className="visiting-card-container" style={{ marginBottom: "2rem", display: "grid", gap: "1.25rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: "700", color: "#0f172a" }}>Digital Business Visiting Card</h3>
+          <p style={{ margin: "0.25rem 0 0", fontSize: "0.85rem", color: "#64748b" }}>Autofetched from your business listing details. Ready to share or download.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => downloadVisitingCardPng(listing)}
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 22px", borderRadius: "8px", background: "linear-gradient(135deg, #6d28d9, #4c1d95)", color: "#ffffff", border: "none", cursor: "pointer", fontSize: "0.9rem", fontWeight: "700", boxShadow: "0 6px 18px rgba(109, 40, 217, 0.28)", transition: "transform 180ms ease, box-shadow 180ms ease" }}
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+          </svg>
+          Download Business Card 📥
+        </button>
+      </div>
+
+      <div
+        className="visiting-card-preview"
+        style={{
+          position: "relative",
+          width: "100%",
+          maxWidth: "640px",
+          height: "350px",
+          borderRadius: "20px",
+          overflow: "hidden",
+          background: "#ffffff",
+          boxShadow: "0 20px 40px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(0,0,0,0.08)",
+          border: "1px solid #cbd5e1",
+          fontFamily: "Arial, sans-serif",
+          display: "flex",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            inset: "0 auto 0 0",
+            width: "58%",
+            background: "linear-gradient(135deg, #4c1d95 0%, #5b21b6 50%, #6d28d9 100%)",
+            clipPath: "ellipse(95% 140% at 0% 50%)",
+            zIndex: 1,
+            padding: "2rem",
+            color: "#ffffff",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <h2 style={{ margin: 0, fontSize: "1.45rem", fontWeight: "800", letterSpacing: "0.02em", color: "#ffffff", textTransform: "uppercase" }}>
+              {name}
+            </h2>
+            <p style={{ margin: "0.25rem 0 0", fontSize: "0.85rem", color: "#ddd6fe", fontWeight: "500" }}>
+              Business Owner
+            </p>
+          </div>
+
+          <div style={{ display: "grid", gap: "0.6rem", fontSize: "0.8rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "grid", placeItems: "center", fontSize: "0.75rem" }}>✉</span>
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "210px" }}>{email}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "grid", placeItems: "center", fontSize: "0.75rem" }}>📞</span>
+              <span>{phone}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "grid", placeItems: "center", fontSize: "0.75rem" }}>📍</span>
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "210px" }}>{address}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "grid", placeItems: "center", fontSize: "0.75rem" }}>🌐</span>
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "210px" }}>{website}</span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginLeft: "auto",
+            width: "48%",
+            padding: "1.75rem 1.25rem",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            zIndex: 2,
+          }}
+        >
+          <img src="/logo.png" alt="Checkinfo" style={{ height: "26px", width: "auto", marginBottom: "0.5rem" }} />
+          <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: "800", color: "#1e1b4b", textTransform: "uppercase", lineHeight: "1.2" }}>
+            {companyName}
+          </h3>
+          <span style={{ fontSize: "0.65rem", fontWeight: "800", letterSpacing: "0.08em", color: "#64748b", margin: "0.25rem 0 0.85rem", textTransform: "uppercase" }}>
+            VERIFIED ON CHECKINFO
+          </span>
+
+          <div style={{ padding: "6px", background: "#ffffff", borderRadius: "10px", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0" }}>
+            <img src={qrUrl} alt="Business QR Code" style={{ width: "105px", height: "105px", display: "block" }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MyBusinessListingModule() {
   const [listings, setListings] = useStoredState("checkinfo-member-listings", listingSeed);
   const [isEditing, setIsEditing] = useState(false);
@@ -389,6 +632,10 @@ export function MyBusinessListingModule() {
       />
       
       {message ? <div className="member-notice" style={{ marginBottom: "1.25rem" }}>{message}</div> : null}
+
+      <PanelSection eyebrow="Business Visiting Card" title="Digital Business Card">
+        <DigitalVisitingCard listing={currentListing} />
+      </PanelSection>
 
       <PanelSection eyebrow="Business Details View" title="Listing Overview">
         <div className="business-view-card" style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "14px", padding: "1.5rem", display: "grid", gap: "1.5rem", boxShadow: "0 4px 20px rgba(15,23,42,0.05)" }}>
