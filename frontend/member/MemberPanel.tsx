@@ -47,6 +47,12 @@ function NavIcon({ name }: { name: (typeof accountNav)[number]["icon"] }) {
 
 type AnyListing = Record<string, string | undefined>;
 
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 export function SidebarDigitalVisitingCard() {
   const [listing, setListing] = useState<AnyListing | null>(null);
 
@@ -72,11 +78,13 @@ export function SidebarDigitalVisitingCard() {
     } catch {}
   }, []);
 
-  const name = listing?.contactPerson || listing?.name || memberProfile.name;
-  const companyName = listing?.name || "YOUR BUSINESS";
-  const email = listing?.email || memberProfile.email;
-  const phone = listing?.mobile || "+91 98765 43210";
-  const address = listing?.subcity ? `${listing.subcity}, ${listing.city}` : listing?.city || listing?.address || "India";
+  const cookieMemberName = getCookie("checkinfo_member_name");
+  const storedMemberName = typeof window !== "undefined" ? window.localStorage.getItem("checkinfo_member_name") : null;
+  const name = listing?.contactPerson || listing?.name || cookieMemberName || storedMemberName || "Business Member";
+  const companyName = listing?.name || "Create Business Profile";
+  const email = listing?.email || "";
+  const phone = listing?.mobile || "";
+  const address = listing?.subcity ? `${listing.subcity}, ${listing.city}` : listing?.city || listing?.address || "";
   const website = listing?.website?.trim();
   const hasWebsite = Boolean(website && website.toLowerCase() !== "n/a" && website !== "undefined");
 

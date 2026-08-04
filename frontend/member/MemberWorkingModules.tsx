@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AccountHeader,
   categories,
+  EmptyState,
   imageSlots,
   MemberShell,
   PanelSection,
@@ -288,19 +289,62 @@ function ListingForm({
 }
 
 export function MemberDashboardModule() {
-  const [listings] = useStoredState("checkinfo-member-listings", listingSeed);
+  const [listings, setListings] = useStoredState("checkinfo-member-listings", listingSeed);
   const [enquiries] = useStoredState("checkinfo-member-enquiries", enquirySeed);
+
+  useEffect(() => {
+    void getMemberData<MemberListing[]>("listings", []).then((data) => {
+      if (Array.isArray(data)) setListings(data);
+    });
+  }, []);
+
   const activeListings = listings.filter((listing) => listing.status === "Active" || listing.status === "Featured").length;
   const newEnquiries = enquiries.filter((enquiry) => enquiry.status === "New").length;
+
+  let profileStatus = 0;
+  if (listings.length > 0) {
+    const l = listings[0];
+    const fields = [l.name, l.contactPerson, l.mobile, l.email, l.address, l.category, l.subcategory, l.city, l.description, l.website];
+    const filledCount = fields.filter((f) => Boolean(f && f.trim())).length;
+    profileStatus = Math.round((filledCount / fields.length) * 100);
+  }
+
   const dashboardCards = [
-    ["Profile status", `${Math.min(100, 55 + listings.length * 12)}%`, "Complete media, category, and service tags"],
-    ["Listings", `${activeListings} active`, "Manage free and featured business ads"],
-    ["My Business Listing", listings.length > 0 ? `${listings[0]?.name} (${listings[0]?.status})` : "Not created", "View, manage, or update your 1 business profile listing"],
-    ["Enquiries", `${newEnquiries} new`, "Track buyer leads from your listing"],
-    ["Reach score", listings.some((listing) => listing.status === "Featured") ? "Boosted" : "Starter", "Upgrade package to boost search ranking"],
+    [
+      "Profile status",
+      listings.length > 0 ? `${profileStatus}%` : "0%",
+      listings.length > 0
+        ? profileStatus === 100 ? "Profile 100% complete" : "Complete remaining details for 100%"
+        : "Create your business profile to get started",
+    ],
+    [
+      "Listings",
+      listings.length > 0 ? `${activeListings} active` : "0 listings",
+      listings.length > 0 ? `Total ${listings.length} registered business profile(s)` : "No business profile created yet",
+    ],
+    [
+      "My Business Listing",
+      listings.length > 0 ? `${listings[0]?.name}` : "Not Created",
+      listings.length > 0 ? `Status: ${listings[0]?.status}` : "Click button above to add your business",
+    ],
+    [
+      "Enquiries",
+      `${newEnquiries} new`,
+      enquiries.length > 0 ? `${enquiries.length} total customer lead(s)` : "No buyer leads received yet",
+    ],
+    [
+      "Reach score",
+      listings.some((listing) => listing.status === "Featured") ? "Featured Boost" : listings.length > 0 ? "Standard" : "Inactive",
+      listings.some((listing) => listing.status === "Featured")
+        ? "Highest search ranking active"
+        : listings.length > 0
+        ? "Upgrade package to boost reach"
+        : "Publish listing to appear in customer searches",
+    ],
   ];
+
   const quickActions = [
-    ["My Business Listing", "View, manage, or update your 1 business profile listing.", "/members/my_listings"],
+    ["My Business Listing", listings.length > 0 ? "View, manage, or update your business listing details." : "Publish your business listing on Checkinfo.", "/members/my_listings"],
     ["My Enquiries", "Filter and manage buyer enquiries received from listings.", "/members/enquirylisting"],
     ["Manage Reviews", "View customer feedback and moderate reviews.", "/members/reviewlisting"],
     ["Featured Packages", "Compare visibility plans and promotional placements.", "/members/packages"],
@@ -311,9 +355,37 @@ export function MemberDashboardModule() {
 
   return (
     <MemberShell active="Dashboard">
-      <AccountHeader action={<a className="primary-button" href="/members/my_listings">{listings.length > 0 ? "My Business Listing" : "Add Business Listing"}</a>} eyebrow="Welcome to your account" subtitle="Manage listings, visibility, enquiries, reviews, support, and security from dedicated pages." title="Your business command center" />
-      <section className="dashboard-grid">{dashboardCards.map(([title, value, note]) => <article className="dashboard-card" key={title}><span>{title}</span><strong>{value}</strong><p>{note}</p></article>)}</section>
-      <section className="panel-section"><div className="panel-heading"><div><p className="eyebrow">Account Shortcuts</p><h2>Choose a panel section</h2></div></div><div className="shortcut-grid">{quickActions.map(([title, text, href]) => <a className="shortcut-card" href={href} key={title}><strong>{title}</strong><span>{text}</span></a>)}</div></section>
+      <AccountHeader
+        action={<a className="primary-button" href="/members/my_listings">{listings.length > 0 ? "My Business Listing" : "Add Business Listing"}</a>}
+        eyebrow="Welcome to your account"
+        subtitle="Manage listings, visibility, enquiries, reviews, support, and security from your dashboard."
+        title="Your business command center"
+      />
+      <section className="dashboard-grid">
+        {dashboardCards.map(([title, value, note]) => (
+          <article className="dashboard-card" key={title}>
+            <span>{title}</span>
+            <strong>{value}</strong>
+            <p>{note}</p>
+          </article>
+        ))}
+      </section>
+      <section className="panel-section">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Account Shortcuts</p>
+            <h2>Choose a panel section</h2>
+          </div>
+        </div>
+        <div className="shortcut-grid">
+          {quickActions.map(([title, text, href]) => (
+            <a className="shortcut-card" href={href} key={title}>
+              <strong>{title}</strong>
+              <span>{text}</span>
+            </a>
+          ))}
+        </div>
+      </section>
     </MemberShell>
   );
 }
@@ -358,9 +430,9 @@ function downloadVisitingCardPng(listing: MemberListing) {
   // 4. Draw Left Side Text (Name & Details)
   const name = (listing.contactPerson || listing.name || "Business Owner").toUpperCase();
   const designation = "Business Owner";
-  const email = listing.email || "info@checkinfo.in";
-  const phone = listing.mobile || "+91 98765 43210";
-  const address = listing.address || listing.location || "India";
+  const email = listing.email?.trim() || "";
+  const phone = listing.mobile?.trim() || "";
+  const address = (listing.address || listing.location || "").trim();
   const website = listing.website?.trim();
   const hasWebsite = Boolean(website && website.toLowerCase() !== "n/a" && website !== "undefined");
 
@@ -789,8 +861,26 @@ export function EnquiriesModule() {
     <MemberShell active="My Enquiries">
       <AccountHeader eyebrow="Manage Enquiries" subtitle="Search buyer leads by user name, email, phone number, and date range." title="My Enquiries" />
       <PanelSection eyebrow="Filter By" title="Find enquiry records">
-        <div className="member-filter"><label className="panel-field"><span>User Name / Email / Contact</span><input value={query} onChange={(event) => setQuery(event.target.value)} /></label></div>
-        <div className="data-table member-table-enquiries"><div className="data-row data-head"><span>User</span><span>Email</span><span>Contact</span><span>Message</span><span>Action</span></div>{filtered.map((record) => <div className="data-row" key={record.id}><strong>{record.name}<small>{record.date}</small></strong><span>{record.email}</span><span>{record.contact}</span><span>{record.message}</span><span className="row-actions"><button type="button" onClick={() => status(record.id, "Read")}>{record.status}</button><button type="button" onClick={() => status(record.id, "Closed")}>Close</button></span></div>)}</div>
+        <div className="member-filter"><label className="panel-field"><span>User Name / Email / Contact</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search..." /></label></div>
+        {filtered.length > 0 ? (
+          <div className="data-table member-table-enquiries">
+            <div className="data-row data-head"><span>User</span><span>Email</span><span>Contact</span><span>Message</span><span>Action</span></div>
+            {filtered.map((record) => (
+              <div className="data-row" key={record.id}>
+                <strong>{record.name}<small>{record.date}</small></strong>
+                <span>{record.email}</span>
+                <span>{record.contact}</span>
+                <span>{record.message}</span>
+                <span className="row-actions">
+                  <button type="button" onClick={() => status(record.id, "Read")}>{record.status}</button>
+                  <button type="button" onClick={() => status(record.id, "Closed")}>Close</button>
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState title="No Enquiries Received" text="When customers contact your business listing on Checkinfo, their enquiries will appear here." />
+        )}
       </PanelSection>
     </MemberShell>
   );
@@ -813,7 +903,25 @@ export function ReviewsModule() {
     <MemberShell active="Manage Reviews">
       <AccountHeader eyebrow="Manage Reviews" subtitle="Track published, pending, and moderated customer feedback for your listing." title="Customer Reviews" />
       <PanelSection eyebrow="Reviews" title="Customer feedback">
-        <div className="data-table member-table-reviews"><div className="data-row data-head"><span>Customer</span><span>Rating</span><span>Review</span><span>Status</span><span>Action</span></div>{reviews.map((review) => <div className="data-row" key={review.id}><strong>{review.author}</strong><span>{review.rating} / 5</span><span>{review.message}</span><span className={`status-pill ${review.status.toLowerCase()}`}>{review.status}</span><span className="row-actions"><button type="button" onClick={() => update(review.id, "Published")}>Publish</button><button type="button" onClick={() => update(review.id, "Hidden")}>Hide</button></span></div>)}</div>
+        {reviews.length > 0 ? (
+          <div className="data-table member-table-reviews">
+            <div className="data-row data-head"><span>Customer</span><span>Rating</span><span>Review</span><span>Status</span><span>Action</span></div>
+            {reviews.map((review) => (
+              <div className="data-row" key={review.id}>
+                <strong>{review.author}</strong>
+                <span>{review.rating} / 5</span>
+                <span>{review.message}</span>
+                <span className={`status-pill ${review.status.toLowerCase()}`}>{review.status}</span>
+                <span className="row-actions">
+                  <button type="button" onClick={() => update(review.id, "Published")}>Publish</button>
+                  <button type="button" onClick={() => update(review.id, "Hidden")}>Hide</button>
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState title="No Reviews Yet" text="Ratings and reviews submitted by customers for your business will appear here." />
+        )}
       </PanelSection>
     </MemberShell>
   );
@@ -1025,8 +1133,22 @@ export function NotificationsModule() {
   }
   return (
     <MemberShell active="Notifications">
-      <AccountHeader action={<button className="primary-button" type="button" onClick={markAllRead}>Mark all read</button>} eyebrow="Notifications" subtitle="Stay updated on profile health, reviews, enquiries, and promotions." title="Activity Center" />
-      <PanelSection eyebrow="Recent Updates" title="Member alerts"><div className="timeline">{notifications.map((item) => <article className="timeline-item" key={item.id}><span>{item.time}{item.unread ? " / Unread" : ""}</span><strong>{item.title}</strong><p>{item.text}</p></article>)}</div></PanelSection>
+      <AccountHeader action={notifications.length > 0 ? <button className="primary-button" type="button" onClick={markAllRead}>Mark all read</button> : undefined} eyebrow="Notifications" subtitle="Stay updated on profile health, reviews, enquiries, and promotions." title="Activity Center" />
+      <PanelSection eyebrow="Recent Updates" title="Member alerts">
+        {notifications.length > 0 ? (
+          <div className="timeline">
+            {notifications.map((item) => (
+              <article className="timeline-item" key={item.id}>
+                <span>{item.time}{item.unread ? " / Unread" : ""}</span>
+                <strong>{item.title}</strong>
+                <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <EmptyState title="No Notifications" text="Alerts regarding profile verification status, new buyer enquiries, and account updates will appear here." />
+        )}
+      </PanelSection>
     </MemberShell>
   );
 }
