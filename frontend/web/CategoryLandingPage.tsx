@@ -9,7 +9,7 @@ import type { PublicBusinessListing } from "@/backend/listingSeo";
 import { BusinessCard } from "./BusinessCard";
 import { CategoryIconVisual } from "./CategoryIconVisual";
 import type { CategoryExperience } from "./categoryExperience";
-import { HeaderUserProfileDropdown } from "./HeaderUserProfileDropdown";
+import { SiteHeader } from "./SiteHeader";
 import { LocationSearchForm } from "./LocationSearchForm";
 
 type CategoryLandingPageProps = {
@@ -61,23 +61,7 @@ export function CategoryLandingPage({ category, initialSubcategorySlug = "", ini
 
   return (
     <main className="category-world is-landed" style={{ "--category-accent": activeCategory.accent } as CSSProperties}>
-      <header className="category-world-header">
-        <Link className="check-logo" href="/" aria-label="Checkinfo home">
-          <span>i</span>
-          <strong>Checkinfo</strong>
-          <small>Check kiya kya?</small>
-        </Link>
-        <nav aria-label="Category navigation">
-          <a href="/">Home</a>
-          <a href="/featured">Featured</a>
-          <a href="/new">New Ads</a>
-          <a href="/trending">Trending</a>
-        </nav>
-        <div className="check-header-actions">
-          <a className="check-post-button" href="/members/login">List Your Business</a>
-          <HeaderUserProfileDropdown />
-        </div>
-      </header>
+      <SiteHeader activeNav="Categories" />
 
       <section className="category-hero">
         <div className="category-hero-copy">

@@ -6,7 +6,7 @@ import { getApprovedListings } from "./listingCollections";
 import { DUMMY_BUSINESS_IMAGE } from "./dummyImages";
 import { LocationSearchForm } from "./LocationSearchForm";
 
-import { HeaderUserProfileDropdown } from "./HeaderUserProfileDropdown";
+import { SiteHeader } from "./SiteHeader";
 
 const footerLinks = {
   info: ["How to buy", "FAQs", "Career", "Privacy Policy", "Legal Disclaimer", "Terms And Conditions", "Refer to Friend"],
@@ -55,27 +55,7 @@ export async function HomePage() {
 
   return (
     <main className="check-home">
-      <header className="check-header">
-        <a className="check-logo" href="/" aria-label="Checkinfo home">
-          <span>i</span>
-          <strong>Checkinfo</strong>
-          <small>Check kiya kya?</small>
-        </a>
-        <LocationSearchForm className="check-top-search" compact />
-        <nav aria-label="Primary navigation">
-          <a href="#top">Home</a>
-          <a href="/about">About Us</a>
-          <a href="/new">Business</a>
-          <a href="#categories">Categories</a>
-          <a href="/featured">Featured Ads</a>
-          <a href="#advertise">Advertise</a>
-          <a href="#contact">Contact</a>
-        </nav>
-        <div className="check-header-actions">
-          <a className="check-post-button" href="/members/login">List Your Business</a>
-          <HeaderUserProfileDropdown />
-        </div>
-      </header>
+      <SiteHeader />
 
       <section className="check-hero" id="top">
         <span className="check-hero-aurora" aria-hidden="true" />

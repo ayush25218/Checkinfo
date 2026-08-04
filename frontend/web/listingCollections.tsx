@@ -2,7 +2,7 @@ import { getAdminResourceAsync } from "@/backend/directoryStore";
 import type { PublicBusinessListing } from "@/backend/listingSeo";
 import { BusinessCard } from "./BusinessCard";
 import { slugifyCategory } from "./categoryExperience";
-import { HeaderUserProfileDropdown } from "./HeaderUserProfileDropdown";
+import { SiteHeader } from "./SiteHeader";
 
 export type ListingCollectionKind = "featured" | "new" | "trending" | "category";
 
@@ -51,24 +51,7 @@ export function ListingCollectionPage({
 }) {
   return (
     <main className="listing-collection-page">
-      <header className="listing-collection-header">
-        <a className="check-logo" href="/" aria-label="Checkinfo home">
-          <span>i</span>
-          <strong>Checkinfo</strong>
-          <small>Check kiya kya?</small>
-        </a>
-        <nav aria-label="Listing page navigation">
-          <a href="/">Home</a>
-          <a href="/#categories">Categories</a>
-          <a href="/featured">Featured</a>
-          <a href="/new">New Ads</a>
-          <a href="/trending">Trending</a>
-        </nav>
-        <div className="check-header-actions">
-          <a className="check-post-button" href="/members/login">List Your Business</a>
-          <HeaderUserProfileDropdown />
-        </div>
-      </header>
+      <SiteHeader />
 
       <section className="listing-collection-hero">
         <p className="eyebrow">{eyebrow}</p>
