@@ -1380,7 +1380,15 @@ cite {
 }
 
 .check-post-button {
-  min-width: 145px;
+  min-height: 30px;
+  min-width: auto;
+  padding: 5px 12px;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
 }
 
 .check-header nav {
@@ -6948,22 +6956,24 @@ cite {
 .header-user-dropdown-wrap {
   position: relative;
   display: inline-block;
-  font-family: Calibri, "Segoe UI", Arial, sans-serif;
+  font-family: Arial, sans-serif;
 }
 
 .check-profile-circle {
-  gap: 9px;
-  min-height: 42px;
-  padding: 5px 12px 5px 5px;
+  gap: 7px;
+  min-height: 30px;
+  padding: 3px 9px 3px 3px;
   border: 1px solid #cbd5e1;
   background: #ffffff;
   color: #172033;
-  font-family: Calibri, "Segoe UI", Arial, sans-serif;
-  font-size: 15px;
-  font-weight: 700;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
   line-height: 1;
-  box-shadow: 0 8px 20px rgba(15, 38, 62, 0.08);
+  border-radius: 9999px;
+  box-shadow: 0 3px 10px rgba(15, 38, 62, 0.06);
   transition: border-color 170ms ease, box-shadow 170ms ease, transform 170ms ease, background 170ms ease;
+  cursor: pointer;
 }
 
 .check-profile-circle.is-active {
@@ -6979,33 +6989,41 @@ cite {
 .check-profile-circle:hover {
   border-color: #0f7fb8;
   color: #172033;
-  box-shadow: 0 12px 26px rgba(15, 127, 184, 0.16);
+  box-shadow: 0 8px 18px rgba(15, 127, 184, 0.14);
 }
 
 .check-profile-avatar {
   position: relative;
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
   background: linear-gradient(135deg, #0f766e, #2491c7);
-  box-shadow: 0 8px 18px rgba(15, 118, 110, 0.22);
-  font-size: 12px;
-  font-weight: 800;
+  box-shadow: 0 3px 8px rgba(15, 118, 110, 0.2);
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 400;
 }
 
 .check-profile-status {
   position: absolute;
-  right: 1px;
-  bottom: 1px;
-  width: 9px;
-  height: 9px;
-  border: 2px solid #ffffff;
+  right: 0;
+  bottom: 0;
+  width: 7px;
+  height: 7px;
+  border: 1.5px solid #ffffff;
   border-radius: 50%;
   background: #22c55e;
 }
 
 .check-profile-label {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
   max-width: 132px;
   overflow: hidden;
   text-overflow: ellipsis;
