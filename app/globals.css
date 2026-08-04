@@ -2724,11 +2724,11 @@ cite {
   align-content: start;
   gap: 12px;
   min-height: 275px;
-  border: 1px solid rgba(219, 231, 251, 0.95);
-  border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   padding: 20px;
-  box-shadow: 0 10px 30px rgba(15, 42, 85, 0.05);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
   transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
   font-family: Arial, sans-serif;
 }
@@ -2738,15 +2738,15 @@ cite {
   position: absolute;
   inset: 0 0 auto;
   height: 3px;
-  background: linear-gradient(90deg, #1f6fff, #4a8cff, transparent);
-  opacity: 0.9;
+  background: linear-gradient(90deg, #2563eb, #1e3a8a, transparent);
+  opacity: 0.85;
 }
 
 .check-ad-card:hover,
 .check-trending-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(31, 111, 255, 0.35);
-  box-shadow: 0 20px 48px rgba(31, 111, 255, 0.12);
+  transform: translateY(-3px);
+  border-color: #94a3b8;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
 }
 
 .check-empty-listing {
@@ -2813,17 +2813,17 @@ cite {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 54px;
-  height: 54px;
-  border: 1px solid rgba(219, 231, 251, 0.9);
-  border-radius: 12px;
-  background: #f8fafc;
+  width: 52px;
+  height: 52px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
   color: #0f172a;
-  box-shadow: 0 4px 12px rgba(15, 42, 85, 0.05);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
 .check-ad-image.has-photo {
-  background: #f8fafc;
+  background: #ffffff;
 }
 
 .check-ad-image.has-photo::after {
@@ -2856,24 +2856,24 @@ cite {
 .check-ad-badge {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  border: 1px solid rgba(31, 111, 255, 0.25);
+  min-height: 24px;
+  border: 1px solid #cbd5e1;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(31, 111, 255, 0.07), rgba(74, 140, 255, 0.12));
-  color: #1f6fff;
+  background: #ffffff;
+  color: #334155;
   font-family: Arial, sans-serif;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 400;
-  letter-spacing: 0.06em;
-  padding: 4px 11px;
+  letter-spacing: 0.05em;
+  padding: 3px 10px;
   text-transform: uppercase;
 }
 
 .check-ad-card small {
   display: inline-block;
   width: fit-content;
-  color: #1f6fff;
-  background: #edf4ff;
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
   border-radius: 4px;
   padding: 2px 8px;
   font-family: Arial, sans-serif;
@@ -2887,14 +2887,14 @@ cite {
   margin: 0;
   color: #0f172a;
   font-family: Arial, sans-serif;
-  font-size: 18.5px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.25;
   transition: color 180ms ease;
 }
 
 .check-ad-card:hover h3 {
-  color: #1f6fff;
+  color: #1d4ed8;
 }
 
 .check-ad-card p,
@@ -2910,7 +2910,7 @@ cite {
 .check-ad-meta {
   display: grid;
   gap: 6px;
-  border-top: 1px solid #eef3fc;
+  border-top: 1px solid #cbd5e1;
   padding-top: 12px;
 }
 
@@ -2927,25 +2927,25 @@ cite {
   display: grid;
   place-items: center;
   align-self: end;
-  min-height: 38px;
+  min-height: 36px;
   border: 0;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #1f6fff 0%, #174ea6 100%);
+  border-radius: 7px;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   color: #ffffff;
   font-family: Arial, sans-serif;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  box-shadow: 0 6px 18px rgba(31, 111, 255, 0.22);
-  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
 .check-ad-card a:hover,
 .check-trending-card a:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(31, 111, 255, 0.35);
-  filter: brightness(1.06);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
   color: #ffffff;
 }
 
