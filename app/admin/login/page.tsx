@@ -36,7 +36,6 @@ export default async function AdminLoginPage({
           </label>
           <button type="submit">Login to Admin</button>
         </form>
-        <small>Set `ADMIN_LOGIN_USERNAME`, `ADMIN_LOGIN_PASSWORD`, and `AUTH_SECRET` in Vercel for production.</small>
       </section>
     </main>
   );
