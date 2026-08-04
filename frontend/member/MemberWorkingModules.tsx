@@ -666,7 +666,7 @@ export function MyBusinessListingModule() {
       const updated: MemberListing = { ...currentListing, ...record, status: "Pending" };
       setListings([updated]);
       void postMemberAction("listing", { action: "update", id: currentListing.id, record });
-      setMessage("Business details updated successfully and sent for review.");
+      setMessage("⏳ Business details updated successfully! Your listing has been submitted for Admin Review and will be updated on the website after approval.");
     } else {
       const newListing: MemberListing = {
         ...record,
@@ -675,7 +675,7 @@ export function MyBusinessListingModule() {
       };
       setListings([newListing]);
       void postMemberAction("listing", { action: "create", record });
-      setMessage("Your business listing has been created successfully!");
+      setMessage("⏳ Business profile created successfully! It is now Pending Admin Approval and will go live on the website once approved by Administrator.");
     }
     setIsEditing(false);
   }
@@ -768,7 +768,7 @@ export function MyBusinessListingModule() {
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
               <span className={`status-pill ${currentListing.status.toLowerCase()}`} style={{ padding: "4px 12px", borderRadius: "999px", fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase" }}>
-                {currentListing.status}
+                {currentListing.status === "Pending" ? "⏳ Pending Approval" : currentListing.status}
               </span>
               <button
                 type="button"
@@ -782,6 +782,29 @@ export function MyBusinessListingModule() {
               </button>
             </div>
           </div>
+
+          {/* Admin Approval Workflow Status Banner */}
+          {currentListing.status === "Pending" ? (
+            <div style={{ background: "#fffbeb", border: "1px solid #f59e0b", borderRadius: "10px", padding: "0.95rem 1.25rem", color: "#92400e", display: "flex", alignItems: "center", gap: "0.85rem" }}>
+              <span style={{ fontSize: "1.5rem", flexShrink: 0 }}>⏳</span>
+              <div>
+                <strong style={{ fontSize: "0.925rem", display: "block", color: "#78350f" }}>Listing Submitted — Pending Admin Approval</strong>
+                <span style={{ fontSize: "0.825rem", color: "#92400e" }}>
+                  Your business profile is currently under review by Admin. As soon as Administrator approves it, your business will go live on Checkinfo public search and category listings.
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div style={{ background: "#f0fdf4", border: "1px solid #22c55e", borderRadius: "10px", padding: "0.95rem 1.25rem", color: "#14532d", display: "flex", alignItems: "center", gap: "0.85rem" }}>
+              <span style={{ fontSize: "1.5rem", flexShrink: 0 }}>✅</span>
+              <div>
+                <strong style={{ fontSize: "0.925rem", display: "block", color: "#15803d" }}>Listing Approved & Live on Checkinfo!</strong>
+                <span style={{ fontSize: "0.825rem", color: "#166534" }}>
+                  Your business profile is active and publicly visible to customers searching for services in your area.
+                </span>
+              </div>
+            </div>
+          )}
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.25rem" }}>
             <div>

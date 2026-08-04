@@ -1043,6 +1043,28 @@ export function ManageBusinessModule() {
 
   return (
     <section className="admin-card">
+      {/* Pending Approval Notice for Admin */}
+      {records.some((r) => r.status === "Pending") ? (
+        <div style={{ background: "#fffbeb", border: "1px solid #f59e0b", borderRadius: "10px", padding: "0.85rem 1.25rem", margin: "0 0 1.25rem", color: "#92400e", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <span style={{ fontSize: "1.35rem" }}>🔔</span>
+            <div>
+              <strong style={{ fontSize: "0.95rem", color: "#78350f" }}>
+                {records.filter((r) => r.status === "Pending").length} Business Listing(s) Waiting For Approval
+              </strong>
+              <span style={{ fontSize: "0.825rem" }}>Review details below and click &quot;Approve &amp; Publish&quot; to make them live on the website.</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFilters({ ...filters, status: "Pending" })}
+            style={{ background: "#d97706", color: "#ffffff", border: "none", borderRadius: "6px", padding: "6px 14px", fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", whiteSpace: "nowrap" }}
+          >
+            View Pending Listings
+          </button>
+        </div>
+      ) : null}
+
       <div className="admin-filters">
         <label>
           <span>Business Name</span>
@@ -1194,10 +1216,19 @@ export function ManageBusinessModule() {
             <span>{record.address}<small>{record.subcity || record.city || record.state ? [record.subcity, record.city, record.state].filter(Boolean).join(", ") : record.location}</small></span>
             <span>{record.contact}<small>{record.ownerEmail || ""}</small></span>
             <span>{record.badge} / {record.details}<small>{record.addressProofName ? `Proof: ${record.addressProofName}` : "Address proof optional"}</small>{record.publicPath ? <a className="admin-mini-link" href={record.publicPath} target="_blank" rel="noreferrer">SEO page</a> : null}</span>
-            <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
+            <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status === "Pending" ? "⏳ Pending Review" : record.status}</b></span>
             <span className="admin-business-actions">
               <button type="button" className="admin-link-button" onClick={() => editRecord(record)}>Manage</button>
-              {record.status !== "Active" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Active")}>Approve</button> : null}
+              {record.status !== "Active" ? (
+                <button
+                  type="button"
+                  className="admin-link-button"
+                  style={record.status === "Pending" ? { background: "#16a34a", color: "#ffffff", fontWeight: "700", padding: "4px 10px", borderRadius: "6px" } : undefined}
+                  onClick={() => setRecordStatus(record, "Active")}
+                >
+                  {record.status === "Pending" ? "✓ Approve & Publish" : "Approve"}
+                </button>
+              ) : null}
               {record.status !== "Featured" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Featured")}>Feature</button> : null}
               {record.status !== "Inactive" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Inactive")}>Hide</button> : null}
             </span>
