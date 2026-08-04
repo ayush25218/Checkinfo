@@ -786,18 +786,192 @@ export function ReviewsModule() {
   );
 }
 
+interface PackagePlan {
+  id: string;
+  name: string;
+  price: string;
+  period: string;
+  popular?: boolean;
+  badge?: string;
+  description: string;
+  features: Array<{ text: string; included: boolean }>;
+}
+
+const featuredPackagesData: PackagePlan[] = [
+  {
+    id: "Free Listing",
+    name: "Free Listing",
+    price: "₹0",
+    period: "Forever Free",
+    description: "Standard business profile for local category discovery and basic search placement.",
+    features: [
+      { text: "Standard Category & Location Listing", included: true },
+      { text: "Contact Name, Mobile & Address Display", included: true },
+      { text: "Top Category Priority Ranking", included: false },
+      { text: "Featured Search Badge & Highlight Border", included: false },
+      { text: "Verified QR Code & Instant Buyer Leads", included: false },
+    ],
+  },
+  {
+    id: "Featured Boost",
+    name: "Featured Boost",
+    price: "₹999",
+    period: "per year",
+    popular: true,
+    badge: "MOST POPULAR",
+    description: "Maximum visibility package for top search placement and verified buyer trust.",
+    features: [
+      { text: "Standard Category & Location Listing", included: true },
+      { text: "Contact Name, Mobile & Address Display", included: true },
+      { text: "Top Category Priority Ranking", included: true },
+      { text: "Featured Search Badge & Highlight Border", included: true },
+      { text: "City Leader Homepage Placement", included: false },
+    ],
+  },
+  {
+    id: "City Leader",
+    name: "City Leader",
+    price: "₹2,499",
+    period: "per year",
+    badge: "PREMIUM PRO",
+    description: "Ultimate business growth package with city-wide prime placement & priority support.",
+    features: [
+      { text: "Standard Category & Location Listing", included: true },
+      { text: "Contact Name, Mobile & Address Display", included: true },
+      { text: "Top Category Priority Ranking", included: true },
+      { text: "Featured Search Badge & Highlight Border", included: true },
+      { text: "City Leader Banner & Priority 24/7 Care", included: true },
+    ],
+  },
+];
+
 export function PackagesModule() {
   const [selectedPlan, setSelectedPlan] = useState(readStored("checkinfo-member-package", "Free Listing"));
+
   function choose(name: string) {
     setSelectedPlan(name);
     writeStored("checkinfo-member-package", name);
     void postMemberAction("package", { packageName: name });
   }
+
   return (
     <MemberShell active="Featured Packages">
-      <AccountHeader eyebrow="Advertise With Us" subtitle="Choose promotion plans that help customers notice your business faster." title="Featured Packages" />
-      <PanelSection eyebrow="Visibility Plans" title="Boost search discovery">
-        <div className="package-grid">{packageSeed.map(([name, price, text]) => <article className="package-card" key={name}><span>{name}</span><strong>{price}</strong><p>{text}</p><button type="button" onClick={() => choose(name)}>{selectedPlan === name ? "Selected" : "Select Plan"}</button></article>)}</div>
+      <AccountHeader
+        eyebrow="Advertise With Us"
+        subtitle="Choose promotion plans that help customers notice your business faster."
+        title="Featured Packages"
+      />
+      <PanelSection eyebrow="Visibility Plans" title="Boost Search & Customer Discovery">
+        <div className="modern-package-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem", marginTop: "0.5rem" }}>
+          {featuredPackagesData.map((pkg) => {
+            const isSelected = selectedPlan === pkg.name;
+            return (
+              <article
+                key={pkg.id}
+                style={{
+                  position: "relative",
+                  background: pkg.popular
+                    ? "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)"
+                    : "#ffffff",
+                  border: isSelected
+                    ? "2px solid #2563eb"
+                    : pkg.popular
+                    ? "2px solid #6366f1"
+                    : "1px solid #cbd5e1",
+                  borderRadius: "16px",
+                  padding: "1.75rem 1.5rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  boxShadow: pkg.popular
+                    ? "0 20px 40px rgba(99, 102, 241, 0.12), 0 2px 6px rgba(0,0,0,0.05)"
+                    : "0 4px 20px rgba(15, 23, 42, 0.05)",
+                  transition: "transform 200ms ease, box-shadow 200ms ease",
+                }}
+              >
+                {pkg.badge ? (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "-12px",
+                      right: "20px",
+                      padding: "4px 14px",
+                      borderRadius: "999px",
+                      background: pkg.popular
+                        ? "linear-gradient(135deg, #6366f1, #4f46e5)"
+                        : "linear-gradient(135deg, #0f172a, #334155)",
+                      color: "#ffffff",
+                      fontSize: "0.7rem",
+                      fontWeight: "800",
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    }}
+                  >
+                    {pkg.badge}
+                  </span>
+                ) : null}
+
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: "800", color: "#0f172a" }}>
+                    {pkg.name}
+                  </h3>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "6px", margin: "0.75rem 0 0.5rem" }}>
+                    <span style={{ fontSize: "2rem", fontWeight: "800", color: "#0f172a" }}>{pkg.price}</span>
+                    <span style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: "500" }}>/ {pkg.period}</span>
+                  </div>
+                  <p style={{ margin: "0 0 1.25rem", fontSize: "0.85rem", color: "#475569", lineHeight: "1.45" }}>
+                    {pkg.description}
+                  </p>
+
+                  <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "1.25rem", display: "grid", gap: "0.75rem" }}>
+                    {pkg.features.map((feat, idx) => (
+                      <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem", fontSize: "0.85rem" }}>
+                        {feat.included ? (
+                          <span style={{ color: "#16a34a", fontWeight: "800", fontSize: "1rem", lineHeight: "1" }}>✔</span>
+                        ) : (
+                          <span style={{ color: "#94a3b8", fontWeight: "800", fontSize: "0.9rem", lineHeight: "1" }}>✖</span>
+                        )}
+                        <span style={{ color: feat.included ? "#1e293b" : "#94a3b8", fontWeight: feat.included ? "500" : "400" }}>
+                          {feat.text}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginTop: "1.5rem" }}>
+                  <button
+                    type="button"
+                    onClick={() => choose(pkg.name)}
+                    style={{
+                      width: "100%",
+                      padding: "11px 20px",
+                      borderRadius: "10px",
+                      background: isSelected
+                        ? "linear-gradient(135deg, #16a34a, #15803d)"
+                        : pkg.popular
+                        ? "linear-gradient(90deg, #1e293b 0%, #334155 45%, #2563eb 100%)"
+                        : "linear-gradient(135deg, #0f172a, #1e293b)",
+                      backgroundSize: pkg.popular ? "220% 100%" : "auto",
+                      color: "#ffffff",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      fontWeight: "700",
+                      boxShadow: isSelected
+                        ? "0 4px 14px rgba(22, 163, 74, 0.28)"
+                        : "0 4px 14px rgba(15, 23, 42, 0.18)",
+                      transition: "all 500ms ease",
+                    }}
+                  >
+                    {isSelected ? "✔ Currently Active Plan" : `Select ${pkg.name}`}
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       </PanelSection>
     </MemberShell>
   );
