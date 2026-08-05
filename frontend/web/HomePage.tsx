@@ -159,7 +159,7 @@ export async function HomePage() {
         <div className="check-stats-grid">
           <div className="check-stat-card">
             <span className="stat-icon">📊</span>
-            <strong className="stat-number">50,000+</strong>
+            <strong className="stat-number">1,50,000+</strong>
             <span className="stat-label">Listed Businesses</span>
           </div>
           <div className="check-stat-card">

@@ -26,7 +26,7 @@ const values = [
 ];
 
 const teamStats = [
-  { label: "Listed Verified Businesses", value: "50,000+" },
+  { label: "Listed Verified Businesses", value: "1,50,000+" },
   { label: "Cities & Towns Covered", value: "100+" },
   { label: "Monthly Customer Enquiries", value: "1,000,000+" },
   { label: "Platform Uptime & Speed", value: "99.9%" },
