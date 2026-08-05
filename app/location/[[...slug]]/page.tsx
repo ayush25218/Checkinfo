@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import { getAdminResourceAsync } from "@/backend/directoryStore";
 import {
   listingLocationText,
-  listingPublicPath,
   matchesLocationSlug,
   type PublicBusinessListing,
 } from "@/backend/listingSeo";
 
-import { HeaderUserProfileDropdown } from "@/frontend/web/HeaderUserProfileDropdown";
-import { PublicListingInteractiveForm } from "@/frontend/web/PublicListingInteractiveForm";
+import { SiteHeader } from "@/frontend/web/SiteHeader";
+import { SiteFooter } from "@/frontend/web/SiteFooter";
+import { BusinessCard } from "@/frontend/web/BusinessCard";
+import { BusinessDetailView } from "@/frontend/web/BusinessDetailView";
 
 type LocationPageProps = {
   params: Promise<{ slug?: string[] }>;
@@ -50,58 +51,49 @@ export default async function LocationListingPage({ params }: LocationPageProps)
   const segments = (await params).slug ?? [];
   const listings = await getApprovedListings();
   const exact = segments.length >= 4 ? listings.find((listing) => matchesLocationSlug(listing, segments)) : null;
-  const filtered = exact ? [exact] : listings.filter((listing) => matchesLocationSlug(listing, segments));
+
+  if (exact) {
+    return <BusinessDetailView listing={exact} />;
+  }
+
+  const filtered = listings.filter((listing) => matchesLocationSlug(listing, segments));
   const headingLocation = segments.slice(0, 3).map(titleCaseSlug).filter(Boolean).join(", ") || "India";
 
   return (
-    <main className="location-page">
-      <header className="search-header">
-        <a className="check-logo" href="/" aria-label="Checkinfo home">
-          <img src="/logo.png" alt="Checkinfo - Check Kiya Kya ?" className="check-logo-img" />
-        </a>
-        <div className="check-header-actions">
-          <a className="check-post-button" href="/members/login">List Your Business</a>
-          <HeaderUserProfileDropdown />
-        </div>
-      </header>
+    <main className="check-home location-page">
+      <SiteHeader activeNav="Business" />
 
-      <section className="location-hero">
-        <p className="eyebrow">Checkinfo approved business</p>
-        <h1>{exact ? exact.name : `Businesses in ${headingLocation}`}</h1>
-        <p>
-          {exact
-            ? `${exact.category || "Business"} listing with verified contact and location details.`
-            : "Approved businesses from member submissions appear here after admin review."}
-        </p>
+      <section className="check-about-hero">
+        <span className="check-hero-aurora" aria-hidden="true" />
+        <span className="check-hero-grid" aria-hidden="true" />
+        <div className="check-about-hero-content">
+          <p className="eyebrow">Location Directory</p>
+          <h1>Verified Businesses in {headingLocation}</h1>
+          <p>
+            Browse top-rated local vendors, manufacturers, and service providers in {headingLocation} with verified contact numbers and direct enquiries.
+          </p>
+        </div>
       </section>
 
-      <section className="location-listing-grid">
-        {filtered.length ? filtered.map((listing) => (
-          <article className="location-business-card" key={listing.id}>
-            <div>
-              <span className="search-badge">{listing.status === "Featured" ? "Featured" : "Verified"}</span>
-              <h2>{listing.name}</h2>
-              <p>{[listing.category, listing.subcategory, listing.businessType].filter(Boolean).join(" / ") || "Business"}</p>
-              <address>{listing.address || listingLocationText(listing)}</address>
-              {listing.details || listing.description ? <p>{listing.details || listing.description}</p> : null}
-            </div>
-            <div className="search-card-meta">
-              {listing.mobile || listing.contact ? <a href={`tel:${listing.mobile || listing.contact}`}>{listing.mobile || listing.contact}</a> : null}
-              {listing.ownerEmail ? <a href={`mailto:${listing.ownerEmail}`}>{listing.ownerEmail}</a> : null}
-              {listing.website ? <a href={listing.website} target="_blank" rel="noreferrer">Website</a> : null}
-              {!exact ? <a href={listingPublicPath(listing)}>Open Page</a> : null}
-              <span>{listingLocationText(listing)}</span>
-            </div>
-          </article>
-        )) : (
-          <div className="search-empty">
-            <h2>No approved business found</h2>
-            <p>This location page is ready. Listings will appear here after admin approval.</p>
+      <section className="check-section" style={{ maxWidth: 1240, margin: "0 auto", padding: "40px 16px" }}>
+        {filtered.length ? (
+          <div className="check-new-grid">
+            {filtered.map((listing) => (
+              <BusinessCard listing={listing} key={listing.id} />
+            ))}
+          </div>
+        ) : (
+          <div className="check-empty-listing" style={{ textAlign: "center", padding: "60px 20px" }}>
+            <h2>No approved businesses found in {headingLocation} yet</h2>
+            <p>Listings in this location will appear here once approved by admin.</p>
+            <a href="/members/login" className="check-post-button" style={{ display: "inline-block", marginTop: 16 }}>
+              List Your Business in {headingLocation}
+            </a>
           </div>
         )}
       </section>
 
-      {exact ? <PublicListingInteractiveForm listing={exact} /> : null}
+      <SiteFooter />
     </main>
   );
 }
