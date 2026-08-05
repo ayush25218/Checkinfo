@@ -8962,3 +8962,149 @@ a.check-card-title-link:hover {
 .suggestion-icon {
   font-size: 14px;
 }
+
+/* 🌆 CITY CAROUSEL & ANIMATION STYLES */
+.city-carousel-wrapper {
+  position: relative;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.city-carousel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+.carousel-status {
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.carousel-status strong {
+  color: #ffffff;
+}
+
+.carousel-nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.carousel-btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.carousel-btn:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  transform: scale(1.06);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+}
+
+.carousel-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.city-carousel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 1024px) {
+  .city-carousel-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .city-carousel-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+.check-city-card.is-entering {
+  animation: citySlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.check-city-card.is-exiting {
+  animation: citySlideOut 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+@keyframes citySlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(30px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes citySlideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-30px) scale(0.96);
+  }
+}
+
+.city-landmark-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.88);
+  color: #ffffff;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.city-carousel-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.carousel-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.carousel-dot.is-active {
+  width: 28px;
+  border-radius: 999px;
+  background: #2563eb;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+}

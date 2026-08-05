@@ -8,6 +8,7 @@ import { LocationSearchForm } from "./LocationSearchForm";
 import { LeadCallbackForm } from "./LeadCallbackForm";
 import { SiteHeader } from "./SiteHeader";
 import { SiteFooter } from "./SiteFooter";
+import { CityCarousel } from "./CityCarousel";
 
 const footerLinks = {
   info: ["How to buy", "FAQs", "Career", "Privacy Policy", "Legal Disclaimer", "Terms And Conditions", "Refer to Friend"],
@@ -210,26 +211,14 @@ export async function HomePage() {
         <CategoryTransitionGrid categories={categoryExperiences} />
       </section>
 
-      {/* City Discovery Section with Landmark Covers */}
+      {/* City Discovery Section with Landmark Covers & Carousel */}
       <section className="check-city-discovery" aria-label="Explore city business listings">
         <div className="check-section-title centered">
           <p className="eyebrow">Explore by city</p>
           <h2>Find businesses across high-intent locations.</h2>
           <p>Real city discovery tiles connected with Checkinfo category, search, and location routes.</p>
         </div>
-        <div className="check-city-grid">
-          {cityHighlights.map(({ city, text, href, image }, index) => (
-            <a className={`check-city-card check-city-landmark-card city-${index + 1}`} href={href} key={city}>
-              <img src={image} alt={`${city} Landmark`} className="city-landmark-image" loading="lazy" />
-              <div className="city-landmark-overlay" />
-              <div className="city-landmark-content">
-                <span className="city-number">{String(index + 1).padStart(2, "0")}</span>
-                <strong>{city}</strong>
-                <small>{text}</small>
-              </div>
-            </a>
-          ))}
-        </div>
+        <CityCarousel />
       </section>
 
       {/* Testimonials Section */}
