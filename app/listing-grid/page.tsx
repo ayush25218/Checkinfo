@@ -1,5 +1,5 @@
-import { FioxenPage } from "@/frontend/fioxen/FioxenPage";
+import { redirect } from "next/navigation";
 
-export default function ListingGridPage() {
-  return <FioxenPage file="listing-grid.html" />;
+export default function Page() {
+  redirect("/search");
 }

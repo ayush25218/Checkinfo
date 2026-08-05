@@ -1,5 +1,5 @@
-import { FioxenPage } from "@/frontend/fioxen/FioxenPage";
+import { redirect } from "next/navigation";
 
-export default function BlogPage() {
-  return <FioxenPage file="blog.html" />;
+export default function Page() {
+  redirect("/new");
 }

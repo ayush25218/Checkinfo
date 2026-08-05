@@ -1,5 +1,5 @@
-import { FioxenPage } from "@/frontend/fioxen/FioxenPage";
+import { redirect } from "next/navigation";
 
-export default function AddListingPage() {
-  return <FioxenPage file="add-listing.html" />;
+export default function Page() {
+  redirect("/members/login");
 }
