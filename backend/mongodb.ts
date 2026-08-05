@@ -570,37 +570,45 @@ export async function saveNewsletterSubscription(email: string, source = "websit
 }
 
 export async function saveContactEnquiry(payload: {
-  email: string;
-  message: string;
-  name: string;
-  phone: string;
+  email?: string;
+  message?: string;
+  name?: string;
+  phone?: string;
   subject?: string;
   type?: EnquiryRecord["type"];
 }) {
   const now = new Date().toISOString();
   const dateStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
+  const cleanName = String(payload.name || "Website Lead").trim();
+  const cleanEmail = String(payload.email || "").trim();
+  const cleanPhone = String(payload.phone || "").trim();
+  const cleanSubject = String(payload.subject || "General Contact Enquiry").trim();
+  const cleanMessage = String(payload.message || "Lead request from website").trim();
+
   const enquiryDoc: EnquiryRecord = {
     _id: `enq-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     createdAt: now,
-    email: payload.email.trim(),
-    message: payload.subject?.trim()
-      ? `[Subject: ${payload.subject.trim()}]\n\n${payload.message.trim()}`
-      : payload.message.trim(),
-    name: payload.name.trim(),
-    phone: payload.phone.trim(),
+    email: cleanEmail,
+    message: cleanSubject ? `[Subject: ${cleanSubject}]\n\n${cleanMessage}` : cleanMessage,
+    name: cleanName,
+    phone: cleanPhone,
     receivedAt: dateStr,
     status: "New",
-    subject: payload.subject?.trim() || "General Contact Enquiry",
+    subject: cleanSubject,
     type: payload.type || "Contact",
   };
 
   if (isMongoConfigured()) {
-    const { enquiries, leads } = await getMongoCollections();
-    await Promise.all([
-      enquiries.insertOne(enquiryDoc),
-      leads.insertOne({ ...payload, createdAt: now, source: "contact-form" }),
-    ]);
+    try {
+      const { enquiries, leads } = await getMongoCollections();
+      await Promise.all([
+        enquiries.insertOne(enquiryDoc),
+        leads.insertOne({ ...payload, createdAt: now, source: "contact-form" }),
+      ]);
+    } catch (dbErr) {
+      console.error("MongoDB error in saveContactEnquiry:", dbErr);
+    }
   }
 
   return enquiryDoc;
