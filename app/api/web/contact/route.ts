@@ -8,15 +8,15 @@ export async function POST(request: Request) {
       ? await request.json()
       : formDataToObject(await request.formData());
 
-    const name = String(payload.name || payload.fullName || payload.business_name || "Website Lead").trim();
+    const name = String(payload.name || payload.fullName || "").trim();
     const email = String(payload.email || "").trim();
     const phone = String(payload.phone || payload.mobile || payload.contact || "").trim();
-    const subject = String(payload.subject || payload.topic || "Business Callback Enquiry").trim();
-    const message = String(payload.message || payload.details || payload.comment || "Lead request from website").trim();
+    const subject = String(payload.subject || payload.topic || "General Enquiry").trim();
+    const message = String(payload.message || payload.details || "").trim();
 
-    if (!name || (!phone && !email)) {
+    if (!name || (!phone && !email) || !message) {
       return Response.json(
-        createResponse("Name and contact number/email are required.", { ok: false }),
+        createResponse("Name, message, and contact (phone or email) are required.", { ok: false }),
         { status: 400 }
       );
     }
@@ -31,15 +31,14 @@ export async function POST(request: Request) {
     });
 
     return Response.json(
-      createResponse("Enquiry received successfully! Admin and support team have been notified.", {
+      createResponse("Enquiry submitted successfully! Our team will contact you shortly.", {
         ok: true,
         enquiry: savedEnquiry,
-        nextStep: "Admin can view this in Admin Panel under Manage Contact Enquiries.",
       })
     );
   } catch (error) {
     return Response.json(
-      createResponse("Error submitting lead enquiry", { ok: false }),
+      createResponse("Error submitting contact enquiry.", { ok: false }),
       { status: 500 }
     );
   }

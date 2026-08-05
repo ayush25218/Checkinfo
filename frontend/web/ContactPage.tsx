@@ -1,6 +1,6 @@
 import { SiteHeader } from "./SiteHeader";
 import { SiteFooter } from "./SiteFooter";
-import { LeadCallbackForm } from "./LeadCallbackForm";
+import { ContactForm } from "./ContactForm";
 
 export function ContactPage() {
   return (
@@ -53,20 +53,8 @@ export function ContactPage() {
       </section>
 
       {/* Contact Form Section */}
-      <section className="advertise" id="contact-form">
-        <div className="advertise-copy">
-          <p className="eyebrow">Send an Enquiry</p>
-          <h2>Request a Free Callback from Our Business Experts</h2>
-          <p>
-            Fill out your details below and our team will get in touch with you within 30 minutes.
-          </p>
-          <div className="advertise-points" aria-label="Contact benefits">
-            <span>Instant Callback</span>
-            <span>Dedicated Support</span>
-            <span>Free Onboarding Consultation</span>
-          </div>
-        </div>
-        <LeadCallbackForm />
+      <section className="check-contact-form-section" id="contact-form">
+        <ContactForm />
       </section>
 
       <SiteFooter />

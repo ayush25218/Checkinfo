@@ -135,6 +135,7 @@ export type EnquiryRecord = {
   phone: string;
   receivedAt: string;
   status: "New" | "Replied" | "Closed";
+  subject?: string;
   type: "Contact" | "Business" | "Career" | "Advertise";
 };
 
@@ -568,6 +569,43 @@ export async function saveNewsletterSubscription(email: string, source = "websit
   return record;
 }
 
+export async function saveContactEnquiry(payload: {
+  email: string;
+  message: string;
+  name: string;
+  phone: string;
+  subject?: string;
+  type?: EnquiryRecord["type"];
+}) {
+  const now = new Date().toISOString();
+  const dateStr = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+
+  const enquiryDoc: EnquiryRecord = {
+    _id: `enq-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    createdAt: now,
+    email: payload.email.trim(),
+    message: payload.subject?.trim()
+      ? `[Subject: ${payload.subject.trim()}]\n\n${payload.message.trim()}`
+      : payload.message.trim(),
+    name: payload.name.trim(),
+    phone: payload.phone.trim(),
+    receivedAt: dateStr,
+    status: "New",
+    subject: payload.subject?.trim() || "General Contact Enquiry",
+    type: payload.type || "Contact",
+  };
+
+  if (isMongoConfigured()) {
+    const { enquiries, leads } = await getMongoCollections();
+    await Promise.all([
+      enquiries.insertOne(enquiryDoc),
+      leads.insertOne({ ...payload, createdAt: now, source: "contact-form" }),
+    ]);
+  }
+
+  return enquiryDoc;
+}
+
 export async function saveAdvertisingLead(payload: Record<string, unknown>, source = "advertise-form") {
   if (!isMongoConfigured()) return null;
 
@@ -586,6 +624,7 @@ export async function saveAdvertisingLead(payload: Record<string, unknown>, sour
     phone: String(payload.phone || payload.mobile || payload.contact || ""),
     receivedAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
     status: "New",
+    subject: String(payload.subject || "Advertising Lead"),
     type: enquiryType,
   };
   await enquiries.insertOne(enqDoc);
