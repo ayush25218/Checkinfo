@@ -8732,3 +8732,95 @@ cite {
   color: #94a3b8;
   margin-bottom: 8px;
 }
+
+/* 🏢 ABOUT US PAGE STYLES */
+.check-about-page {
+  background: var(--background);
+}
+
+.check-about-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 60px clamp(16px, 5vw, 64px) 40px;
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  color: #ffffff;
+  text-align: center;
+}
+
+.check-about-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.check-about-hero h1 {
+  font-size: clamp(28px, 4vw, 46px);
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 12px 0 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.check-about-hero p {
+  font-size: clamp(15px, 1.4vw, 18px);
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+.check-about-story-section {
+  padding: 48px clamp(16px, 4vw, 64px);
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.check-about-story-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.about-story-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 32px 28px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.about-story-card.highlight {
+  background: linear-gradient(135deg, #eef2ff 0%, #eff6ff 100%);
+  border-color: #c7d2fe;
+}
+
+.about-story-card h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.about-story-card p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: #475569;
+}
+
+.about-story-card .inline-cta {
+  margin-top: auto;
+  align-self: flex-start;
+  text-decoration: none;
+}
+
+.check-about-values-section {
+  padding: 24px clamp(16px, 4vw, 64px) 48px;
+  max-width: 1240px;
+  margin: 0 auto;
+}

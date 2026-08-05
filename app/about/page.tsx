@@ -1,5 +1,5 @@
-import { FioxenPage } from "@/frontend/fioxen/FioxenPage";
+import { AboutPage } from "@/frontend/web/AboutPage";
 
-export default function AboutPage() {
-  return <FioxenPage file="about.html" />;
+export default function Page() {
+  return <AboutPage />;
 }
