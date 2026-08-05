@@ -18,7 +18,8 @@ export function BusinessCard({ listing }: { listing: PublicBusinessListing }) {
   const rawContact = listing.contact || listing.mobile || listing.email || "9718290290";
   const cleanPhone = String(rawContact).replace(/[^0-9]/g, "") || "9718290290";
 
-  const coverImage = listing.image || getCategoryCoverImage(category);
+  const isPlaceholder = !listing.image || listing.image.includes("370X290") || listing.image.includes("fioxen") || listing.image.includes("dummy");
+  const coverImage = isPlaceholder ? getCategoryCoverImage(`${listing.name} ${category}`) : listing.image;
   const { rating, reviews } = getListingRating(listing.name || "Business");
   const publicPath = listingPublicPath(listing);
   const whatsappUrl = `https://wa.me/91${cleanPhone.slice(-10)}?text=${encodeURIComponent(`Hi ${listing.name || "Business"}, I found your profile on Checkinfo and would like to enquire about your services.`)}`;
