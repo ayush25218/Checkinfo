@@ -136,7 +136,7 @@ export async function HomePage() {
           <p>
             India's Trusted Business Discovery Engine — Connect directly with 100% verified local vendors, corporate listings, and service providers across all major cities.
           </p>
-          <LocationSearchForm className="check-hero-search" showSuggestions />
+          <LocationSearchForm className="check-hero-search" />
           <div className="check-trending-searches" aria-label="Trending searches">
             {trendingSearches.map(({ label, icon }) => (
               <a href={`/search?q=${encodeURIComponent(label)}`} key={label} className="check-trending-pill">
