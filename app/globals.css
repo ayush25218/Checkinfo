@@ -1,31 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f8fb;
-  --foreground: #142033;
-  --muted: #637083;
-  --line: #dbe3ee;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
   --panel: #ffffff;
-  --brand: #0f6b63;
-  --brand-dark: #0a3f48;
-  --accent: #d59b2f;
-  --soft: #e9f4f2;
-  --glow: rgba(34, 211, 238, 0.22);
-  --check-blue: #1d65d8;
-  --check-blue-2: #2f75e8;
-  --check-teal: #13494e;
-  --check-teal-2: #1d776b;
-  --check-navy: #071225;
-  --check-ink: #0b1220;
-  --check-surface: #f7faff;
-  --check-line: #dbe7fb;
-  --check-glow: rgba(31, 111, 255, 0.26);
+  --brand: #4f46e5;
+  --brand-dark: #3730a3;
+  --accent: #f59e0b;
+  --soft: #eef2ff;
+  --glow: rgba(79, 70, 229, 0.18);
+  --check-blue: #2563eb;
+  --check-blue-2: #4f46e5;
+  --check-teal: #0f172a;
+  --check-teal-2: #1e293b;
+  --check-navy: #0f172a;
+  --check-ink: #020617;
+  --check-surface: #f8fafc;
+  --check-line: #e2e8f0;
+  --check-glow: rgba(37, 99, 235, 0.22);
+  --check-gold: #f59e0b;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-plus-jakarta), var(--font-geist-sans), sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -40,10 +41,10 @@ html {
 body {
   margin: 0;
   background:
-    linear-gradient(180deg, rgba(246, 248, 251, 0.92), rgba(232, 240, 248, 0.92)),
-    repeating-linear-gradient(90deg, rgba(15, 107, 99, 0.04) 0 1px, transparent 1px 96px);
+    linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(241, 245, 249, 0.96)),
+    repeating-linear-gradient(90deg, rgba(79, 70, 229, 0.03) 0 1px, transparent 1px 96px);
   color: var(--foreground);
-  font-family: Inter, "Segoe UI", Roboto, Arial, Helvetica, sans-serif;
+  font-family: var(--font-plus-jakarta), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 a {
@@ -863,10 +864,13 @@ cite {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #ffffff;
-  border-bottom: 1px solid rgba(219, 231, 251, 0.95);
-  box-shadow: 0 8px 30px rgba(7, 21, 47, 0.07);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
   width: 100%;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .check-header-container {
@@ -2840,15 +2844,16 @@ cite {
 .check-ad-badge {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   min-height: 24px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid rgba(245, 158, 11, 0.35);
   border-radius: 999px;
-  background: #ffffff;
-  color: #334155;
-  font-family: Arial, sans-serif;
-  font-size: 10.5px;
-  font-weight: 400;
-  letter-spacing: 0.05em;
+  background: rgba(245, 158, 11, 0.08);
+  color: #b45309;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   padding: 3px 10px;
   text-transform: uppercase;
 }
