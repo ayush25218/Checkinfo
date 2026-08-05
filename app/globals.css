@@ -8395,3 +8395,340 @@ cite {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ==========================================================================
+   SECTIONS 4, 5, 6, 7: PLATFORM ENHANCEMENT STYLES
+   ========================================================================== */
+
+/* Category Vendor Badge */
+.check-category-vendor-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-top: 2px;
+}
+
+/* 📊 Live Statistics Counter Section */
+.check-stats-section {
+  padding: 24px clamp(16px, 4vw, 64px);
+  margin: 10px auto 30px;
+  max-width: 1240px;
+}
+
+.check-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-radius: 18px;
+  padding: 32px 24px;
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.25);
+  color: #ffffff;
+}
+
+.check-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 12px;
+}
+
+.check-stat-card .stat-icon {
+  font-size: 32px;
+  margin-bottom: 4px;
+}
+
+.check-stat-card .stat-number {
+  font-size: clamp(28px, 3.2vw, 38px);
+  font-weight: 800;
+  background: linear-gradient(135deg, #60a5fa, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.1;
+}
+
+.check-stat-card .stat-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* 🛡️ "Why Choose Checkinfo?" Trust Banner */
+.check-why-choose-section {
+  padding: 40px clamp(16px, 4vw, 64px);
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.check-trust-banner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.trust-banner-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px 24px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.trust-banner-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.1);
+  border-color: #cbd5e1;
+}
+
+.trust-card-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #eef2ff;
+  font-size: 22px;
+  margin-bottom: 14px;
+}
+
+.trust-banner-card h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.trust-banner-card p {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* 🏙️ City Landmark Cards with Overlays */
+.check-city-landmark-card {
+  position: relative;
+  overflow: hidden;
+  height: 220px;
+  border-radius: 16px !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.1) !important;
+  text-decoration: none;
+}
+
+.city-landmark-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.check-city-landmark-card:hover .city-landmark-image {
+  transform: scale(1.08);
+}
+
+.city-landmark-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.15) 0%, rgba(15, 23, 42, 0.85) 100%);
+  z-index: 1;
+}
+
+.city-landmark-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 20px;
+  color: #ffffff;
+}
+
+.city-landmark-content .city-number {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #60a5fa;
+  margin-bottom: 4px;
+}
+
+.city-landmark-content strong {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.city-landmark-content small {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.4;
+}
+
+/* ⭐ Customer & Owner Testimonials Section */
+.check-testimonials-section {
+  padding: 48px clamp(16px, 4vw, 64px);
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.check-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.check-testimonial-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.check-testimonial-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 32px -4px rgba(15, 23, 42, 0.1);
+}
+
+.testimonial-stars {
+  font-size: 14px;
+}
+
+.testimonial-text {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #334155;
+  font-style: italic;
+}
+
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.author-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid #e2e8f0;
+}
+
+.author-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.author-info strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.author-info span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* 📱 Mobile Sticky Bottom Navigation Bar */
+.check-mobile-bottom-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 768px) {
+  .check-mobile-bottom-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+  }
+  
+  body {
+    padding-bottom: 60px;
+  }
+}
+
+.bottom-bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  transition: color 0.2s ease;
+}
+
+.bottom-bar-item svg {
+  width: 20px;
+  height: 20px;
+}
+
+.bottom-bar-item:hover,
+.bottom-bar-item:active {
+  color: #2563eb;
+}
+
+.bottom-bar-cta {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  border-radius: 999px;
+  padding: 6px 16px;
+  margin-top: -12px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+/* 📢 Styled Ad Banners */
+.check-ad-slot-styled {
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  margin: 24px auto;
+  max-width: 1240px;
+}
+
+.check-ad-slot-styled .ad-slot-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
