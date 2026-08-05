@@ -178,6 +178,28 @@ export function LocationSearchForm({
     recognition.start();
   }
 
+  function handleUseMyLocation() {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setIsLocating(false);
+        setLocation("Near Me");
+        if (formRef.current) {
+          submitWithPosition(formRef.current, position);
+        }
+      },
+      () => {
+        setIsLocating(false);
+        alert("Unable to retrieve your location");
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+
   function clearFilters() {
     setCategory("");
     setLocation("");
@@ -185,21 +207,61 @@ export function LocationSearchForm({
 
   return (
     <form ref={formRef} className={formClassName} action="/search" method="get" onSubmit={handleSubmit}>
-      <input
-        ref={inputRef}
-        name="q"
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder={compact ? "Search" : "What are you looking for?"}
-        value={query}
-      />
+      <div className="search-input-group search-what-group">
+        <span className="search-field-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </span>
+        <div className="search-field-content">
+          {!compact ? <span className="search-field-label">WHAT</span> : null}
+          <input
+            ref={inputRef}
+            name="q"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={compact ? "Search..." : "Service, business, or category..."}
+            value={query}
+          />
+        </div>
+      </div>
+
+      {!compact ? <span className="search-divider" aria-hidden="true" /> : null}
+
       <input name="category" type="hidden" value={category} />
-      {compact ? <input name="location" type="hidden" value={location} /> : (
-        <input
-          name="location"
-          onChange={(event) => setLocation(event.target.value)}
-          placeholder="City or location"
-          value={location}
-        />
+
+      {compact ? (
+        <input name="location" type="hidden" value={location} />
+      ) : (
+        <div className="search-input-group search-where-group">
+          <span className="search-field-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+          </span>
+          <div className="search-field-content">
+            <span className="search-field-label">WHERE</span>
+            <input
+              name="location"
+              onChange={(event) => setLocation(event.target.value)}
+              placeholder="City, pincode, or area..."
+              value={location}
+            />
+          </div>
+          <button
+            type="button"
+            className="use-location-btn"
+            onClick={handleUseMyLocation}
+            title="Use My Current Location (GPS)"
+            disabled={isLocating}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="3 11 22 2 13 21 11 13 3 11" />
+            </svg>
+            <span>{isLocating ? "Locating..." : "Near Me"}</span>
+          </button>
+        </div>
       )}
       <button
         aria-expanded={filterOpen}

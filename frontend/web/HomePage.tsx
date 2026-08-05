@@ -13,7 +13,14 @@ const footerLinks = {
   quick: ["Home", "About Us", "Business", "Advertise with Us", "Testimonials", "Support", "Contact Us", "Sitemap"],
 };
 
-const trendingSearches = ["Website Developer", "Restaurants near me", "Hospitals", "Hotels", "Schools", "Bank"];
+const trendingSearches = [
+  { label: "Website Developer", icon: "💻" },
+  { label: "Restaurants", icon: "🍽️" },
+  { label: "Hospitals", icon: "🩺" },
+  { label: "Hotels", icon: "🏨" },
+  { label: "Schools", icon: "🎓" },
+  { label: "Bank", icon: "🏦" },
+];
 
 const cityHighlights = [
   ["Delhi NCR", "Verified businesses, services, and local enquiries.", "/search?location=Delhi"],
@@ -62,17 +69,18 @@ export async function HomePage() {
         <span className="check-hero-aurora" aria-hidden="true" />
         <span className="check-hero-grid" aria-hidden="true" />
         <div>
-          <p className="eyebrow">India local search engine</p>
-          <h1>Search any business details here.</h1>
+          <p className="eyebrow">India's Trusted Local Search Engine</p>
+          <h1>Discover & Connect with Verified Businesses</h1>
           <p>
-            A faster corporate directory for verified businesses, promoted ads,
-            new listings, trending searches, customer care, and free business
-            onboarding.
+            India's Trusted Business Discovery Engine — Connect directly with 100% verified local vendors, corporate listings, and service providers across all major cities.
           </p>
           <LocationSearchForm className="check-hero-search" showSuggestions />
           <div className="check-trending-searches" aria-label="Trending searches">
-            {trendingSearches.map((search) => (
-              <a href={`/search?q=${encodeURIComponent(search)}`} key={search}>{search}</a>
+            {trendingSearches.map(({ label, icon }) => (
+              <a href={`/search?q=${encodeURIComponent(label)}`} key={label} className="check-trending-pill">
+                <span className="trending-icon" aria-hidden="true">{icon}</span>
+                <span>{label}</span>
+              </a>
             ))}
           </div>
         </div>
