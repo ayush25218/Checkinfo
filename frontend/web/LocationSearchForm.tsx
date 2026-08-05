@@ -12,10 +12,10 @@ type LocationSearchFormProps = {
 };
 
 const suggestions = [
-  ["Website Developer", "New Delhi"],
-  ["Restaurants", "near me"],
-  ["Hospitals", "Dwarka"],
-  ["Hotels", "New Delhi"],
+  ["Website Developer", "New Delhi", "💻"],
+  ["Restaurants", "near me", "🍽️"],
+  ["Hospitals", "Dwarka", "🩺"],
+  ["Hotels", "New Delhi", "🏨"],
 ];
 
 type SpeechRecognitionResultLike = {
@@ -325,12 +325,18 @@ export function LocationSearchForm({
         </svg>
         <span>{isListening ? "Listening" : "Voice search"}</span>
       </button>
-      <button type="submit">{isLocating ? "Locating..." : "Search"}</button>
+      <button type="submit" className="search-submit-btn" title="Search business listings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <span>{isLocating ? "Locating..." : "Search"}</span>
+      </button>
       {showSuggestions ? (
         <div className="check-search-suggestions" aria-label="Popular searches">
-          {suggestions.map(([suggestedQuery, suggestedLocation]) => (
+          {suggestions.map(([suggestedQuery, suggestedLocation, icon]) => (
             <a href={`/search?q=${encodeURIComponent(suggestedQuery)}&location=${encodeURIComponent(suggestedLocation)}`} key={`${suggestedQuery}-${suggestedLocation}`}>
-              <span>{suggestedQuery.charAt(0)}</span>
+              <span className="suggestion-icon">{icon}</span>
               {suggestedQuery}
             </a>
           ))}

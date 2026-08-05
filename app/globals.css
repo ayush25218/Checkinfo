@@ -8922,3 +8922,43 @@ a.check-card-title-link:hover {
   max-width: 1240px;
   margin: 0 auto;
 }
+
+/* 🔍 SEARCH SUBMIT BUTTON & SUGGESTION ICONS */
+.search-submit-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 44px !important;
+  padding: 8px 24px !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+  color: #ffffff !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35) !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.search-submit-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.45) !important;
+  background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%) !important;
+}
+
+.search-submit-btn svg {
+  width: 17px !important;
+  height: 17px !important;
+  stroke: #ffffff !important;
+  stroke-width: 2.5 !important;
+  flex-shrink: 0 !important;
+}
+
+.suggestion-icon {
+  font-size: 14px;
+}
