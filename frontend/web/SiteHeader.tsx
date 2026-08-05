@@ -72,7 +72,7 @@ export function SiteHeader({ showSearch = true, activeNav, className = "" }: Sit
     { label: "Categories", href: "/#categories" },
     { label: "Featured Ads", href: "/featured" },
     { label: "Advertise", href: "/#advertise" },
-    { label: "Contact", href: "/#contact" },
+    { label: "Contact", href: "/contact" },
   ];
 
   return (

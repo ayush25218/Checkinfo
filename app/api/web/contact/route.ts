@@ -43,3 +43,7 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function GET() {
+  return Response.json(createResponse("Contact API is active and ready.", { ok: true, status: "healthy" }));
+}
