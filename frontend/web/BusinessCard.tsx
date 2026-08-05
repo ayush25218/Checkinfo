@@ -26,7 +26,7 @@ export function BusinessCard({ listing }: { listing: PublicBusinessListing }) {
   return (
     <article className="check-ad-card check-ad-card-enhanced">
       <div className="check-ad-card-head">
-        <div className="check-ad-image has-photo">
+        <div className="check-ad-image-cover">
           <img src={coverImage} alt={listing.name || "Business Cover"} loading="lazy" />
         </div>
         <div className="check-card-badge-container">
@@ -38,8 +38,8 @@ export function BusinessCard({ listing }: { listing: PublicBusinessListing }) {
 
       <div className="check-ad-card-body">
         <div className="check-card-header-row">
-          <h3>
-            <a href={publicPath}>{listing.name}</a>
+          <h3 className="check-card-title">
+            <a href={publicPath} className="check-card-title-link">{listing.name}</a>
           </h3>
           <span className="check-category-pill">{category}</span>
         </div>
@@ -52,7 +52,7 @@ export function BusinessCard({ listing }: { listing: PublicBusinessListing }) {
           <span className="response-badge">⚡ Quick Response</span>
         </div>
 
-        <p>{listing.details || listing.description || listing.address || "Approved Checkinfo verified business listing."}</p>
+        <p className="check-card-description">{listing.details || listing.description || listing.address || "Approved Checkinfo verified business listing."}</p>
 
         <div className="check-ad-meta">
           <span className="meta-location">📍 {location || "India"}</span>

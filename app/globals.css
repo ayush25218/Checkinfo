@@ -2844,17 +2844,16 @@ cite {
   overflow: hidden;
 }
 
-.check-ad-card-enhanced .check-ad-image {
+.check-ad-image-cover {
+  position: relative;
   width: 100% !important;
   height: 150px !important;
-  border-radius: 0 !important;
-  border: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
+  overflow: hidden;
+  background: #f1f5f9;
   display: block !important;
 }
 
-.check-ad-card-enhanced .check-ad-image img {
+.check-ad-image-cover img {
   width: 100% !important;
   height: 150px !important;
   object-fit: cover !important;
@@ -2862,8 +2861,48 @@ cite {
   transition: transform 0.4s ease !important;
 }
 
-.check-ad-card-enhanced:hover .check-ad-image img {
+.check-ad-card-enhanced:hover .check-ad-image-cover img {
   transform: scale(1.05) !important;
+}
+
+.check-card-title {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+a.check-card-title-link {
+  all: unset !important;
+  color: #0f172a !important;
+  font-family: inherit !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  background: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  border-radius: 0 !important;
+  cursor: pointer !important;
+  display: inline !important;
+}
+
+a.check-card-title-link:hover {
+  color: #2563eb !important;
+  background: none !important;
+  text-decoration: underline !important;
+}
+
+.check-card-description {
+  margin: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  color: #475569 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
 }
 
 .check-card-badge-container {
