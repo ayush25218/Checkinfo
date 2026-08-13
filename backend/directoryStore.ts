@@ -385,6 +385,62 @@ async function bulkImportBusinesses(records: Array<Record<string, unknown>>) {
   return imported.length;
 }
 
+async function upsertAdminBusiness(record: Record<string, unknown>) {
+  const id = importSlug(String(record.id ?? record.name ?? `biz-${Date.now()}`)) || `biz-${Date.now()}`;
+  const name = String(record.name ?? "").trim();
+  if (!name) return null;
+
+  const ownerId = importSlug(String(record.ownerId ?? record.ownerEmail ?? record.contact ?? `admin-${id}`)) || `admin-${id}`;
+  const account = await getOrCreateMongoMember(ownerId);
+  const contact = String(record.contact ?? "").trim();
+  const ownerEmail = String(record.ownerEmail ?? account.profile.email ?? "").trim().toLowerCase();
+  const ownerName = String(record.ownerName ?? account.profile.name ?? name).trim();
+
+  account.profile.email = ownerEmail;
+  account.profile.name = ownerName;
+  account.profile.phone = contact || account.profile.phone;
+  account.profile.username = account.profile.username || ownerId;
+  account.profile.status = "Active";
+
+  const listing: MemberListing = {
+    id,
+    address: String(record.address ?? "").trim(),
+    addressProofName: String(record.addressProofName ?? record.proof ?? "").trim(),
+    businessType: String(record.businessType ?? "").trim(),
+    category: String(record.category ?? categories[0] ?? "General").trim(),
+    city: String(record.city ?? "").trim(),
+    contactPerson: ownerName,
+    description: String(record.details ?? record.description ?? "").trim(),
+    email: ownerEmail,
+    image: String(record.image ?? "").trim(),
+    keywords: String(record.keywords ?? record.details ?? "").trim(),
+    location: [record.subcity, record.city, record.state].map((part) => String(part ?? "").trim()).filter(Boolean).join(", "),
+    mobile: contact,
+    name,
+    state: String(record.state ?? "").trim(),
+    status: validListingStatus(String(record.status ?? "Pending")),
+    subcategory: String(record.subcategory ?? "").trim(),
+    subcity: String(record.subcity ?? "").trim(),
+    website: String(record.website ?? "").trim(),
+    youtube: String(record.youtube ?? "").trim(),
+  };
+
+  account.listings = [listing, ...account.listings.filter((item) => item.id !== listing.id)];
+  await saveMongoMember(account);
+  return listing;
+}
+
+async function deleteAdminBusinesses(ids: string[]) {
+  if (!ids.length) return;
+  const members = await listMongoMembers({ limit: 5000 });
+  await Promise.all(members.map(async (account) => {
+    const nextListings = account.listings.filter((listing) => !ids.includes(listing.id));
+    if (nextListings.length === account.listings.length) return;
+    account.listings = nextListings;
+    await saveMongoMember(account);
+  }));
+}
+
 export function getAdminResource(resource = "dashboard") {
   const store = getStore();
   const localMembers = Object.values(store.members);
@@ -772,6 +828,49 @@ export function handleAdminAction(resource: string, payload: Record<string, unkn
   if (resource === "business") {
     const action = String(payload.action ?? "");
 
+    if (action === "upsert" && payload.record && typeof payload.record === "object") {
+      const record = payload.record as Record<string, unknown>;
+      const id = importSlug(String(record.id ?? record.name ?? `biz-${Date.now()}`)) || `biz-${Date.now()}`;
+      const ownerId = importSlug(String(record.ownerId ?? record.ownerEmail ?? record.contact ?? `admin-${id}`)) || `admin-${id}`;
+      const account = getMemberAccount(ownerId);
+      const listing: MemberListing = {
+        id,
+        address: String(record.address ?? "").trim(),
+        addressProofName: String(record.addressProofName ?? record.proof ?? "").trim(),
+        businessType: String(record.businessType ?? "").trim(),
+        category: String(record.category ?? categories[0] ?? "General").trim(),
+        city: String(record.city ?? "").trim(),
+        contactPerson: String(record.ownerName ?? account.profile.name ?? record.name ?? "").trim(),
+        description: String(record.details ?? "").trim(),
+        email: String(record.ownerEmail ?? account.profile.email ?? "").trim(),
+        image: String(record.image ?? "").trim(),
+        keywords: String(record.keywords ?? record.details ?? "").trim(),
+        location: [record.subcity, record.city, record.state].map((part) => String(part ?? "").trim()).filter(Boolean).join(", "),
+        mobile: String(record.contact ?? "").trim(),
+        name: String(record.name ?? "").trim(),
+        state: String(record.state ?? "").trim(),
+        status: validListingStatus(String(record.status ?? "Pending")),
+        subcategory: String(record.subcategory ?? "").trim(),
+        subcity: String(record.subcity ?? "").trim(),
+        website: String(record.website ?? "").trim(),
+        youtube: String(record.youtube ?? "").trim(),
+      };
+      account.profile.id = ownerId;
+      account.profile.name = listing.contactPerson || listing.name;
+      account.profile.email = listing.email;
+      account.profile.phone = listing.mobile;
+      account.listings = [listing, ...account.listings.filter((item) => item.id !== listing.id)];
+      return { business: getAdminResource("business") };
+    }
+
+    if (action === "delete" && (Array.isArray(payload.ids) || payload.id)) {
+      const ids = Array.isArray(payload.ids) ? payload.ids.map(String) : [String(payload.id)];
+      Object.values(getStore().members).forEach((account) => {
+        account.listings = account.listings.filter((listing) => !ids.includes(listing.id));
+      });
+      return { business: getAdminResource("business") };
+    }
+
     const ownerId = String(payload.ownerId ?? "");
     const id = String(payload.id ?? "");
     const account = ownerId ? getMemberAccount(ownerId) : null;
@@ -780,6 +879,15 @@ export function handleAdminAction(resource: string, payload: Record<string, unkn
       account.listings = account.listings.map((listing) =>
         listing.id === id ? { ...listing, status: action as MemberListing["status"] } : listing,
       );
+      return { business: getAdminResource("business") };
+    }
+
+    if (!ownerId && id && ["Active", "Inactive", "Pending", "Draft", "Featured"].includes(action)) {
+      Object.values(getStore().members).forEach((member) => {
+        member.listings = member.listings.map((listing) =>
+          listing.id === id ? { ...listing, status: action as MemberListing["status"] } : listing,
+        );
+      });
       return { business: getAdminResource("business") };
     }
   }
@@ -1119,6 +1227,17 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
 
   if (resource === "business") {
     const action = String(payload.action ?? "");
+    if (action === "upsert" && payload.record && typeof payload.record === "object") {
+      await upsertAdminBusiness(payload.record as Record<string, unknown>);
+      return { business: await getAdminResourceAsync("business") };
+    }
+
+    if (action === "delete" && (Array.isArray(payload.ids) || payload.id)) {
+      const ids = Array.isArray(payload.ids) ? payload.ids.map(String) : [String(payload.id)];
+      await deleteAdminBusinesses(ids);
+      return { business: await getAdminResourceAsync("business") };
+    }
+
     const ownerId = String(payload.ownerId ?? "");
     const id = String(payload.id ?? "");
     const account = ownerId ? await getOrCreateMongoMember(ownerId) : null;
@@ -1136,6 +1255,18 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
       });
       await updateMongoBusinessStatus(ownerId, id, action as MemberListing["status"]);
       await saveMongoMember(account);
+      return { business: await getAdminResourceAsync("business") };
+    }
+
+    if (!ownerId && id && ["Active", "Inactive", "Pending", "Draft", "Featured"].includes(action)) {
+      const members = await listMongoMembers({ limit: 5000 });
+      await Promise.all(members.map(async (member) => {
+        if (!member.listings.some((listing) => listing.id === id)) return;
+        member.listings = member.listings.map((listing) =>
+          listing.id === id ? { ...listing, status: action as MemberListing["status"] } : listing,
+        );
+        await saveMongoMember(member);
+      }));
       return { business: await getAdminResourceAsync("business") };
     }
   }

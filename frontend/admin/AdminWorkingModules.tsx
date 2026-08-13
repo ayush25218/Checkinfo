@@ -1044,7 +1044,7 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
     });
   }
 
-  function saveRecord() {
+  async function saveRecord() {
     if (!form.name.trim()) return;
 
     const nextRecord: BusinessRecord = {
@@ -1062,13 +1062,14 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
       status: form.status,
       subcategory: form.subcategory.trim(),
       subcity: form.subcity.trim(),
+      ownerEmail: editing?.ownerEmail,
+      ownerId: editing?.ownerId,
+      ownerName: editing?.ownerName,
     };
 
-    sync(
-      editing
-        ? records.map((record) => (record.id === editing.id ? nextRecord : record))
-        : [...records, nextRecord],
-    );
+    const result = await postAdminAction("business", { action: "upsert", record: nextRecord });
+    if (result.data?.business) setRecords(result.data.business);
+    else sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
     resetForm();
   }
 
@@ -1091,18 +1092,23 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
     });
   }
 
-  function bulkStatus(nextStatus: Status) {
-    sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
-    selected.forEach((id) => {
+  async function bulkStatus(nextStatus: Status) {
+    let latest: BusinessRecord[] | undefined;
+    for (const id of selected) {
       const record = records.find((item) => item.id === id);
-      if (record?.ownerId) void postAdminAction("business", { action: nextStatus, id: record.id, ownerId: record.ownerId });
-    });
+      if (!record) continue;
+      const result = await postAdminAction("business", { action: nextStatus, id: record.id, ownerId: record.ownerId });
+      latest = result.data?.business ?? latest;
+    }
+    if (latest) setRecords(latest);
+    else sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
     setSelected([]);
   }
 
-  function setRecordStatus(record: BusinessRecord, nextStatus: Status) {
-    sync(records.map((item) => (item.id === record.id ? { ...item, status: nextStatus } : item)));
-    if (record.ownerId) void postAdminAction("business", { action: nextStatus, id: record.id, ownerId: record.ownerId });
+  async function setRecordStatus(record: BusinessRecord, nextStatus: Status) {
+    const result = await postAdminAction("business", { action: nextStatus, id: record.id, ownerId: record.ownerId });
+    if (result.data?.business) setRecords(result.data.business);
+    else sync(records.map((item) => (item.id === record.id ? { ...item, status: nextStatus } : item)));
 
     if (typeof window !== "undefined") {
       try {
@@ -1127,8 +1133,11 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
     }
   }
 
-  function deleteSelected() {
-    sync(records.filter((record) => !selected.includes(record.id)));
+  async function deleteSelected() {
+    const toDelete = [...selected];
+    const result = await postAdminAction("business", { action: "delete", ids: toDelete });
+    if (result.data?.business) setRecords(result.data.business);
+    else sync(records.filter((record) => !selected.includes(record.id)));
     setSelected([]);
   }
 

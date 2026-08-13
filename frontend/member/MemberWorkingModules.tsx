@@ -203,7 +203,7 @@ function ListingForm({
 }: {
   buttonLabel: string;
   initial?: Partial<MemberListing>;
-  onSave: (record: Omit<MemberListing, "id" | "status">) => void;
+  onSave: (record: Omit<MemberListing, "id" | "status">) => void | Promise<void>;
 }) {
   const [form, setForm] = useState({ ...initialListing(), ...initial });
   const effectiveTaxonomy = useMemo(() => getEffectiveTaxonomy(), []);
@@ -894,9 +894,10 @@ export function EnquiriesModule() {
   }, [setRecords]);
 
   const filtered = useMemo(() => records.filter((record) => [record.name, record.email, record.contact, record.message].join(" ").toLowerCase().includes(query.toLowerCase())), [query, records]);
-  function status(id: string, next: MemberEnquiry["status"]) {
-    setRecords(records.map((record) => record.id === id ? { ...record, status: next } : record));
-    void postMemberAction("enquiry", { id, status: next });
+  async function status(id: string, next: MemberEnquiry["status"]) {
+    const response = await postMemberAction("enquiry", { id, status: next });
+    const serverRecords = response?.data?.enquiries;
+    setRecords(Array.isArray(serverRecords) ? serverRecords : records.map((record) => record.id === id ? { ...record, status: next } : record));
   }
   return (
     <MemberShell active="My Enquiries">
@@ -936,9 +937,10 @@ export function ReviewsModule() {
     });
   }, [setReviews]);
 
-  function update(id: string, status: MemberReview["status"]) {
-    setReviews(reviews.map((review) => review.id === id ? { ...review, status } : review));
-    void postMemberAction("review", { id, status });
+  async function update(id: string, status: MemberReview["status"]) {
+    const response = await postMemberAction("review", { id, status });
+    const serverReviews = response?.data?.reviews;
+    setReviews(Array.isArray(serverReviews) ? serverReviews : reviews.map((review) => review.id === id ? { ...review, status } : review));
   }
   return (
     <MemberShell active="Manage Reviews">
@@ -1030,10 +1032,12 @@ const featuredPackagesData: PackagePlan[] = [
 export function PackagesModule() {
   const [selectedPlan, setSelectedPlan] = useState(() => readStored(memberStorageKey("member-package"), "Free Listing"));
 
-  function choose(name: string) {
-    setSelectedPlan(name);
-    writeStored(memberStorageKey("member-package"), name);
-    void postMemberAction("package", { packageName: name });
+  async function choose(name: string) {
+    const response = await postMemberAction("package", { packageName: name });
+    const savedPlan = response?.data?.packageName;
+    const nextPlan = typeof savedPlan === "string" ? savedPlan : name;
+    setSelectedPlan(nextPlan);
+    writeStored(memberStorageKey("member-package"), nextPlan);
   }
 
   return (
@@ -1168,9 +1172,10 @@ export function NotificationsModule() {
     });
   }, [setNotifications]);
 
-  function markAllRead() {
-    setNotifications(notifications.map((item) => ({ ...item, unread: false })));
-    void postMemberAction("notification", { action: "mark-all-read" });
+  async function markAllRead() {
+    const response = await postMemberAction("notification", { action: "mark-all-read" });
+    const serverNotifications = response?.data?.notifications;
+    setNotifications(Array.isArray(serverNotifications) ? serverNotifications : notifications.map((item) => ({ ...item, unread: false })));
   }
   return (
     <MemberShell active="Notifications">
@@ -1197,11 +1202,12 @@ export function NotificationsModule() {
 export function SupportModule() {
   const [tickets, setTickets] = useStoredState<SupportTicket[]>("checkinfo-member-support", []);
   const [form, setForm] = useState({ email: "", issue: "", message: "", name: "", phone: "" });
-  function submit() {
+  async function submit() {
     if (!form.name.trim() || !form.message.trim()) return;
     const ticket = { ...form, id: `ticket-${Date.now()}`, status: "Open" as const };
-    setTickets([...tickets, ticket]);
-    void postMemberAction("support", { ticket: form });
+    const response = await postMemberAction("support", { ticket: form });
+    const serverTickets = response?.data?.tickets;
+    setTickets(Array.isArray(serverTickets) ? serverTickets : [...tickets, ticket]);
     setForm({ email: "", issue: "", message: "", name: "", phone: "" });
   }
   return (
@@ -1219,11 +1225,20 @@ export function SupportModule() {
 export function ChangePasswordModule() {
   const [form, setForm] = useState({ confirm: "", next: "", old: "" });
   const [message, setMessage] = useState("Password not updated yet.");
-  function update() {
+  async function update() {
     if (!form.old || !form.next || !form.confirm) setMessage("All fields are required.");
     else if (form.next.length < 8) setMessage("New password must be at least 8 characters.");
     else if (form.next !== form.confirm) setMessage("New password and confirm password do not match.");
-    else { writeStored("checkinfo-member-password", { updatedAt: new Date().toISOString() }); void postMemberAction("password", { action: "update", newPassword: form.next }); setForm({ confirm: "", next: "", old: "" }); setMessage("Password updated successfully in database."); }
+    else {
+      const response = await postMemberAction("password", { action: "update", newPassword: form.next });
+      if (!response?.ok) {
+        setMessage("Password could not be saved. Please try again.");
+        return;
+      }
+      writeStored("checkinfo-member-password", { updatedAt: new Date().toISOString() });
+      setForm({ confirm: "", next: "", old: "" });
+      setMessage("Password updated successfully in database.");
+    }
   }
   return (
     <MemberShell active="Change Password">
