@@ -18,7 +18,7 @@ import {
   indiaSubdistricts,
 } from "./indiaLocations";
 
-type Status = "Active" | "Inactive" | "Pending" | "Draft" | "Featured";
+type Status = "Active" | "Inactive" | "Pending" | "Draft" | "Featured" | "Popular";
 
 type CategoryRecord = {
   id: string;
@@ -955,7 +955,7 @@ function mapMemberListingToBusinessRecord(item: Record<string, unknown>): Busine
     id: String(item.id || `biz-${Date.now()}`),
     address: String(item.address || item.location || ""),
     addressProofName: String(item.addressProofName || ""),
-    badge: item.status === "Featured" ? "Featured" : "Verified",
+    badge: item.status === "Featured" ? "Featured" : item.status === "Popular" ? "Popular" : "Verified",
     businessType: String(item.businessType || ""),
     category: String(item.category || "General"),
     city: String(item.city || ""),
@@ -1208,6 +1208,7 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
             <option>Pending</option>
             <option>Draft</option>
             <option>Featured</option>
+            <option>Popular</option>
           </select>
         </label>
         <label>
@@ -1316,6 +1317,7 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
             <option>Pending</option>
             <option>Draft</option>
             <option>Featured</option>
+            <option>Popular</option>
           </select>
         </label>
         <button type="button" onClick={saveRecord}>{editing ? "Update Business" : "Add Business"}</button>
@@ -1324,6 +1326,9 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
 
       <div className="admin-actions">
         <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Activate</button>
+        <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Move to New Ads</button>
+        <button type="button" onClick={() => bulkStatus("Featured")} disabled={!selected.length}>Mark Featured</button>
+        <button type="button" onClick={() => bulkStatus("Popular")} disabled={!selected.length}>Mark Popular</button>
         <button type="button" onClick={() => bulkStatus("Inactive")} disabled={!selected.length}>Deactivate</button>
         <button type="button" onClick={deleteSelected} disabled={!selected.length}>Delete</button>
       </div>
@@ -1359,6 +1364,8 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
                 </button>
               ) : null}
               {record.status !== "Featured" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Featured")}>Feature</button> : null}
+              {record.status !== "Popular" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Popular")}>Popular</button> : null}
+              {record.status !== "Active" && record.status !== "Pending" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Active")}>New Ads</button> : null}
               {record.status !== "Inactive" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Inactive")}>Hide</button> : null}
             </span>
           </div>

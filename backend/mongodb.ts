@@ -48,7 +48,7 @@ export type MemberAccount = {
 
 export type BusinessListingRecord = MemberListing & {
   _id: string;
-  badge: "Featured" | "Verified";
+  badge: "Featured" | "Popular" | "Verified";
   contact: string;
   createdAt: string;
   details: string;
@@ -505,12 +505,18 @@ function businessId(ownerId: string, listingId: string) {
   return `${ownerId}::${listingId}`;
 }
 
+function badgeForStatus(status: MemberListing["status"]) {
+  if (status === "Featured") return "Featured";
+  if (status === "Popular") return "Popular";
+  return "Verified";
+}
+
 function businessRecordFromListing(account: MemberAccount, listing: MemberListing): Omit<BusinessListingRecord, "createdAt"> {
   return {
     ...listing,
     _id: businessId(account.profile.id, listing.id),
     address: listing.address || listingLocationText(listing),
-    badge: listing.status === "Featured" ? "Featured" : "Verified",
+    badge: badgeForStatus(listing.status),
     contact: listing.mobile || listing.email,
     details: listing.description || listing.keywords,
     location: listingLocationText(listing),
@@ -597,7 +603,7 @@ export async function updateMongoBusinessStatus(ownerId: string, listingId: stri
   const { businesses } = await getMongoCollections();
   await businesses.updateOne(
     { _id: businessId(ownerId, listingId) },
-    { $set: { status, badge: status === "Featured" ? "Featured" : "Verified", updatedAt: new Date().toISOString() } },
+    { $set: { status, badge: badgeForStatus(status), updatedAt: new Date().toISOString() } },
   );
 }
 

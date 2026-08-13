@@ -143,7 +143,7 @@ export function getMemberState(memberId: string, resource = "dashboard") {
 function getMemberStateFromAccount(account: MemberAccount, resource = "dashboard") {
 
   if (resource === "dashboard") {
-    const activeListings = account.listings.filter((listing) => listing.status === "Active" || listing.status === "Featured").length;
+    const activeListings = account.listings.filter((listing) => listing.status === "Active" || listing.status === "Featured" || listing.status === "Popular").length;
     const newEnquiries = account.enquiries.filter((enquiry) => enquiry.status === "New").length;
 
     return {
@@ -291,7 +291,7 @@ function buildBusinessFromMembers(members: MemberAccount[]) {
     member.listings.map((listing) => ({
       address: listing.address || listingLocationText(listing),
       addressProofName: listing.addressProofName,
-      badge: listing.status === "Featured" ? "Featured" : "Verified",
+      badge: listing.status === "Featured" ? "Featured" : listing.status === "Popular" ? "Popular" : "Verified",
       businessType: listing.businessType,
       category: listing.category,
       city: listing.city,
@@ -320,7 +320,7 @@ function importSlug(value: string) {
 }
 
 function validListingStatus(value: string): MemberListing["status"] {
-  return ["Active", "Inactive", "Pending", "Draft", "Featured"].includes(value)
+  return ["Active", "Inactive", "Pending", "Draft", "Featured", "Popular"].includes(value)
     ? value as MemberListing["status"]
     : "Pending";
 }
@@ -875,14 +875,14 @@ export function handleAdminAction(resource: string, payload: Record<string, unkn
     const id = String(payload.id ?? "");
     const account = ownerId ? getMemberAccount(ownerId) : null;
 
-    if (account && ["Active", "Inactive", "Pending", "Draft", "Featured"].includes(action)) {
+    if (account && ["Active", "Inactive", "Pending", "Draft", "Featured", "Popular"].includes(action)) {
       account.listings = account.listings.map((listing) =>
         listing.id === id ? { ...listing, status: action as MemberListing["status"] } : listing,
       );
       return { business: getAdminResource("business") };
     }
 
-    if (!ownerId && id && ["Active", "Inactive", "Pending", "Draft", "Featured"].includes(action)) {
+    if (!ownerId && id && ["Active", "Inactive", "Pending", "Draft", "Featured", "Popular"].includes(action)) {
       Object.values(getStore().members).forEach((member) => {
         member.listings = member.listings.map((listing) =>
           listing.id === id ? { ...listing, status: action as MemberListing["status"] } : listing,
@@ -1242,7 +1242,7 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
     const id = String(payload.id ?? "");
     const account = ownerId ? await getOrCreateMongoMember(ownerId) : null;
 
-    if (account && ["Active", "Inactive", "Pending", "Draft", "Featured"].includes(action)) {
+    if (account && ["Active", "Inactive", "Pending", "Draft", "Featured", "Popular"].includes(action)) {
       account.listings = account.listings.map((listing) =>
         listing.id === id ? { ...listing, status: action as MemberListing["status"] } : listing,
       );
@@ -1258,7 +1258,7 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
       return { business: await getAdminResourceAsync("business") };
     }
 
-    if (!ownerId && id && ["Active", "Inactive", "Pending", "Draft", "Featured"].includes(action)) {
+    if (!ownerId && id && ["Active", "Inactive", "Pending", "Draft", "Featured", "Popular"].includes(action)) {
       const members = await listMongoMembers({ limit: 5000 });
       await Promise.all(members.map(async (member) => {
         if (!member.listings.some((listing) => listing.id === id)) return;

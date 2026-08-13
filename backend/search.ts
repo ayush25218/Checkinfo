@@ -99,7 +99,7 @@ function listingMatches(listing: SearchableListing, query = "", location = "", c
 function listingToResult(listing: SearchableListing, source: "sponsored" | "local"): DirectorySearchResult {
   return {
     address: listing.address || listingLocationText(listing) || "Address not available",
-    badge: listing.status === "Featured" ? "Featured" : "Verified",
+    badge: listing.status === "Featured" ? "Featured" : listing.status === "Popular" ? "Popular" : "Verified",
     category: listing.category ?? "Business",
     id: `${source}-${normalizeText(listing.name || listing.id || "business").replaceAll(" ", "-")}`,
     name: listing.name || "Business listing",
@@ -122,7 +122,7 @@ async function getSponsoredListings(query = "", location = "", category = "") {
 async function getFallbackLocalListings(query = "", location = "", category = "") {
   const business = ((await getAdminResourceAsync("business")) ?? []) as SearchableListing[];
   return business
-    .filter((listing) => listing.status === "Active")
+    .filter((listing) => listing.status === "Active" || listing.status === "Popular")
     .filter((listing) => listingMatches(listing, query, location, category))
     .map((listing) => listingToResult(listing, "local"));
 }

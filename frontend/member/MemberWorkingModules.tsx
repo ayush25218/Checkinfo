@@ -12,7 +12,7 @@ import {
 import { indiaDistricts, indiaStates, indiaSubdistricts } from "@/frontend/admin/indiaLocations";
 import { businessTaxonomy, getEffectiveTaxonomy } from "@/backend/businessTaxonomy";
 
-type ListingStatus = "Draft" | "Pending" | "Active" | "Featured";
+type ListingStatus = "Draft" | "Pending" | "Active" | "Featured" | "Popular";
 
 type MemberListing = {
   id: string;
@@ -300,7 +300,7 @@ export function MemberDashboardModule() {
     });
   }, []);
 
-  const activeListings = listings.filter((listing) => listing.status === "Active" || listing.status === "Featured").length;
+  const activeListings = listings.filter((listing) => listing.status === "Active" || listing.status === "Featured" || listing.status === "Popular").length;
   const newEnquiries = enquiries.filter((enquiry) => enquiry.status === "New").length;
 
   let profileStatus = 0;

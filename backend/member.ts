@@ -14,7 +14,7 @@ export type MemberListing = {
   mobile: string;
   name: string;
   state: string;
-  status: "Draft" | "Pending" | "Active" | "Featured" | "Inactive";
+  status: "Draft" | "Pending" | "Active" | "Featured" | "Popular" | "Inactive";
   subcategory: string;
   subcity: string;
   website: string;

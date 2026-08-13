@@ -5575,7 +5575,8 @@ a.check-card-title-link:hover {
 }
 
 .admin-status-active,
-.admin-status-featured {
+.admin-status-featured,
+.admin-status-popular {
   border-color: #b7e4c7;
   background: #f0fff4;
 }

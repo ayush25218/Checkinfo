@@ -7,7 +7,7 @@ export type ListingCollectionKind = "featured" | "new" | "trending" | "category"
 export async function getApprovedListings() {
   try {
     const business = (((await getAdminResourceAsync("business")) ?? []) as PublicBusinessListing[]);
-    return business.filter((listing) => listing.status === "Active" || listing.status === "Featured");
+    return business.filter((listing) => listing.status === "Active" || listing.status === "Featured" || listing.status === "Popular");
   } catch {
     return [];
   }
@@ -18,7 +18,8 @@ export function filterCollectionListings(
   kind: ListingCollectionKind,
 ) {
   if (kind === "featured") return listings.filter((listing) => listing.status === "Featured");
-  if (kind === "trending") return [...listings].sort((a, b) => Number(b.status === "Featured") - Number(a.status === "Featured"));
+  if (kind === "trending") return listings.filter((listing) => listing.status === "Popular");
+  if (kind === "new") return listings.filter((listing) => listing.status === "Active");
   return listings;
 }
 

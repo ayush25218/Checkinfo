@@ -115,8 +115,8 @@ export async function HomePage() {
   const categoryExperiences = getAllCategoryExperiences();
   const business = await getApprovedListings();
   const featured = business.filter((listing) => listing.status === "Featured").slice(0, 3);
-  const newest = business.slice(0, 8);
-  const trending = [...business].sort((a, b) => Number(b.status === "Featured") - Number(a.status === "Featured")).slice(0, 6);
+  const newest = business.filter((listing) => listing.status === "Active").slice(0, 8);
+  const trending = business.filter((listing) => listing.status === "Popular").slice(0, 6);
 
   return (
     <main className="check-home">
