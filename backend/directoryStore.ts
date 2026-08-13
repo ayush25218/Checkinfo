@@ -184,12 +184,20 @@ function mutateMemberAction(account: MemberAccount, resource: string, payload: R
 
   if (resource === "listing") {
     if (action === "create") {
+      const record = payload.record as Partial<MemberListing>;
       const listing = {
-        ...(payload.record as Omit<MemberListing, "id" | "status">),
-        id: `list-${Date.now()}`,
+        ...record,
+        id: String(record.id || `list-${Date.now()}`),
         status: "Pending",
       } as MemberListing;
-      account.listings.push(listing);
+      account.listings = [listing, ...account.listings.filter((item) => item.id !== listing.id)];
+      account.notifications.unshift({
+        id: `notif-${Date.now()}`,
+        text: "Your business listing was submitted for admin approval.",
+        time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+        title: "Listing Submitted",
+        unread: true,
+      });
       return { listing, listings: account.listings };
     }
 
@@ -198,6 +206,13 @@ function mutateMemberAction(account: MemberAccount, resource: string, payload: R
       account.listings = account.listings.map((listing) =>
         listing.id === id ? { ...listing, ...(payload.record as Partial<MemberListing>), status: "Pending" } : listing,
       );
+      account.notifications.unshift({
+        id: `notif-${Date.now()}`,
+        text: "Your business listing changes were submitted for admin review.",
+        time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+        title: "Listing Review Requested",
+        unread: true,
+      });
       return { listings: account.listings };
     }
 

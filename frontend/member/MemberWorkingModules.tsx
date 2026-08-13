@@ -151,7 +151,9 @@ function postMemberAction(resource: string, payload: Record<string, unknown>) {
     body: JSON.stringify(payload),
     headers: { "content-type": "application/json", "x-checkinfo-member-id": getMemberId() },
     method: "POST",
-  }).catch(() => undefined);
+  })
+    .then((res) => res.json())
+    .catch(() => undefined);
 }
 
 function getMemberData<T>(resource: string, fallback: T): Promise<T> {
@@ -671,23 +673,27 @@ export function MyBusinessListingModule() {
     } catch {}
   }
 
-  function handleSaveListing(record: Omit<MemberListing, "id" | "status">) {
+  async function handleSaveListing(record: Omit<MemberListing, "id" | "status">) {
     if (hasListing && currentListing) {
       const updated: MemberListing = { ...currentListing, ...record, status: "Pending" };
-      setListings([updated]);
-      saveGlobalRegisteredListing(updated);
-      void postMemberAction("listing", { action: "update", id: currentListing.id, record });
-      setMessage("⏳ Business details updated successfully! Your listing has been submitted for Admin Review and will be updated on the website after approval.");
+      const response = await postMemberAction("listing", { action: "update", id: currentListing.id, record });
+      const serverListings = response?.data?.listings;
+      const nextListings = Array.isArray(serverListings) && serverListings.length ? serverListings as MemberListing[] : [updated];
+      setListings(nextListings);
+      saveGlobalRegisteredListing(nextListings[0]);
+      setMessage("Business details updated successfully! Your listing has been submitted for Admin Review and will be updated on the website after approval.");
     } else {
       const newListing: MemberListing = {
         ...record,
         id: `list-${Date.now()}`,
         status: "Pending",
       };
-      setListings([newListing]);
-      saveGlobalRegisteredListing(newListing);
-      void postMemberAction("listing", { action: "create", record: newListing });
-      setMessage("⏳ Business profile created successfully! It is now Pending Admin Approval and will go live on the website once approved by Administrator.");
+      const response = await postMemberAction("listing", { action: "create", record: newListing });
+      const serverListing = response?.data?.listing as MemberListing | undefined;
+      const nextListing = serverListing || newListing;
+      setListings([nextListing]);
+      saveGlobalRegisteredListing(nextListing);
+      setMessage("Business profile created successfully! It is now Pending Admin Approval and will go live on the website once approved by Administrator.");
     }
     setIsEditing(false);
   }
