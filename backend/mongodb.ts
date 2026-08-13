@@ -194,7 +194,10 @@ export async function getMongoClient() {
 
   globalMongo.__checkinfoMongoClientPromise ??= new MongoClient(uri, {
     serverSelectionTimeoutMS: 6000,
-  }).connect();
+  }).connect().catch((error) => {
+    globalMongo.__checkinfoMongoClientPromise = undefined;
+    throw error;
+  });
   return globalMongo.__checkinfoMongoClientPromise;
 }
 

@@ -30,12 +30,23 @@ export async function GET(request: Request, { params }: RouteContext) {
   const active = resource?.[0] ?? "dashboard";
   const memberId = getMemberId(request);
 
-  return Response.json({
-    data: await getMemberStateAsync(memberId, active),
-    memberId,
-    ok: true,
-    resource: active,
-  });
+  try {
+    return Response.json({
+      data: await getMemberStateAsync(memberId, active),
+      memberId,
+      ok: true,
+      resource: active,
+    });
+  } catch (error) {
+    console.error("Member API read failed", error);
+    return Response.json({
+      data: null,
+      memberId,
+      message: "Member database is currently unavailable. Please try again after database connection is fixed.",
+      ok: false,
+      resource: active,
+    }, { status: 503 });
+  }
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
@@ -51,11 +62,22 @@ export async function POST(request: Request, { params }: RouteContext) {
     ? await request.json()
     : formDataToObject(await request.formData());
 
-  return Response.json(
-    createResponse("Member request processed", {
-      data: await handleMemberActionAsync(memberId, active, payload),
+  try {
+    return Response.json(
+      createResponse("Member request processed", {
+        data: await handleMemberActionAsync(memberId, active, payload),
+        memberId,
+        resource: active,
+      }),
+    );
+  } catch (error) {
+    console.error("Member API write failed", error);
+    return Response.json({
+      data: null,
       memberId,
+      message: "Member database is currently unavailable. Your changes were not saved.",
+      ok: false,
       resource: active,
-    }),
-  );
+    }, { status: 503 });
+  }
 }

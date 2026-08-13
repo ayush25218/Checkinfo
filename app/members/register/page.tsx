@@ -51,8 +51,12 @@ export default async function MemberRegisterPage({
                 phone,
                 username,
               });
-            } catch {
-              redirect(`/members/register?error=${encodeURIComponent("Business account with this email or username already exists")}`);
+            } catch (error) {
+              const code = typeof error === "object" && error && "code" in error ? (error as { code?: unknown }).code : undefined;
+              const message = code === 11000
+                ? "Business account with this email or username already exists"
+                : "Registration database is currently unavailable. Please try again after database connection is fixed.";
+              redirect(`/members/register?error=${encodeURIComponent(message)}`);
             }
 
             redirect(`/members/login?registered=true&email=${encodeURIComponent(email)}`);

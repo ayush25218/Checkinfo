@@ -105,10 +105,7 @@ export function validCredentials(role: AuthRole, username: string, password: str
         return true;
       }
     }
-    // Fallback: Accept any non-empty user credentials (min 2 chars)
-    if (cleanUsername.length >= 2 && cleanPassword.length >= 2) {
-      return true;
-    }
+    return false;
   }
 
   if (role === "member") {
@@ -119,10 +116,7 @@ export function validCredentials(role: AuthRole, username: string, password: str
         return true;
       }
     }
-    // Fallback: Accept any non-empty business member credentials (min 2 chars)
-    if (cleanUsername.length >= 2 && cleanPassword.length >= 2) {
-      return true;
-    }
+    return false;
   }
 
   return false;
@@ -182,7 +176,7 @@ export async function validCredentialsAsync(role: AuthRole, username: string, pa
       }
     }
   } catch {
-    return role === "admin" ? false : validCredentials(role, cleanUsername, password);
+    return false;
   }
 
   return false;
