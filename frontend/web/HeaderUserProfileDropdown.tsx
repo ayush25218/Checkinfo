@@ -2,19 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-type AccountMode = "guest" | "member" | "visitor";
-
-type VisitorProfile = {
-  email: string;
-  name: string;
-  phone: string;
-};
-
-const defaultVisitor: VisitorProfile = {
-  email: "",
-  name: "",
-  phone: "",
-};
+type AccountMode = "guest" | "member";
 
 function getCookie(name: string): string {
   if (typeof document === "undefined") return "";
@@ -22,17 +10,6 @@ function getCookie(name: string): string {
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(";").shift() || "");
   return "";
-}
-
-function readStoredVisitor(): VisitorProfile {
-  if (typeof window === "undefined") return defaultVisitor;
-
-  try {
-    const raw = window.localStorage.getItem("checkinfo_visitor_profile");
-    return raw ? (JSON.parse(raw) as VisitorProfile) : defaultVisitor;
-  } catch {
-    return defaultVisitor;
-  }
 }
 
 function initialsFor(name: string) {
@@ -77,24 +54,15 @@ export function HeaderUserProfileDropdown() {
     // ✅ FIX: Use regex match to ensure cookie has a non-empty value (not just the key presence)
     const memberIdMatch = cookies.match(/checkinfo_member_id=([^;]+)/);
     const memberAuthMatch = cookies.match(/checkinfo_member_auth=([^;]+)/);
-    const userAuthMatch = cookies.match(/checkinfo_user_auth=([^;]+)/);
     const hasMemberCookie = !!(memberIdMatch?.[1]?.trim() || memberAuthMatch?.[1]?.trim());
-    const hasUserCookie = !!(userAuthMatch?.[1]?.trim() && userAuthMatch[1] !== "false");
 
     if (hasMemberCookie) {
       setMode("member");
       const memberName = getCookie("checkinfo_member_name") || window.localStorage.getItem("checkinfo_member_name") || "Business Member";
       setDisplayName(memberName);
-    } else if (hasUserCookie) {
-      setMode("visitor");
-      const visitor = readStoredVisitor();
-      const userName = getCookie("checkinfo_user_name") || visitor.name || window.localStorage.getItem("checkinfo_user_name") || "User Account";
-      setDisplayName(userName);
     } else {
       // Cookies are absent -> Reset header display mode without clearing business listings
       try {
-        window.localStorage.removeItem("checkinfo_user_auth");
-        window.localStorage.removeItem("checkinfo_user_name");
         window.localStorage.removeItem("checkinfo_member_name");
       } catch {}
       setMode("guest");
@@ -141,8 +109,8 @@ export function HeaderUserProfileDropdown() {
   
   // When NOT logged in -> Label is "Login"
   // When LOGGED IN -> Label is the User's / Member's Name!
-  const buttonLabel = !isSignedIn ? "Login" : displayName || (mode === "member" ? "Business Account" : "User Account");
-  const avatarLabel = !isSignedIn ? "LG" : mode === "member" ? (displayName && displayName !== "Business Member" ? initialsFor(displayName) : "BIZ") : initialsFor(displayName);
+  const buttonLabel = !isSignedIn ? "Business Login" : displayName || "Business Account";
+  const avatarLabel = !isSignedIn ? "BIZ" : displayName && displayName !== "Business Member" ? initialsFor(displayName) : "BIZ";
 
   return (
     <div className="header-user-dropdown-wrap" ref={dropdownRef}>
@@ -151,7 +119,7 @@ export function HeaderUserProfileDropdown() {
         aria-haspopup="menu"
         className={`check-profile-circle ${isSignedIn ? "is-active" : "is-guest"} ${mode === "member" ? "is-business" : ""}`}
         onClick={() => setIsOpen((value) => !value)}
-        title={!isSignedIn ? "Login or register account" : mode === "member" ? `Business Panel (${displayName})` : `User Account (${displayName})`}
+        title={!isSignedIn ? "Business owner login or registration" : `Business Panel (${displayName})`}
         type="button"
       >
         <span className="check-profile-avatar">
@@ -179,33 +147,19 @@ export function HeaderUserProfileDropdown() {
               <a href="/members/my_listings" role="menuitem"><AccountIcon name="user" />My Business Listing</a>
               <a className="danger" href="/api/auth/logout?role=member" onClick={(e) => { e.preventDefault(); handlePerformLogout("member"); }} role="menuitem"><AccountIcon name="logout" />Logout</a>
             </>
-          ) : mode === "visitor" ? (
-            <>
-              <div className="profile-menu-head">
-                <span className="profile-menu-avatar">{initialsFor(displayName)}</span>
-                <div>
-                  <strong>{displayName}</strong>
-                  <small>Visitor User Account</small>
-                </div>
-              </div>
-              <a href="/#categories" role="menuitem"><AccountIcon name="dashboard" />Browse Directory</a>
-              <a href="/members/login" role="menuitem"><AccountIcon name="login" />Business Owner Login</a>
-              <a className="danger" href="/api/auth/logout?role=user" onClick={(e) => { e.preventDefault(); handlePerformLogout("user"); }} role="menuitem"><AccountIcon name="logout" />Logout</a>
-            </>
           ) : (
             <>
               <div className="profile-menu-head">
-                <span className="profile-menu-avatar">LG</span>
+                <span className="profile-menu-avatar business">BIZ</span>
                 <div>
-                  <strong>Login Account</strong>
-                  <small>Select your account type to login</small>
+                  <strong>Business Account</strong>
+                  <small>Login or register to manage listings</small>
                 </div>
               </div>
-              <a href="/users/login" role="menuitem"><AccountIcon name="login" />Visitor / User Login</a>
               <a className="business-link" href="/members/login" role="menuitem"><AccountIcon name="user" />Business Owner Login</a>
               <div className="profile-menu-footer">
                 <span>Don&apos;t have an account?</span>
-                <a href="/users/register">Sign Up / Create Account</a>
+                <a href="/members/register">Register Business Account</a>
               </div>
             </>
           )}

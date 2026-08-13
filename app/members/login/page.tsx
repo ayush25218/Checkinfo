@@ -42,11 +42,7 @@ export default async function MemberLoginPage({
         <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid #e2e8f0", textAlign: "center", fontSize: "0.85rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <div>
             <span>Don&apos;t have an account? </span>
-            <a href="/users/register" style={{ color: "#0284c7", fontWeight: "700", textDecoration: "none" }}>Register / Sign Up Here</a>
-          </div>
-          <div>
-            <span>Looking for normal site visitor login? </span>
-            <a href="/login" style={{ color: "#0284c7", fontWeight: "600", textDecoration: "none" }}>Visitor Login</a>
+            <a href="/members/register" style={{ color: "#0284c7", fontWeight: "700", textDecoration: "none" }}>Register / Sign Up Here</a>
           </div>
         </div>
       </section>

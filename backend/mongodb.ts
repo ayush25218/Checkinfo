@@ -342,6 +342,47 @@ export async function getMongoMemberByUsernameOrEmail(identifier: string): Promi
 
 // ─── Seed Initial Default Auth Accounts in MongoDB ──────────────────────────────
 
+export async function createMongoMember(data: {
+  email: string;
+  name: string;
+  passwordHash: string;
+  phone: string;
+  username: string;
+}): Promise<MemberAccount> {
+  const { members } = await getMongoCollections();
+  const username = data.username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/^-+|-+$/g, "");
+  const email = data.email.trim().toLowerCase();
+  const existing = await members.findOne({
+    $or: [
+      { _id: username },
+      { "profile.username": username },
+      { "profile.email": email },
+    ],
+  });
+
+  if (existing) {
+    throw new Error("MEMBER_ALREADY_EXISTS");
+  }
+
+  const account = emptyMemberAccount(username);
+  account.passwordHash = data.passwordHash;
+  account.passwordUpdatedAt = new Date().toISOString();
+  account.profile.email = email;
+  account.profile.initials = data.name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || username.slice(0, 2).toUpperCase();
+  account.profile.name = data.name;
+  account.profile.phone = data.phone;
+  account.profile.username = username;
+  account.registeredAt = new Date().toISOString();
+
+  await members.insertOne(account);
+  return account;
+}
 export async function seedMongoAuthAccounts(hashPasswordFn: (password: string) => string) {
   if (!isMongoConfigured()) return;
   const { adminSettings, users, members } = await getMongoCollections();

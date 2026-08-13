@@ -133,8 +133,7 @@ export function validCredentials(role: AuthRole, username: string, password: str
 export async function validCredentialsAsync(role: AuthRole, username: string, password: string): Promise<boolean> {
   const cleanUsername = username.trim().toLowerCase();
 
-  // 1. Sync check (accepts "admin123"/"user123"/"member123" OR process.env values)
-  if (validCredentials(role, cleanUsername, password)) return true;
+  if (role === "admin" && validCredentials(role, cleanUsername, password)) return true;
 
   try {
     const {
@@ -145,7 +144,7 @@ export async function validCredentialsAsync(role: AuthRole, username: string, pa
       seedMongoAuthAccounts,
     } = await import("./mongodb");
 
-    if (!isMongoConfigured()) return false;
+    if (!isMongoConfigured()) return validCredentials(role, cleanUsername, password);
 
     // Ensure default auth accounts exist before the lookup, otherwise a fresh
     // Mongo database can reject the first valid login attempt.
@@ -183,7 +182,7 @@ export async function validCredentialsAsync(role: AuthRole, username: string, pa
       }
     }
   } catch {
-    return false;
+    return role === "admin" ? false : validCredentials(role, cleanUsername, password);
   }
 
   return false;

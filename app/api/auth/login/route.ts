@@ -30,6 +30,24 @@ export async function POST(request: Request) {
   }
 
   const cookieStore = await cookies();
+  let sessionUsername = username;
+  let memberProfileName = "";
+  let memberProfileId = "";
+
+  if (role === "member") {
+    try {
+      const { getMongoMemberByUsernameOrEmail, isMongoConfigured } = await import("@/backend/mongodb");
+      if (isMongoConfigured()) {
+        const member = await getMongoMemberByUsernameOrEmail(username);
+        if (member?.profile) {
+          sessionUsername = member.profile.username || member.profile.id || username;
+          memberProfileId = member.profile.id || sessionUsername;
+          memberProfileName = member.profile.name || "";
+        }
+      }
+    } catch {}
+  }
+
   cookieStore.set(getAuthCookieName(role), createSessionToken(role, username), {
     httpOnly: true,
     maxAge: 60 * 60 * 12,
@@ -39,8 +57,8 @@ export async function POST(request: Request) {
   });
 
   if (role === "member") {
-    const cleanName = username.split("@")[0] || username || "Business Member";
-    cookieStore.set("checkinfo_member_id", username.replace(/[^a-zA-Z0-9_-]/g, "") || "member", {
+    const cleanName = memberProfileName || sessionUsername.split("@")[0] || sessionUsername || "Business Member";
+    cookieStore.set("checkinfo_member_id", memberProfileId || sessionUsername.replace(/[^a-zA-Z0-9_-]/g, "") || "member", {
       maxAge: 60 * 60 * 24 * 365,
       path: "/",
       sameSite: "lax",

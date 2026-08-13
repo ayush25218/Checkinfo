@@ -1,3 +1,3 @@
-import UserRegisterPage from "@/app/users/register/page";
+import MemberRegisterPage from "@/app/members/register/page";
 
-export default UserRegisterPage;
+export default MemberRegisterPage;
