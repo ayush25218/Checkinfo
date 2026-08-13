@@ -25,7 +25,9 @@ export function proxy(request: NextRequest) {
     }
   }
 
-  if (pathname.startsWith("/members") && pathname !== "/members/login") {
+  const publicMemberPages = new Set(["/members/login", "/members/register"]);
+
+  if (pathname.startsWith("/members") && !publicMemberPages.has(pathname)) {
     if (!hasValidSession(request, "checkinfo_member_auth", "member")) {
       return NextResponse.redirect(new URL("/members/login", request.url));
     }
