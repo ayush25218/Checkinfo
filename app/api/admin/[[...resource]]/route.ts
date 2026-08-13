@@ -26,14 +26,27 @@ export async function GET(request: Request, { params }: RouteContext) {
   const active = resource?.[0] ?? "dashboard";
   const filters = Object.fromEntries(new URL(request.url).searchParams.entries());
 
-  return Response.json({
-    data: await getAdminResourceAsync(active),
-    filters,
-    groups: adminGroups,
-    ok: true,
-    page: getAdminPage(active),
-    resource: active,
-  });
+  try {
+    return Response.json({
+      data: await getAdminResourceAsync(active),
+      filters,
+      groups: adminGroups,
+      ok: true,
+      page: getAdminPage(active),
+      resource: active,
+    });
+  } catch (error) {
+    console.error("Admin API read failed", error);
+    return Response.json({
+      data: null,
+      filters,
+      groups: adminGroups,
+      message: "Admin database is currently unavailable. Please try again after database connection is fixed.",
+      ok: false,
+      page: getAdminPage(active),
+      resource: active,
+    }, { status: 503 });
+  }
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
@@ -48,10 +61,20 @@ export async function POST(request: Request, { params }: RouteContext) {
     ? await request.json()
     : formDataToObject(await request.formData());
 
-  return Response.json(
-    createResponse("Admin action queued", {
-      data: await handleAdminActionAsync(active, payload),
+  try {
+    return Response.json(
+      createResponse("Admin action queued", {
+        data: await handleAdminActionAsync(active, payload),
+        resource: active,
+      }),
+    );
+  } catch (error) {
+    console.error("Admin API write failed", error);
+    return Response.json({
+      data: null,
+      message: "Admin database is currently unavailable. Your changes were not saved.",
+      ok: false,
       resource: active,
-    }),
-  );
+    }, { status: 503 });
+  }
 }

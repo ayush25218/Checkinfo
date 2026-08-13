@@ -10,19 +10,14 @@ type RouteContext = {
   params: Promise<{ resource?: string[] }>;
 };
 
-async function requireMemberAuth(request: Request) {
+async function requireMemberAuth() {
   const cookieStore = await cookies();
   const token = cookieStore.get(getAuthCookieName("member"))?.value;
-  if (verifySessionToken(token, "member")) return true;
-
-  const memberId = getMemberId(request);
-  if (memberId && memberId !== "member-default" && memberId.length > 2) return true;
-
-  return false;
+  return verifySessionToken(token, "member");
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
-  if (!(await requireMemberAuth(request))) {
+  if (!(await requireMemberAuth())) {
     return Response.json({ ok: false, message: "Member login required" }, { status: 401 });
   }
 
@@ -50,7 +45,7 @@ export async function GET(request: Request, { params }: RouteContext) {
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
-  if (!(await requireMemberAuth(request))) {
+  if (!(await requireMemberAuth())) {
     return Response.json({ ok: false, message: "Member login required" }, { status: 401 });
   }
 
