@@ -311,7 +311,15 @@ async function postAdminAction(resource: string, payload: Record<string, unknown
       headers: { "content-type": "application/json" },
       method: "POST",
     });
-    return await response.json() as { data?: { business?: BusinessRecord[]; imported?: number; members?: MemberRecord[] }; members?: MemberRecord[] };
+    return await response.json() as {
+      data?: {
+        business?: BusinessRecord[];
+        categories?: CategoryRecord[];
+        imported?: number;
+        members?: MemberRecord[];
+      };
+      members?: MemberRecord[];
+    };
   } catch {
     return {};
   }
@@ -544,7 +552,7 @@ export function ManageCategoriesModule() {
     });
   }
 
-  function saveRecord() {
+  async function saveRecord() {
     if (!form.name.trim()) return;
 
     const nextRecord: CategoryRecord = {
@@ -557,13 +565,7 @@ export function ManageCategoriesModule() {
       homeTop: form.homeTop,
     };
 
-    sync(
-      editing
-        ? records.map((record) => (record.id === editing.id ? nextRecord : record))
-        : [...records, nextRecord],
-    );
-
-    void postAdminAction("categories", {
+    const result = await postAdminAction("categories", {
       action: "upsert",
       record: {
         displayOrder: nextRecord.order,
@@ -576,6 +578,8 @@ export function ManageCategoriesModule() {
       },
     });
 
+    if (result.data?.categories) sync(result.data.categories);
+    else sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
     resetForm();
   }
 
@@ -592,16 +596,18 @@ export function ManageCategoriesModule() {
     });
   }
 
-  function bulkStatus(nextStatus: "Active" | "Inactive") {
-    sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
-    void postAdminAction("categories", { action: "bulk-status", ids: selected, status: nextStatus });
+  async function bulkStatus(nextStatus: "Active" | "Inactive") {
+    const result = await postAdminAction("categories", { action: "bulk-status", ids: selected, status: nextStatus });
+    if (result.data?.categories) sync(result.data.categories);
+    else sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
     setSelected([]);
   }
 
-  function deleteSelected() {
+  async function deleteSelected() {
     const toDelete = [...selected];
-    sync(records.filter((record) => !selected.includes(record.id)));
-    void postAdminAction("categories", { action: "bulk-delete", ids: toDelete });
+    const result = await postAdminAction("categories", { action: "bulk-delete", ids: toDelete });
+    if (result.data?.categories) sync(result.data.categories);
+    else sync(records.filter((record) => !selected.includes(record.id)));
     setSelected([]);
   }
 

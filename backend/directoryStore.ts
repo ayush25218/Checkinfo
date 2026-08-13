@@ -964,12 +964,12 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
       if (isMongoConfigured()) {
         await upsertMongoCategory(rec);
       }
-      return { ok: true };
+      return { categories: await getAdminResourceAsync("categories") };
     }
 
     if (action === "delete" && payload.id) {
       if (isMongoConfigured()) await deleteMongoCategoryById(String(payload.id));
-      return { ok: true };
+      return { categories: await getAdminResourceAsync("categories") };
     }
 
     if (action === "bulk-status" && Array.isArray(payload.ids) && payload.status) {
@@ -979,15 +979,15 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
           payload.status as "Active" | "Inactive",
         );
       }
-      return { ok: true };
+      return { categories: await getAdminResourceAsync("categories") };
     }
 
     if (action === "bulk-delete" && Array.isArray(payload.ids)) {
       if (isMongoConfigured()) await deleteMongoCategoriesByIds(payload.ids as string[]);
-      return { ok: true };
+      return { categories: await getAdminResourceAsync("categories") };
     }
 
-    return { ok: true };
+    return { categories: await getAdminResourceAsync("categories") };
   }
 
   // Newsletter
