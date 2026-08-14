@@ -11,12 +11,15 @@ export function PasswordFieldWithToggle({
   placeholder = "Enter password",
   required = true,
   autoComplete = "current-password",
+  readOnly: readOnlyProp,
   style,
   inputStyle,
   className,
+  onFocus,
   ...props
 }: PasswordFieldProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(Boolean(readOnlyProp));
 
   return (
     <div
@@ -36,7 +39,12 @@ export function PasswordFieldWithToggle({
         name={name}
         placeholder={placeholder}
         required={required}
+        readOnly={isReadOnly}
         type={showPassword ? "text" : "password"}
+        onFocus={(event) => {
+          if (isReadOnly) setIsReadOnly(false);
+          onFocus?.(event);
+        }}
         style={{
           width: "100%",
           paddingRight: "2.75rem",

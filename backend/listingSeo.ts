@@ -4,6 +4,7 @@ export type PublicBusinessListing = Partial<MemberListing> & {
   badge?: string;
   contact?: string;
   details?: string;
+  placements?: Array<"new" | "featured" | "trending">;
   ownerEmail?: string;
   ownerId?: string;
   ownerName?: string;

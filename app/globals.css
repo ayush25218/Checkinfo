@@ -4392,6 +4392,12 @@ a.check-card-title-link:hover {
   resize: vertical;
 }
 
+.panel-field input::placeholder,
+.panel-field textarea::placeholder {
+  color: #8b97a8;
+  opacity: 1;
+}
+
 .upload-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -5518,6 +5524,140 @@ a.check-card-title-link:hover {
 .admin-business-actions .admin-link-button {
   min-height: 30px;
   padding: 6px 9px;
+}
+
+.admin-bulk-placement-bar {
+  align-items: center;
+  background: #f7fbff;
+  border: 1px solid #2f6fed;
+  border-radius: 12px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 14px 0 18px;
+  min-height: 56px;
+  padding: 10px 14px;
+}
+
+.admin-bulk-placement-bar-active {
+  background: linear-gradient(90deg, #eef6ff 0%, #f8fbff 100%);
+  box-shadow: 0 8px 24px rgba(29, 78, 216, 0.08);
+}
+
+.admin-bulk-selection-summary,
+.admin-bulk-placement-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-bulk-selection-summary {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.admin-bulk-selection-summary strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-bulk-selection-summary button {
+  min-height: 30px;
+  border: 1px solid #d5e1f2;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #1e293b;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.admin-bulk-placement-actions button,
+.admin-bulk-placement-actions select {
+  min-height: 34px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-bulk-placement-actions button {
+  border: 1px solid #173a59;
+  background: #173a59;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 8px 16px;
+  text-transform: uppercase;
+}
+
+.admin-bulk-placement-actions select {
+  min-width: 150px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #172033;
+  padding: 7px 12px;
+}
+
+.admin-bulk-placement-actions button:disabled,
+.admin-bulk-placement-actions select:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.admin-bulk-placement-actions .admin-danger-button {
+  border-color: #173a59;
+  background: #173a59;
+}
+
+.admin-placement-pill {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 5px 8px;
+  width: fit-content;
+}
+
+.admin-placement-list {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 5px !important;
+  min-height: auto !important;
+  padding: 0 !important;
+}
+
+.admin-placement-active {
+  background: #eaf4ff;
+  color: #155a9f;
+}
+
+.admin-placement-new {
+  background: #eaf4ff;
+  color: #155a9f;
+}
+
+.admin-placement-featured {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.admin-placement-popular,
+.admin-placement-trending {
+  background: #fff7ed;
+  color: #b45309;
+}
+
+.admin-placement-pending {
+  background: #fff8e8;
+  color: #92400e;
+}
+
+.admin-placement-inactive,
+.admin-placement-draft {
+  background: #f1f5f9;
+  color: #64748b;
 }
 
 .admin-mini-link {
@@ -7981,6 +8121,41 @@ a.check-card-title-link:hover {
   letter-spacing: 0 !important;
   padding: 9px 16px !important;
   text-transform: none !important;
+}
+
+.admin-bulk-placement-bar .admin-bulk-selection-summary button {
+  min-height: 30px !important;
+  border: 1px solid #d5e1f2 !important;
+  border-radius: 9px !important;
+  background: #ffffff !important;
+  color: #1e293b !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 6px 12px !important;
+}
+
+.admin-bulk-placement-bar .admin-bulk-placement-actions button {
+  min-height: 34px !important;
+  border: 1px solid #173a59 !important;
+  border-radius: 9px !important;
+  background: #173a59 !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  padding: 8px 16px !important;
+  text-transform: uppercase !important;
+}
+
+.admin-bulk-placement-bar .admin-bulk-placement-actions select {
+  min-height: 34px !important;
+  min-width: 150px;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 9px !important;
+  background: #ffffff !important;
+  color: #172033 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 7px 12px !important;
 }
 
 .admin-header-actions a:first-child,

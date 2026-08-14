@@ -2,7 +2,7 @@ import { categories } from "@/backend/checkinfo";
 import { CategoryTransitionGrid } from "./CategoryTransitionGrid";
 import { getAllCategoryExperiences } from "./categoryExperience";
 import { BusinessCard } from "./BusinessCard";
-import { getApprovedListings } from "./listingCollections";
+import { filterCollectionListings, getApprovedListings } from "./listingCollections";
 import { DUMMY_BUSINESS_IMAGE } from "./dummyImages";
 import { LocationSearchForm } from "./LocationSearchForm";
 import { LeadCallbackForm } from "./LeadCallbackForm";
@@ -114,9 +114,9 @@ function GoogleAdSlot({ label, slot }: { label: string; slot: string }) {
 export async function HomePage() {
   const categoryExperiences = getAllCategoryExperiences();
   const business = await getApprovedListings();
-  const featured = business.filter((listing) => listing.status === "Featured").slice(0, 3);
-  const newest = business.filter((listing) => listing.status === "Active").slice(0, 8);
-  const trending = business.filter((listing) => listing.status === "Popular").slice(0, 6);
+  const featured = filterCollectionListings(business, "featured").slice(0, 3);
+  const newest = filterCollectionListings(business, "new").slice(0, 8);
+  const trending = filterCollectionListings(business, "trending").slice(0, 6);
 
   return (
     <main className="check-home">

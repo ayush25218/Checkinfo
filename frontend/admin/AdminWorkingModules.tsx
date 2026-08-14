@@ -48,6 +48,7 @@ type BusinessRecord = {
   ownerEmail?: string;
   ownerId?: string;
   ownerName?: string;
+  placements?: Array<"new" | "featured" | "trending">;
   publicPath?: string;
   state?: string;
   status: Status;
@@ -55,6 +56,8 @@ type BusinessRecord = {
   subcity?: string;
   website?: string;
 };
+
+type BusinessPlacement = "new" | "featured" | "trending";
 
 type MemberRecord = {
   id: string;
@@ -907,6 +910,8 @@ export function ManageBusinessModule() {
   const [editing, setEditing] = useState<BusinessRecord | null>(null);
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState("");
+  const [setAsPlacement, setSetAsPlacement] = useState("");
+  const [unsetAsPlacement, setUnsetAsPlacement] = useState("");
   const [form, setForm] = useState({
     address: "",
     badge: "Verified",
@@ -944,6 +949,11 @@ export function ManageBusinessModule() {
     const start = (safePage - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
   }, [filtered, safePage]);
+
+  const selectedRecords = useMemo(
+    () => records.filter((record) => selected.includes(record.id)),
+    [records, selected],
+  );
 
 function mapMemberListingToBusinessRecord(item: Record<string, unknown>): BusinessRecord {
   const contactPerson = String(item.contactPerson ?? item.ownerName ?? "").trim();
@@ -1022,13 +1032,32 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
     void getAdminData<BusinessRecord[]>("business", businessSeed).then((serverData) => {
       const local = readGlobalRegisteredListings();
       const map = new Map<string, BusinessRecord>();
-      [...serverData, ...local].forEach((item) => map.set(item.id, item));
+      [...local, ...serverData].forEach((item) => map.set(item.id, item));
       setRecords(Array.from(map.values()));
     });
   }, []);
 
   function sync(next: BusinessRecord[]) {
     setRecords(next);
+  }
+
+  function defaultPlacements(record: Pick<BusinessRecord, "placements" | "status">): BusinessPlacement[] {
+    if (Array.isArray(record.placements) && record.placements.length) return record.placements;
+    if (record.status === "Featured") return ["new", "featured"];
+    if (record.status === "Popular") return ["new", "trending"];
+    if (record.status === "Active") return ["new"];
+    return [];
+  }
+
+  function placementName(placement: BusinessPlacement) {
+    if (placement === "featured") return "Featured Ads";
+    if (placement === "trending") return "Trending Ads";
+    return "New Ads";
+  }
+
+  function placementActionValue(value: string): BusinessPlacement | "" {
+    if (value === "new" || value === "featured" || value === "trending") return value;
+    return "";
   }
 
   function resetForm() {
@@ -1111,6 +1140,48 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
     setSelected([]);
   }
 
+  async function applyPlacement(nextStatus: Status) {
+    const placement = nextStatus === "Featured" ? "featured" : nextStatus === "Popular" ? "trending" : "new";
+    let latest: BusinessRecord[] | undefined;
+    for (const id of selected) {
+      const record = records.find((item) => item.id === id);
+      if (!record) continue;
+      const result = await postAdminAction("business", { action: "set-placements", id: record.id, ownerId: record.ownerId, placements: [placement] });
+      latest = result.data?.business ?? latest;
+    }
+    if (latest) setRecords(latest);
+    else sync(records.map((record) => {
+      if (!selected.includes(record.id)) return record;
+      return { ...record, placements: Array.from(new Set([...defaultPlacements(record), placement])), status: "Active" };
+    }));
+    setSelected([]);
+    setSetAsPlacement("");
+  }
+
+  async function unsetPlacement(currentStatus: Status) {
+    const placement = currentStatus === "Featured" ? "featured" : currentStatus === "Popular" ? "trending" : placementActionValue(currentStatus.toLowerCase());
+    if (!placement) {
+      setUnsetAsPlacement("");
+      return;
+    }
+    const affected = selectedRecords.filter((record) => defaultPlacements(record).includes(placement));
+    if (!affected.length) {
+      setUnsetAsPlacement("");
+      return;
+    }
+
+    let latest: BusinessRecord[] | undefined;
+    for (const record of affected) {
+      const result = await postAdminAction("business", { action: "unset-placements", id: record.id, ownerId: record.ownerId, placements: [placement] });
+      latest = result.data?.business ?? latest;
+    }
+
+    if (latest) setRecords(latest);
+    else sync(records.map((record) => (affected.some((item) => item.id === record.id) ? { ...record, placements: defaultPlacements(record).filter((item) => item !== placement), status: "Active" } : record)));
+    setSelected([]);
+    setUnsetAsPlacement("");
+  }
+
   async function setRecordStatus(record: BusinessRecord, nextStatus: Status) {
     const result = await postAdminAction("business", { action: nextStatus, id: record.id, ownerId: record.ownerId });
     if (result.data?.business) setRecords(result.data.business);
@@ -1137,6 +1208,12 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
         }
       } catch {}
     }
+  }
+
+  async function setRecordPlacement(record: BusinessRecord, placement: BusinessPlacement) {
+    const result = await postAdminAction("business", { action: "set-placements", id: record.id, ownerId: record.ownerId, placements: [placement] });
+    if (result.data?.business) setRecords(result.data.business);
+    else sync(records.map((item) => (item.id === record.id ? { ...item, placements: Array.from(new Set([...defaultPlacements(item), placement])), status: "Active" } : item)));
   }
 
   async function deleteSelected() {
@@ -1324,13 +1401,47 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
         {editing ? <button type="button" className="admin-light-button" onClick={resetForm}>Cancel</button> : null}
       </div>
 
-      <div className="admin-actions">
-        <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Activate</button>
-        <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Move to New Ads</button>
-        <button type="button" onClick={() => bulkStatus("Featured")} disabled={!selected.length}>Mark Featured</button>
-        <button type="button" onClick={() => bulkStatus("Popular")} disabled={!selected.length}>Mark Popular</button>
-        <button type="button" onClick={() => bulkStatus("Inactive")} disabled={!selected.length}>Deactivate</button>
-        <button type="button" onClick={deleteSelected} disabled={!selected.length}>Delete</button>
+      <div className={`admin-bulk-placement-bar${selected.length ? " admin-bulk-placement-bar-active" : ""}`}>
+        <div className="admin-bulk-selection-summary">
+          <strong>{selected.length}</strong>
+          <span>{selected.length === 1 ? "Selected" : "Selected"}</span>
+          {selected.length ? <button type="button" onClick={() => setSelected([])}>Clear</button> : null}
+        </div>
+        <div className="admin-bulk-placement-actions">
+          <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Approve (New Ads)</button>
+          <button type="button" onClick={() => bulkStatus("Pending")} disabled={!selected.length}>Unapproved</button>
+          <select
+            aria-label="Set selected businesses as"
+            disabled={!selected.length}
+            value={setAsPlacement}
+            onChange={(event) => {
+              const value = event.target.value as Status | "";
+              setSetAsPlacement(value);
+              if (value) void applyPlacement(value);
+            }}
+          >
+            <option value="">Event Set As</option>
+            <option value="Active">New Ads</option>
+            <option value="Featured">Featured Ads</option>
+            <option value="Popular">Trending</option>
+          </select>
+          <select
+            aria-label="Unset selected business placement"
+            disabled={!selected.length}
+            value={unsetAsPlacement}
+            onChange={(event) => {
+              const value = event.target.value as Status | "";
+              setUnsetAsPlacement(value);
+              if (value) void unsetPlacement(value);
+            }}
+          >
+            <option value="">Event Unset As</option>
+            <option value="Active">Remove New Ads</option>
+            <option value="Featured">Remove Featured</option>
+            <option value="Popular">Remove Trending</option>
+          </select>
+          <button type="button" className="admin-danger-button" onClick={deleteSelected} disabled={!selected.length}>Delete</button>
+        </div>
       </div>
 
       <div className="admin-real-table admin-real-table-business">
@@ -1339,7 +1450,7 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
           <span>Business Name</span>
           <span>Address</span>
           <span>Contact Details</span>
-          <span>Details</span>
+          <span>Placements</span>
           <span>Current Status</span>
           <span>Action</span>
         </div>
@@ -1349,7 +1460,16 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
             <span>{record.name}<small>{[record.category, record.subcategory, record.businessType].filter(Boolean).join(" / ")}{record.ownerName ? ` / ${record.ownerName}` : ""}</small></span>
             <span>{record.address}<small>{record.subcity || record.city || record.state ? [record.subcity, record.city, record.state].filter(Boolean).join(", ") : record.location}</small></span>
             <span>{record.contact}<small>{record.ownerEmail || ""}</small></span>
-            <span>{record.badge} / {record.details}<small>{record.addressProofName ? `Proof: ${record.addressProofName}` : "Address proof optional"}</small>{record.publicPath ? <a className="admin-mini-link" href={record.publicPath} target="_blank" rel="noreferrer">SEO page</a> : null}</span>
+            <span>
+              <span className="admin-placement-list">
+                {defaultPlacements(record).length ? defaultPlacements(record).map((placement) => (
+                  <b className={`admin-placement-pill admin-placement-${placement}`} key={placement}>{placementName(placement)}</b>
+                )) : <b className={`admin-placement-pill admin-placement-${record.status.toLowerCase().replace(/\s+/g, "-")}`}>{record.status === "Pending" ? "Waiting Approval" : "Not Live"}</b>}
+              </span>
+              <small>{record.badge} / {record.details || "No description added"}</small>
+              {record.addressProofName ? <small>Proof: {record.addressProofName}</small> : null}
+              {record.publicPath ? <a className="admin-mini-link" href={record.publicPath} target="_blank" rel="noreferrer">SEO page</a> : null}
+            </span>
             <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status === "Pending" ? "⏳ Pending Review" : record.status}</b></span>
             <span className="admin-business-actions">
               <button type="button" className="admin-link-button" onClick={() => editRecord(record)}>Manage</button>
@@ -1363,9 +1483,9 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
                   {record.status === "Pending" ? "✓ Approve & Publish" : "Approve"}
                 </button>
               ) : null}
-              {record.status !== "Featured" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Featured")}>Feature</button> : null}
-              {record.status !== "Popular" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Popular")}>Popular</button> : null}
-              {record.status !== "Active" && record.status !== "Pending" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Active")}>New Ads</button> : null}
+              {!defaultPlacements(record).includes("featured") ? <button type="button" className="admin-link-button" onClick={() => setRecordPlacement(record, "featured")}>Feature</button> : null}
+              {!defaultPlacements(record).includes("trending") ? <button type="button" className="admin-link-button" onClick={() => setRecordPlacement(record, "trending")}>Popular</button> : null}
+              {!defaultPlacements(record).includes("new") ? <button type="button" className="admin-link-button" onClick={() => setRecordPlacement(record, "new")}>New Ads</button> : null}
               {record.status !== "Inactive" ? <button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Inactive")}>Hide</button> : null}
             </span>
           </div>

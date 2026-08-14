@@ -25,16 +25,16 @@ export async function POST(request: Request) {
       name,
       email,
       phone,
-      subject,
+      subject: subject || "Business Callback Request",
       message,
-      type: "Contact",
+      type: "Advertise",
     });
 
     return Response.json(
       createResponse("Enquiry received successfully! Admin and support team have been notified.", {
         ok: true,
         enquiry: savedEnquiry,
-        nextStep: "Admin can view this in Admin Panel under Manage Contact Enquiries.",
+        nextStep: "Admin can view this in Admin Panel under Manage Advertise Enquiries.",
       })
     );
   } catch (error) {

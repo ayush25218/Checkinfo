@@ -22,6 +22,7 @@ type MemberListing = {
   description: string;
   email: string;
   keywords: string;
+  image?: string;
   addressProofName?: string;
   businessType: string;
   city: string;
@@ -182,6 +183,7 @@ function initialListing(): Omit<MemberListing, "id" | "status"> {
     description: "",
     email: "",
     keywords: "",
+    image: "",
     addressProofName: "",
     businessType: businessTaxonomy[0]?.subcategories[0]?.businessTypes[0]?.name ?? "",
     city: "",
@@ -235,6 +237,7 @@ function ListingForm({
       contactPerson: form.contactPerson.trim(),
       description: form.description.trim(),
       email: form.email.trim(),
+      image: form.image?.trim() ?? "",
       keywords: form.keywords.trim(),
       location: [form.subcity, form.city, form.state].filter(Boolean).join(", "),
       mobile: form.mobile.trim(),
@@ -254,8 +257,25 @@ function ListingForm({
         <label className="panel-field"><span>Contact Person *</span><input value={form.contactPerson} onChange={(event) => setForm({ ...form, contactPerson: event.target.value })} /></label>
         <label className="panel-field"><span>Mobile Number *</span><input value={form.mobile} onChange={(event) => setForm({ ...form, mobile: event.target.value })} /></label>
         <label className="panel-field"><span>Email ID *</span><input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
-        <label className="panel-field"><span>Website</span><input value={form.website} onChange={(event) => setForm({ ...form, website: event.target.value })} /></label>
-        <label className="panel-field"><span>YouTube Video</span><input value={form.youtube} onChange={(event) => setForm({ ...form, youtube: event.target.value })} /></label>
+        <label className="panel-field">
+          <span>Website URL</span>
+          <input
+            aria-label="Website URL"
+            placeholder="https://www.xyz.com"
+            value={form.website}
+            onChange={(event) => setForm({ ...form, website: event.target.value })}
+          />
+        </label>
+        <label className="panel-field">
+          <span>YouTube Video URL</span>
+          <input
+            aria-label="YouTube Video URL"
+            placeholder="https://www.youtube.com/watch?v=example"
+            value={form.youtube}
+            onChange={(event) => setForm({ ...form, youtube: event.target.value })}
+          />
+        </label>
+        <label className="panel-field wide"><span>Business Photo URL</span><input value={form.image ?? ""} placeholder="https://example.com/photo.jpg" onChange={(event) => setForm({ ...form, image: event.target.value })} /><small>Paste a direct image URL (JPG/PNG) for your business cover photo.</small></label>
         <label className="panel-field wide"><span>Address *</span><textarea value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} /></label>
         <label className="panel-field"><span>Main Category *</span><select value={form.category} onChange={(event) => { const next = businessTaxonomy.find((category) => category.name === event.target.value); const firstSub = next?.subcategories[0]; setForm({ ...form, businessType: firstSub?.businessTypes[0]?.name ?? "General Provider", category: event.target.value, subcategory: firstSub?.name ?? "General Services" }); }}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
         <label className="panel-field"><span>Subcategory</span><select value={form.subcategory} onChange={(event) => { const next = selectedTaxonomy?.subcategories.find((subcategory) => subcategory.name === event.target.value); setForm({ ...form, businessType: next?.businessTypes[0]?.name ?? "General Provider", subcategory: event.target.value }); }}>{selectedTaxonomy?.subcategories.length ? selectedTaxonomy.subcategories.map((subcategory) => <option key={subcategory.slug}>{subcategory.name}</option>) : <option value="General Services">General Services</option>}</select></label>
@@ -681,7 +701,7 @@ export function MyBusinessListingModule() {
       const nextListings = Array.isArray(serverListings) && serverListings.length ? serverListings as MemberListing[] : [updated];
       setListings(nextListings);
       saveGlobalRegisteredListing(nextListings[0]);
-      setMessage("Business details updated successfully! Your listing has been submitted for Admin Review and will be updated on the website after approval.");
+      setMessage("⏳ Business details updated successfully! Your listing has been submitted for Admin Review and will be updated on the website after approval.");
     } else {
       const newListing: MemberListing = {
         ...record,
@@ -693,7 +713,7 @@ export function MyBusinessListingModule() {
       const nextListing = serverListing || newListing;
       setListings([nextListing]);
       saveGlobalRegisteredListing(nextListing);
-      setMessage("Business profile created successfully! It is now Pending Admin Approval and will go live on the website once approved by Administrator.");
+      setMessage("⏳ Business profile created successfully! It is now Pending Admin Approval and will go live on the website once approved by Administrator.");
     }
     setIsEditing(false);
   }

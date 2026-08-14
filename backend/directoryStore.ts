@@ -16,6 +16,7 @@ import {
   listMongoBusinessListings,
   listMongoMembers,
   saveMongoMember,
+  updateMongoBusinessPlacements,
   updateMongoBusinessStatus,
   type MemberAccount,
   type MemberProfile,
@@ -66,6 +67,21 @@ import {
   upsertMongoFaq,
   deleteMongoFaqById,
   updateMongoFaqsOrder,
+  // States
+  listMongoStates,
+  upsertMongoState,
+  bulkUpdateMongoStateStatus,
+  deleteMongoStatesByIds,
+  // Cities
+  listMongoCities,
+  upsertMongoCity,
+  bulkUpdateMongoCityStatus,
+  deleteMongoCitiesByIds,
+  // Locations
+  listMongoLocations,
+  upsertMongoLocation,
+  bulkUpdateMongoLocationStatus,
+  deleteMongoLocationsByIds,
 } from "./mongodb";
 import { listingLocationText, listingPublicPath } from "./listingSeo";
 
@@ -305,6 +321,7 @@ function buildBusinessFromMembers(members: MemberAccount[]) {
       ownerEmail: member.profile.email,
       ownerId: member.profile.id,
       ownerName: member.profile.name,
+      placements: listing.placements,
       publicPath: listingPublicPath(listing),
       state: listing.state,
       status: listing.status,
@@ -313,6 +330,22 @@ function buildBusinessFromMembers(members: MemberAccount[]) {
       website: listing.website,
     })),
   );
+}
+
+type BusinessPlacement = "new" | "featured" | "trending";
+
+function defaultPlacementsForListing(listing: Pick<MemberListing, "status"> & { placements?: MemberListing["placements"] }) {
+  if (Array.isArray(listing.placements) && listing.placements.length) return listing.placements;
+  if (listing.status === "Featured") return ["new", "featured"] as BusinessPlacement[];
+  if (listing.status === "Popular") return ["new", "trending"] as BusinessPlacement[];
+  if (listing.status === "Active") return ["new"] as BusinessPlacement[];
+  return [] as BusinessPlacement[];
+}
+
+function normalizeBusinessPlacements(values: unknown) {
+  const raw = Array.isArray(values) ? values : [values];
+  const allowed = new Set(["new", "featured", "trending"]);
+  return Array.from(new Set(raw.map(String).filter((value): value is BusinessPlacement => allowed.has(value))));
 }
 
 function importSlug(value: string) {
@@ -518,8 +551,8 @@ export async function getAdminResourceAsync(resource = "dashboard") {
         order: doc.displayOrder,
         status: doc.status,
       }));
-    } catch {
-      return getAdminResource(resource);
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -540,8 +573,8 @@ export async function getAdminResourceAsync(resource = "dashboard") {
         lastSent: (doc as Record<string, unknown>).lastSent ?? "Not sent",
         status: (doc as Record<string, unknown>).status ?? "Subscribed",
       }));
-    } catch {
-      return getAdminResource(resource);
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -556,8 +589,8 @@ export async function getAdminResourceAsync(resource = "dashboard") {
         title: doc.title,
         url: doc.url,
       }));
-    } catch {
-      return getAdminResource(resource);
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -574,8 +607,8 @@ export async function getAdminResourceAsync(resource = "dashboard") {
         status: doc.status,
         username: doc.username,
       }));
-    } catch {
-      return [];
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -587,7 +620,9 @@ export async function getAdminResourceAsync(resource = "dashboard") {
         const { passwordHash: _, ...rest } = doc;
         return rest;
       }
-    } catch { /* fall through */ }
+    } catch (error) {
+      throw error;
+    }
     return null;
   }
 
@@ -602,8 +637,8 @@ export async function getAdminResourceAsync(resource = "dashboard") {
         status: doc.status,
         title: doc.title,
       }));
-    } catch {
-      return [];
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -628,8 +663,8 @@ export async function getAdminResourceAsync(resource = "dashboard") {
         status: doc.status,
         type: doc.type,
       }));
-    } catch {
-      return [];
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -645,8 +680,8 @@ export async function getAdminResourceAsync(resource = "dashboard") {
         position: doc.position,
         status: doc.status,
       }));
-    } catch {
-      return [];
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -662,8 +697,8 @@ export async function getAdminResourceAsync(resource = "dashboard") {
         position: doc.position,
         status: doc.status,
       }));
-    } catch {
-      return [];
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -678,8 +713,8 @@ export async function getAdminResourceAsync(resource = "dashboard") {
         order: doc.displayOrder,
         status: doc.status,
       }));
-    } catch {
-      return [];
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -694,8 +729,57 @@ export async function getAdminResourceAsync(resource = "dashboard") {
         question: doc.question,
         status: doc.status,
       }));
-    } catch {
-      return [];
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // States
+  if (resource === "states") {
+    try {
+      const docs = await listMongoStates();
+      return docs.map((doc) => ({
+        countryName: doc.countryName,
+        id: doc._id,
+        name: doc.name,
+        status: doc.status,
+      }));
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Cities
+  if (resource === "cities") {
+    try {
+      const docs = await listMongoCities();
+      return docs.map((doc) => ({
+        cityName: doc.name,
+        countryName: doc.countryName,
+        id: doc._id,
+        name: doc.name,
+        stateName: doc.stateName,
+        status: doc.status,
+      }));
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Locations
+  if (resource === "locations") {
+    try {
+      const docs = await listMongoLocations();
+      return docs.map((doc) => ({
+        cityName: doc.cityName,
+        countryName: doc.countryName,
+        id: doc._id,
+        name: doc.name,
+        stateName: doc.stateName,
+        status: doc.status,
+      }));
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -703,45 +787,28 @@ export async function getAdminResourceAsync(resource = "dashboard") {
   let business: ReturnType<typeof buildBusinessFromMembers>;
   let totalBusinessCount = 0;
   let totalMembersCount = 0;
-  const localMembers = Object.values(getStore().members);
 
   try {
     members = await listMongoMembers({ limit: 5000 });
     totalMembersCount = await countMongoMembers();
-  } catch {
-    members = localMembers;
-    totalMembersCount = members.length;
+  } catch (error) {
+    throw error;
   }
-
-  const allMembersMap = new Map<string, MemberAccount>();
-  [...demoMemberAccounts, ...members, ...localMembers].forEach((m) => {
-    if (m?.profile?.id || m?.profile?.username) {
-      allMembersMap.set(m.profile.id || m.profile.username, m);
-    }
-  });
-  const mergedMembers = Array.from(allMembersMap.values());
 
   try {
     const mongoBusiness = await listMongoBusinessListings({ limit: 5000 });
-    const localMemberBusiness = buildBusinessFromMembers(mergedMembers);
-    const mongoIds = new Set(mongoBusiness.map((b) => b.id));
-    const extraLocal = localMemberBusiness.filter((b) => !mongoIds.has(b.id));
-
     business = mongoBusiness.length
-      ? [
-          ...mongoBusiness.map((listing) => ({
-            ...listing,
-            addressProofName: listing.addressProofName,
-            image: listing.image,
-            publicPath: listing.publicPath || listingPublicPath(listing),
-          })),
-          ...extraLocal,
-        ] as ReturnType<typeof buildBusinessFromMembers>
-      : localMemberBusiness;
+      ? mongoBusiness.map((listing) => ({
+          ...listing,
+        addressProofName: listing.addressProofName,
+        image: listing.image,
+        placements: listing.placements,
+        publicPath: listing.publicPath || listingPublicPath(listing),
+      })) as ReturnType<typeof buildBusinessFromMembers>
+      : buildBusinessFromMembers(members);
     totalBusinessCount = business.length;
-  } catch {
-    business = buildBusinessFromMembers(mergedMembers);
-    totalBusinessCount = business.length;
+  } catch (error) {
+    throw error;
   }
 
   if (resource === "dashboard") {
@@ -752,17 +819,23 @@ export async function getAdminResourceAsync(resource = "dashboard") {
     try {
       const cats = await listMongoCategories();
       if (cats.length > 0) mongoCategoriesCount = cats.length;
-    } catch {}
+    } catch (error) {
+      throw error;
+    }
 
     try {
       mongoEnquiries = await listMongoEnquiries();
-    } catch {}
+    } catch (error) {
+      throw error;
+    }
 
     try {
       const { getMongoCollections } = await import("./mongodb");
       const collections = await getMongoCollections();
       mongoUsersCount = await collections.users.countDocuments();
-    } catch {}
+    } catch (error) {
+      throw error;
+    }
 
     // Compute real category distribution from active listings
     const catDistributionMap: Record<string, number> = {};
@@ -1214,6 +1287,66 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
     return { ok: true };
   }
 
+  // States
+  if (resource === "states") {
+    const action = String(payload.action ?? "");
+    if (action === "upsert" && payload.record) {
+      const rec = payload.record as { countryName: string; id: string; name: string; status: "Active" | "Inactive" };
+      if (isMongoConfigured()) await upsertMongoState(rec);
+      return { ok: true };
+    }
+    if (action === "bulk-status" && Array.isArray(payload.ids) && payload.status) {
+      if (isMongoConfigured()) await bulkUpdateMongoStateStatus(payload.ids as string[], payload.status as "Active" | "Inactive");
+      return { ok: true };
+    }
+    if ((action === "bulk-delete" || action === "delete") && (Array.isArray(payload.ids) || payload.id)) {
+      const ids = Array.isArray(payload.ids) ? payload.ids as string[] : [String(payload.id)];
+      if (isMongoConfigured()) await deleteMongoStatesByIds(ids);
+      return { ok: true };
+    }
+    return { ok: true };
+  }
+
+  // Cities
+  if (resource === "cities") {
+    const action = String(payload.action ?? "");
+    if (action === "upsert" && payload.record) {
+      const rec = payload.record as { countryName: string; id: string; name: string; stateName: string; status: "Active" | "Inactive" };
+      if (isMongoConfigured()) await upsertMongoCity(rec);
+      return { ok: true };
+    }
+    if (action === "bulk-status" && Array.isArray(payload.ids) && payload.status) {
+      if (isMongoConfigured()) await bulkUpdateMongoCityStatus(payload.ids as string[], payload.status as "Active" | "Inactive");
+      return { ok: true };
+    }
+    if ((action === "bulk-delete" || action === "delete") && (Array.isArray(payload.ids) || payload.id)) {
+      const ids = Array.isArray(payload.ids) ? payload.ids as string[] : [String(payload.id)];
+      if (isMongoConfigured()) await deleteMongoCitiesByIds(ids);
+      return { ok: true };
+    }
+    return { ok: true };
+  }
+
+  // Locations
+  if (resource === "locations") {
+    const action = String(payload.action ?? "");
+    if (action === "upsert" && payload.record) {
+      const rec = payload.record as { cityName: string; countryName: string; id: string; name: string; stateName: string; status: "Active" | "Inactive" };
+      if (isMongoConfigured()) await upsertMongoLocation(rec);
+      return { ok: true };
+    }
+    if (action === "bulk-status" && Array.isArray(payload.ids) && payload.status) {
+      if (isMongoConfigured()) await bulkUpdateMongoLocationStatus(payload.ids as string[], payload.status as "Active" | "Inactive");
+      return { ok: true };
+    }
+    if ((action === "bulk-delete" || action === "delete") && (Array.isArray(payload.ids) || payload.id)) {
+      const ids = Array.isArray(payload.ids) ? payload.ids as string[] : [String(payload.id)];
+      if (isMongoConfigured()) await deleteMongoLocationsByIds(ids);
+      return { ok: true };
+    }
+    return { ok: true };
+  }
+
   if (resource === "business") {
     const action = String(payload.action ?? "");
     if (action === "bulk-import" && Array.isArray(payload.records)) {
@@ -1242,6 +1375,29 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
     const id = String(payload.id ?? "");
     const account = ownerId ? await getOrCreateMongoMember(ownerId) : null;
 
+    if (account && (action === "set-placements" || action === "unset-placements")) {
+      const requested = normalizeBusinessPlacements(payload.placements ?? payload.placement);
+      account.listings = account.listings.map((listing) => {
+        if (listing.id !== id) return listing;
+        const current = defaultPlacementsForListing(listing);
+        const placements = action === "set-placements"
+          ? Array.from(new Set([...current, ...requested]))
+          : current.filter((placement) => !requested.includes(placement));
+        return { ...listing, placements, status: "Active" };
+      });
+      account.notifications.unshift({
+        id: `notif-${Date.now()}`,
+        text: `Your listing placements were updated by Administrator.`,
+        time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+        title: "Listing Placement Update",
+        unread: true,
+      });
+      const listing = account.listings.find((item) => item.id === id);
+      await updateMongoBusinessPlacements(ownerId, id, defaultPlacementsForListing(listing ?? { status: "Active" }));
+      await saveMongoMember(account);
+      return { business: await getAdminResourceAsync("business") };
+    }
+
     if (account && ["Active", "Inactive", "Pending", "Draft", "Featured", "Popular"].includes(action)) {
       account.listings = account.listings.map((listing) =>
         listing.id === id ? { ...listing, status: action as MemberListing["status"] } : listing,
@@ -1255,6 +1411,24 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
       });
       await updateMongoBusinessStatus(ownerId, id, action as MemberListing["status"]);
       await saveMongoMember(account);
+      return { business: await getAdminResourceAsync("business") };
+    }
+
+    if (!ownerId && id && (action === "set-placements" || action === "unset-placements")) {
+      const requested = normalizeBusinessPlacements(payload.placements ?? payload.placement);
+      const members = await listMongoMembers({ limit: 5000 });
+      await Promise.all(members.map(async (member) => {
+        if (!member.listings.some((listing) => listing.id === id)) return;
+        member.listings = member.listings.map((listing) => {
+          if (listing.id !== id) return listing;
+          const current = defaultPlacementsForListing(listing);
+          const placements = action === "set-placements"
+            ? Array.from(new Set([...current, ...requested]))
+            : current.filter((placement) => !requested.includes(placement));
+          return { ...listing, placements, status: "Active" };
+        });
+        await saveMongoMember(member);
+      }));
       return { business: await getAdminResourceAsync("business") };
     }
 

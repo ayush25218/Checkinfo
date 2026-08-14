@@ -1,4 +1,5 @@
 import { getExpectedCredentials } from "@/backend/auth";
+import { AutofillSafeInput } from "@/frontend/web/AutofillSafeInput";
 import { PasswordFieldWithToggle } from "@/frontend/web/PasswordFieldWithToggle";
 import { SocialLoginButtons } from "@/frontend/web/SocialLoginButtons";
 
@@ -28,11 +29,23 @@ export default async function MemberLoginPage({
           <input type="password" name="fake_password_remember" style={{ display: "none" }} tabIndex={-1} />
           <label>
             <span>Username / Email</span>
-            <input autoComplete="off" name="username" placeholder="Enter username or email" required />
+            <AutofillSafeInput
+              autoComplete="new-password"
+              initiallyReadOnly
+              name="member_username"
+              placeholder="Enter username or email"
+              required
+            />
           </label>
           <label>
             <span>Password</span>
-            <PasswordFieldWithToggle name="password" placeholder="Enter password" required />
+            <PasswordFieldWithToggle
+              autoComplete="new-password"
+              name="member_password"
+              placeholder="Enter password"
+              required
+              readOnly
+            />
           </label>
           <button type="submit">Login to Business Member Panel</button>
         </form>

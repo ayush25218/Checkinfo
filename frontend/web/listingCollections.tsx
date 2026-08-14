@@ -13,13 +13,21 @@ export async function getApprovedListings() {
   }
 }
 
+function listingPlacements(listing: PublicBusinessListing) {
+  if (Array.isArray(listing.placements) && listing.placements.length) return listing.placements;
+  if (listing.status === "Featured") return ["new", "featured"];
+  if (listing.status === "Popular") return ["new", "trending"];
+  if (listing.status === "Active") return ["new"];
+  return [];
+}
+
 export function filterCollectionListings(
   listings: PublicBusinessListing[],
   kind: ListingCollectionKind,
 ) {
-  if (kind === "featured") return listings.filter((listing) => listing.status === "Featured");
-  if (kind === "trending") return listings.filter((listing) => listing.status === "Popular");
-  if (kind === "new") return listings.filter((listing) => listing.status === "Active");
+  if (kind === "featured") return listings.filter((listing) => listingPlacements(listing).includes("featured"));
+  if (kind === "trending") return listings.filter((listing) => listingPlacements(listing).includes("trending"));
+  if (kind === "new") return listings.filter((listing) => listingPlacements(listing).includes("new"));
   return listings;
 }
 

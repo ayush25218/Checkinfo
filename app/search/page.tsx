@@ -1,5 +1,7 @@
 import { searchDirectory } from "@/backend/search";
 import { LocationSearchForm } from "@/frontend/web/LocationSearchForm";
+import { SiteHeader } from "@/frontend/web/SiteHeader";
+import { SiteFooter } from "@/frontend/web/SiteFooter";
 
 type SearchPageProps = {
   searchParams: Promise<{
@@ -32,22 +34,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   });
 
   return (
-    <main className="search-page">
-      <header className="search-header">
-        <a className="check-logo" href="/" aria-label="Checkinfo home">
-          <img src="/logo.png" alt="Checkinfo - Check Kiya Kya ?" className="check-logo-img" />
-        </a>
+    <main className="check-home search-page">
+      <SiteHeader activeNav="Business" />
+
+      <section className="search-hero">
         <LocationSearchForm
           className="check-top-search search-page-form"
           defaultCategory={category}
           defaultLocation={location}
           defaultQuery={q}
         />
-        <a className="check-post-button" href="/members/add_listing">Post Your Ad</a>
-      </header>
-
-      <section className="search-hero">
-        <p className="eyebrow">Local business search</p>
+        <p className="eyebrow" style={{ marginTop: "1rem" }}>Local business search</p>
         <h1>{q ? `Results for ${q}` : category ? `Results for ${category}` : "Search nearby businesses"}</h1>
         <p>
           Sponsored Checkinfo listings appear first, followed by nearby Google
@@ -88,6 +85,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           </div>
         )}
       </section>
+      
+      <SiteFooter />
     </main>
   );
 }

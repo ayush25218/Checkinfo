@@ -8,14 +8,25 @@ export async function GET(request: Request) {
 
   const redirectUri = `${origin}/api/auth/oauth/callback`;
 
-  // 1. Check ENV variables for providers
   let clientId = "";
   let authUrl = "";
 
   if (provider === "google") {
     clientId = process.env.GOOGLE_CLIENT_ID || "";
     if (clientId) {
-      authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=openid%20profile%20email&state=${role}:google`;
+      const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: "code",
+        scope: "openid profile email",
+        state: `${role}:google`,
+        prompt: "select_account",
+        access_type: "online",
+      });
+      authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    } else {
+      const path = role === "member" ? "/members/login" : "/login";
+      return NextResponse.redirect(new URL(`${path}?error=${encodeURIComponent("Google sign-in is not configured yet")}`, origin));
     }
   } else if (provider === "facebook") {
     clientId = process.env.FACEBOOK_CLIENT_ID || process.env.FB_CLIENT_ID || "";
@@ -34,7 +45,6 @@ export async function GET(request: Request) {
     return NextResponse.redirect(authUrl);
   }
 
-  // 3. Demo / Fallback Login if ENV is not set yet
   const response = NextResponse.redirect(new URL(role === "member" ? "/members/myaccount" : "/", origin));
 
   const authCookieName = role === "member" ? "checkinfo_member_auth" : "checkinfo_user_auth";

@@ -173,6 +173,36 @@ type FaqRecord = {
   updatedAt: string;
 };
 
+type StateRecord = {
+  _id: string;
+  countryName: string;
+  createdAt: string;
+  name: string;
+  status: "Active" | "Inactive";
+  updatedAt: string;
+};
+
+type CityRecord = {
+  _id: string;
+  countryName: string;
+  createdAt: string;
+  name: string;
+  stateName: string;
+  status: "Active" | "Inactive";
+  updatedAt: string;
+};
+
+type LocationRecord = {
+  _id: string;
+  cityName: string;
+  countryName: string;
+  createdAt: string;
+  name: string;
+  stateName: string;
+  status: "Active" | "Inactive";
+  updatedAt: string;
+};
+
 const globalMongo = globalThis as typeof globalThis & {
   __checkinfoMongoClientPromise?: Promise<MongoClient>;
 };
@@ -193,7 +223,12 @@ export async function getMongoClient() {
   }
 
   globalMongo.__checkinfoMongoClientPromise ??= new MongoClient(uri, {
+    appName: "Checkinfo",
+    connectTimeoutMS: 6000,
+    maxPoolSize: 10,
     serverSelectionTimeoutMS: 6000,
+    socketTimeoutMS: 15000,
+    tls: true,
   }).connect().catch((error) => {
     globalMongo.__checkinfoMongoClientPromise = undefined;
     throw error;
@@ -206,6 +241,67 @@ export async function getMongoDb(): Promise<Db> {
   return client.db(process.env.MONGODB_DB?.trim() || "checkinfo");
 }
 
+export function getMongoErrorSummary(error: unknown) {
+  const err = error as { code?: unknown; codeName?: unknown; message?: unknown; name?: unknown };
+  const message = typeof err?.message === "string" ? err.message : "Unknown MongoDB error";
+
+  return {
+    code: typeof err?.code === "number" || typeof err?.code === "string" ? err.code : undefined,
+    codeName: typeof err?.codeName === "string" ? err.codeName : undefined,
+    message: message
+      .replace(/mongodb(\+srv)?:\/\/[^@\s]+@/gi, "mongodb://***@")
+      .replace(/\/\/([^:/\s]+):([^@\s]+)@/g, "//***:***@"),
+    name: typeof err?.name === "string" ? err.name : "MongoError",
+  };
+}
+
+export async function getMongoHealth() {
+  const configured = isMongoConfigured();
+  const dbName = process.env.MONGODB_DB?.trim() || "checkinfo";
+
+  if (!configured) {
+    return {
+      configured,
+      dbName,
+      ok: false,
+      status: "missing-env",
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  const startedAt = Date.now();
+
+  try {
+    const db = await getMongoDb();
+    const ping = await db.admin().ping();
+    const collections = await getMongoCollections();
+    const [members, businesses] = await Promise.all([
+      collections.members.estimatedDocumentCount(),
+      collections.businesses.estimatedDocumentCount(),
+    ]);
+
+    return {
+      configured,
+      dbName,
+      latencyMs: Date.now() - startedAt,
+      ok: Boolean(ping?.ok),
+      status: "connected",
+      counts: { businesses, members },
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    return {
+      configured,
+      dbName,
+      error: getMongoErrorSummary(error),
+      latencyMs: Date.now() - startedAt,
+      ok: false,
+      status: "connection-failed",
+      timestamp: new Date().toISOString(),
+    };
+  }
+}
+
 export async function getMongoCollections() {
   const db = await getMongoDb();
 
@@ -213,14 +309,17 @@ export async function getMongoCollections() {
     adminSettings: db.collection<AdminSettingsExtended>("admin_settings"),
     businesses: db.collection<BusinessListingRecord>("businesses"),
     categories: db.collection<CategoryRecord>("categories"),
+    cities: db.collection<CityRecord>("cities"),
     enquiries: db.collection<EnquiryRecord>("enquiries"),
     faqs: db.collection<FaqRecord>("faqs"),
     leads: db.collection<LeadRecord>("advertising_leads"),
+    locations: db.collection<LocationRecord>("locations"),
     media: db.collection<MediaRecord>("media"),
     members: db.collection<MemberAccount>("members"),
     metaTags: db.collection<MetaTagRecord>("meta_tags"),
     newsletters: db.collection<NewsletterRecord>("newsletter_subscribers"),
     settings: db.collection<SettingRecord>("settings"),
+    states: db.collection<StateRecord>("states"),
     staticPages: db.collection<StaticPageRecord>("static_pages"),
     subadmins: db.collection<SubadminRecord>("subadmins"),
     testimonials: db.collection<TestimonialRecord>("testimonials"),
@@ -386,6 +485,58 @@ export async function createMongoMember(data: {
   await members.insertOne(account);
   return account;
 }
+
+export async function upsertMongoOAuthMember(data: {
+  email: string;
+  id: string;
+  name: string;
+  provider: "google";
+  username: string;
+}): Promise<MemberAccount | null> {
+  if (!isMongoConfigured()) return null;
+
+  const { members } = await getMongoCollections();
+  const email = data.email.trim().toLowerCase();
+  const username = data.username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/^-+|-+$/g, "");
+  const existing = await members.findOne({
+    $or: [
+      { _id: data.id },
+      { "profile.id": data.id },
+      { "profile.username": username },
+      { "profile.email": email },
+    ],
+  });
+
+  const recordId = existing?._id || existing?.profile.id || data.id || username;
+  const account = existing ? { ...existing } : emptyMemberAccount(recordId);
+  const initials = data.name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || email.slice(0, 2).toUpperCase() || recordId.slice(0, 2).toUpperCase();
+
+  account._id = recordId;
+  account.profile.id = recordId;
+  account.profile.email = email;
+  account.profile.initials = initials;
+  account.profile.name = data.name || account.profile.name || "Business Member";
+  account.profile.phone = account.profile.phone || "";
+  account.profile.role = `${data.provider} business member`;
+  account.profile.status = "Active";
+  account.profile.username = existing?.profile.username || username || recordId;
+  account.registeredAt = existing?.registeredAt || account.registeredAt || new Date().toISOString();
+
+  await members.updateOne(
+    { _id: recordId },
+    { $set: account, $setOnInsert: { _id: recordId } },
+    { upsert: true },
+  );
+
+  return account;
+}
+
 export async function seedMongoAuthAccounts(hashPasswordFn: (password: string) => string) {
   if (!isMongoConfigured()) return;
   const { adminSettings, users, members } = await getMongoCollections();
@@ -514,18 +665,39 @@ function badgeForStatus(status: MemberListing["status"]) {
   return "Verified";
 }
 
+function defaultPlacementsForStatus(status: MemberListing["status"]) {
+  if (status === "Featured") return ["new", "featured"] as NonNullable<MemberListing["placements"]>;
+  if (status === "Popular") return ["new", "trending"] as NonNullable<MemberListing["placements"]>;
+  if (status === "Active") return ["new"] as NonNullable<MemberListing["placements"]>;
+  return [] as NonNullable<MemberListing["placements"]>;
+}
+
+function normalizePlacements(listing: Partial<MemberListing>) {
+  const raw = Array.isArray(listing.placements) ? listing.placements : defaultPlacementsForStatus(listing.status ?? "Draft");
+  const allowed = new Set(["new", "featured", "trending"]);
+  return Array.from(new Set(raw.filter((item): item is "new" | "featured" | "trending" => allowed.has(item))));
+}
+
+function badgeForPlacements(status: MemberListing["status"], placements: NonNullable<MemberListing["placements"]>) {
+  if (placements.includes("featured")) return "Featured";
+  if (placements.includes("trending")) return "Popular";
+  return badgeForStatus(status);
+}
+
 function businessRecordFromListing(account: MemberAccount, listing: MemberListing): Omit<BusinessListingRecord, "createdAt"> {
+  const placements = normalizePlacements(listing);
   return {
     ...listing,
     _id: businessId(account.profile.id, listing.id),
     address: listing.address || listingLocationText(listing),
-    badge: badgeForStatus(listing.status),
+    badge: badgeForPlacements(listing.status, placements),
     contact: listing.mobile || listing.email,
     details: listing.description || listing.keywords,
     location: listingLocationText(listing),
     ownerEmail: account.profile.email,
     ownerId: account.profile.id,
     ownerName: account.profile.name,
+    placements,
     publicPath: listingPublicPath(listing),
     updatedAt: new Date().toISOString(),
   };
@@ -604,9 +776,29 @@ export async function countMongoBusinessListings(filter: Record<string, unknown>
 
 export async function updateMongoBusinessStatus(ownerId: string, listingId: string, status: MemberListing["status"]) {
   const { businesses } = await getMongoCollections();
+  const existing = await businesses.findOne({ _id: businessId(ownerId, listingId) }, { projection: { placements: 1 } });
+  const placements = status === "Active"
+    ? Array.from(new Set([...(normalizePlacements(existing ?? { status })), "new" as const]))
+    : normalizePlacements(existing ?? { status });
   await businesses.updateOne(
     { _id: businessId(ownerId, listingId) },
-    { $set: { status, badge: badgeForStatus(status), updatedAt: new Date().toISOString() } },
+    { $set: { status, badge: badgeForPlacements(status, placements), placements, updatedAt: new Date().toISOString() } },
+  );
+}
+
+export async function updateMongoBusinessPlacements(ownerId: string, listingId: string, placements: NonNullable<MemberListing["placements"]>) {
+  const { businesses } = await getMongoCollections();
+  const normalized = normalizePlacements({ placements, status: "Active" });
+  await businesses.updateOne(
+    { _id: businessId(ownerId, listingId) },
+    {
+      $set: {
+        badge: badgeForPlacements("Active", normalized),
+        placements: normalized,
+        status: "Active",
+        updatedAt: new Date().toISOString(),
+      },
+    },
   );
 }
 
@@ -1055,6 +1247,7 @@ export async function listMongoFaqs() {
   return faqs.find({}).sort({ displayOrder: 1 }).toArray();
 }
 
+
 export async function upsertMongoFaq(record: {
   answer: string;
   id: string;
@@ -1090,6 +1283,119 @@ export async function updateMongoFaqsOrder(records: Array<{ id: string; order: n
   await Promise.all(
     records.map((item) => faqs.updateOne({ _id: item.id }, { $set: { displayOrder: item.order } })),
   );
+}
+
+// ─── States ───────────────────────────────────────────────────────────────────
+
+export async function listMongoStates() {
+  const { states } = await getMongoCollections();
+  return states.find({}).sort({ name: 1 }).toArray();
+}
+
+export async function upsertMongoState(record: {
+  countryName: string;
+  id: string;
+  name: string;
+  status: "Active" | "Inactive";
+}) {
+  const { states } = await getMongoCollections();
+  const now = new Date().toISOString();
+  await states.updateOne(
+    { _id: record.id },
+    {
+      $set: { countryName: record.countryName, name: record.name, status: record.status, updatedAt: now },
+      $setOnInsert: { _id: record.id, createdAt: now },
+    },
+    { upsert: true },
+  );
+  return record;
+}
+
+export async function bulkUpdateMongoStateStatus(ids: string[], status: "Active" | "Inactive") {
+  const { states } = await getMongoCollections();
+  await states.updateMany({ _id: { $in: ids } }, { $set: { status, updatedAt: new Date().toISOString() } });
+}
+
+export async function deleteMongoStatesByIds(ids: string[]) {
+  const { states } = await getMongoCollections();
+  await states.deleteMany({ _id: { $in: ids } });
+}
+
+// ─── Cities ───────────────────────────────────────────────────────────────────
+
+export async function listMongoCities(stateName?: string) {
+  const { cities } = await getMongoCollections();
+  const filter = stateName ? { stateName } : {};
+  return cities.find(filter).sort({ name: 1 }).toArray();
+}
+
+export async function upsertMongoCity(record: {
+  countryName: string;
+  id: string;
+  name: string;
+  stateName: string;
+  status: "Active" | "Inactive";
+}) {
+  const { cities } = await getMongoCollections();
+  const now = new Date().toISOString();
+  await cities.updateOne(
+    { _id: record.id },
+    {
+      $set: { countryName: record.countryName, name: record.name, stateName: record.stateName, status: record.status, updatedAt: now },
+      $setOnInsert: { _id: record.id, createdAt: now },
+    },
+    { upsert: true },
+  );
+  return record;
+}
+
+export async function bulkUpdateMongoCityStatus(ids: string[], status: "Active" | "Inactive") {
+  const { cities } = await getMongoCollections();
+  await cities.updateMany({ _id: { $in: ids } }, { $set: { status, updatedAt: new Date().toISOString() } });
+}
+
+export async function deleteMongoCitiesByIds(ids: string[]) {
+  const { cities } = await getMongoCollections();
+  await cities.deleteMany({ _id: { $in: ids } });
+}
+
+// ─── Locations (Sub-areas) ─────────────────────────────────────────────────────
+
+export async function listMongoLocations(cityName?: string) {
+  const { locations } = await getMongoCollections();
+  const filter = cityName ? { cityName } : {};
+  return locations.find(filter).sort({ name: 1 }).toArray();
+}
+
+export async function upsertMongoLocation(record: {
+  cityName: string;
+  countryName: string;
+  id: string;
+  name: string;
+  stateName: string;
+  status: "Active" | "Inactive";
+}) {
+  const { locations } = await getMongoCollections();
+  const now = new Date().toISOString();
+  await locations.updateOne(
+    { _id: record.id },
+    {
+      $set: { cityName: record.cityName, countryName: record.countryName, name: record.name, stateName: record.stateName, status: record.status, updatedAt: now },
+      $setOnInsert: { _id: record.id, createdAt: now },
+    },
+    { upsert: true },
+  );
+  return record;
+}
+
+export async function bulkUpdateMongoLocationStatus(ids: string[], status: "Active" | "Inactive") {
+  const { locations } = await getMongoCollections();
+  await locations.updateMany({ _id: { $in: ids } }, { $set: { status, updatedAt: new Date().toISOString() } });
+}
+
+export async function deleteMongoLocationsByIds(ids: string[]) {
+  const { locations } = await getMongoCollections();
+  await locations.deleteMany({ _id: { $in: ids } });
 }
 
 export type MongoCollectionMap = {

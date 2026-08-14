@@ -17,11 +17,31 @@ function loginPath(role: AuthRole, error = "") {
   return error ? `${path}?error=${encodeURIComponent(error)}` : path;
 }
 
+function readLoginField(formData: FormData, names: string[]) {
+  for (const name of names) {
+    const value = formData.get(name);
+    if (typeof value === "string" && value.trim()) {
+      return value;
+    }
+  }
+  return "";
+}
+
 export async function POST(request: Request) {
   const formData = await request.formData();
   const role = formData.get("role");
-  const username = String(formData.get("username") ?? "");
-  const password = String(formData.get("password") ?? "");
+  const username =
+    role === "member"
+      ? readLoginField(formData, ["member_username", "username"])
+      : role === "admin"
+        ? readLoginField(formData, ["admin_username", "username"])
+        : readLoginField(formData, ["username"]);
+  const password =
+    role === "member"
+      ? readLoginField(formData, ["member_password", "password"])
+      : role === "admin"
+        ? readLoginField(formData, ["admin_password", "password"])
+        : readLoginField(formData, ["password"]);
 
   if (!isAuthRole(role)) redirect("/members/login?error=Invalid login role");
 

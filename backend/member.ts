@@ -14,6 +14,7 @@ export type MemberListing = {
   mobile: string;
   name: string;
   state: string;
+  placements?: Array<"new" | "featured" | "trending">;
   status: "Draft" | "Pending" | "Active" | "Featured" | "Popular" | "Inactive";
   subcategory: string;
   subcity: string;

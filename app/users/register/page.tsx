@@ -4,7 +4,7 @@ import { PasswordFieldWithToggle } from "@/frontend/web/PasswordFieldWithToggle"
 import { SocialLoginButtons } from "@/frontend/web/SocialLoginButtons";
 import { redirect } from "next/navigation";
 
-export default function UserRegisterPage() {
+export default function UserRegisterPage({ searchParams }: { searchParams: { error?: string } }) {
   return (
     <main className="auth-page auth-page-user" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", padding: "1.5rem" }}>
       <section className="auth-card" style={{ maxWidth: "440px", width: "100%", padding: "2rem", background: "#fff", borderRadius: "16px", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)", border: "1px solid #e2e8f0" }}>
@@ -19,27 +19,43 @@ export default function UserRegisterPage() {
           </p>
         </div>
 
+        {searchParams?.error ? (
+          <div style={{ padding: "0.75rem", marginBottom: "1rem", borderRadius: "8px", background: "#fee2e2", color: "#b91c1c", fontSize: "0.875rem", border: "1px solid #fca5a5" }}>
+            {searchParams.error}
+          </div>
+        ) : null}
+
         <form
           className="auth-form"
           action={async (formData: FormData) => {
             "use server";
-            const name = String(formData.get("name") || "Registered User");
-            const email = String(formData.get("email") || "");
-            const phone = String(formData.get("phone") || "");
+            const name = String(formData.get("name") || "").trim();
+            const email = String(formData.get("email") || "").trim();
+            const phone = String(formData.get("phone") || "").trim();
             const password = String(formData.get("password") || "");
+
+            if (name.length < 2) redirect(`/users/register?error=${encodeURIComponent("Name must be at least 2 characters")}`);
+            if (!email.includes("@")) redirect(`/users/register?error=${encodeURIComponent("Email must contain @")}`);
+            if (phone.length < 10) redirect(`/users/register?error=${encodeURIComponent("Phone must be at least 10 digits")}`);
+            if (password.length < 6) redirect(`/users/register?error=${encodeURIComponent("Password must be at least 6 characters")}`);
+
             const username = email.split("@")[0] || email || "user";
 
-            if (isMongoConfigured() && email && password) {
-              await createMongoUser({
-                email,
-                name,
-                passwordHash: hashPassword(password),
-                phone,
-                username,
-              });
+            if (isMongoConfigured()) {
+              try {
+                await createMongoUser({
+                  email,
+                  name,
+                  passwordHash: hashPassword(password),
+                  phone,
+                  username,
+                });
+              } catch (e) {
+                redirect(`/users/register?error=${encodeURIComponent("Account with this email already exists")}`);
+              }
             }
 
-            redirect(`/login?registered=true&email=${encodeURIComponent(email)}`);
+            redirect(`/users/login?registered=true&email=${encodeURIComponent(email)}`);
           }}
           style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
         >
