@@ -817,13 +817,14 @@ export async function syncMongoMemberListings(account: MemberAccount) {
     await businesses.bulkWrite(
       account.listings.map((listing) => {
         const record = businessRecordFromListing(account, listing);
-        const { _id, createdAt, ...fields } = record;
+        const { _id, ...fields } = record as any;
+        delete fields.createdAt;
         return {
           updateOne: {
             filter: { _id },
             update: {
               $set: { ...fields, updatedAt: new Date().toISOString() },
-              $setOnInsert: { _id, createdAt: createdAt || new Date().toISOString() },
+              $setOnInsert: { _id, createdAt: listing.createdAt || new Date().toISOString() },
             },
             upsert: true,
           },
