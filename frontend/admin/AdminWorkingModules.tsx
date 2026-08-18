@@ -1622,14 +1622,7 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
         <div className="admin-bulk-placement-actions">
           <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Approve (New Ads)</button>
           <button type="button" onClick={() => bulkStatus("Pending")} disabled={!selected.length}>Unapproved</button>
-          <label style={{ display: "grid", gap: "0.2rem", fontSize: "0.7rem", fontWeight: 700 }}>
-            <span>Start</span>
-            <input type="date" value={placementSchedule.startsAt} onChange={(event) => setPlacementSchedule({ ...placementSchedule, startsAt: event.target.value })} />
-          </label>
-          <label style={{ display: "grid", gap: "0.2rem", fontSize: "0.7rem", fontWeight: 700 }}>
-            <span>Expiry</span>
-            <input type="date" value={placementSchedule.expiresAt} onChange={(event) => setPlacementSchedule({ ...placementSchedule, expiresAt: event.target.value })} />
-          </label>
+
           <select
             aria-label="Set selected businesses as"
             disabled={!selected.length}
