@@ -822,7 +822,7 @@ export async function syncMongoMemberListings(account: MemberAccount) {
           updateOne: {
             filter: { _id },
             update: {
-              $set: fields,
+              $set: { ...fields, updatedAt: new Date().toISOString() },
               $setOnInsert: { _id, createdAt: new Date().toISOString() },
             },
             upsert: true,
@@ -872,7 +872,7 @@ export async function countMongoMembers(filter: Record<string, unknown> = {}) {
 export async function listMongoBusinessListings(options: { limit?: number; status?: MemberListing["status"] } = {}) {
   const { businesses } = await getMongoCollections();
   const filter: Partial<Pick<BusinessListingRecord, "status">> = options.status ? { status: options.status } : {};
-  const cursor = businesses.find(filter).sort({ updatedAt: -1 });
+  const cursor = businesses.find(filter).sort({ updatedAt: -1, createdAt: -1 });
   if (options.limit && options.limit > 0) cursor.limit(options.limit);
   return cursor.toArray();
 }
