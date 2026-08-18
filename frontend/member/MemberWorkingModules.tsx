@@ -352,10 +352,42 @@ function ListingForm({
             onChange={(event) => setForm({ ...form, youtube: event.target.value })}
           />
         </label>
-        <label className="panel-field wide"><span>Business Photo</span><input value={form.image ?? ""} placeholder="https://example.com/photo.jpg or upload below" onChange={(event) => setForm({ ...form, image: event.target.value })} /><small>Paste a direct image URL or upload an image from gallery manager.</small></label>
+
         <label className="panel-field wide"><span>Address *</span><textarea value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} /></label>
         <label className="panel-field"><span>Main Category *</span><select value={form.category} onChange={(event) => { const next = businessTaxonomy.find((category) => category.name === event.target.value); const firstSub = next?.subcategories[0]; setForm({ ...form, businessType: firstSub?.businessTypes[0]?.name ?? "General Provider", category: event.target.value, subcategory: firstSub?.name ?? "General Services" }); }}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
-        <label className="panel-field"><span>Subcategory</span><select value={form.subcategory} onChange={(event) => { const next = selectedTaxonomy?.subcategories.find((subcategory) => subcategory.name === event.target.value); setForm({ ...form, businessType: next?.businessTypes[0]?.name ?? "General Provider", subcategory: event.target.value }); }}>{selectedTaxonomy?.subcategories.length ? selectedTaxonomy.subcategories.map((subcategory) => <option key={subcategory.slug}>{subcategory.name}</option>) : <option value="General Services">General Services</option>}</select></label>
+        <label className="panel-field">
+          <span>Subcategory</span>
+          <select 
+            value={
+              selectedTaxonomy?.subcategories.some((s) => s.name === form.subcategory) 
+                ? form.subcategory 
+                : (form.subcategory ? "Other" : "")
+            } 
+            onChange={(event) => { 
+              const val = event.target.value;
+              if (val === "Other") {
+                setForm({ ...form, subcategory: "" });
+              } else {
+                const next = selectedTaxonomy?.subcategories.find((s) => s.name === val); 
+                setForm({ ...form, businessType: next?.businessTypes[0]?.name ?? "General Provider", subcategory: val }); 
+              }
+            }}
+          >
+            {selectedTaxonomy?.subcategories.length 
+              ? selectedTaxonomy.subcategories.map((subcategory) => <option key={subcategory.slug} value={subcategory.name}>{subcategory.name}</option>) 
+              : <option value="General Services">General Services</option>
+            }
+            <option value="Other">Other (Type custom)</option>
+          </select>
+          {(!selectedTaxonomy?.subcategories.some((s) => s.name === form.subcategory)) && (
+            <input 
+              style={{ marginTop: '8px' }} 
+              placeholder="Type custom subcategory..." 
+              value={form.subcategory} 
+              onChange={(e) => setForm({ ...form, subcategory: e.target.value })} 
+            />
+          )}
+        </label>
         <label className="panel-field"><span>Business Type</span><select value={form.businessType} onChange={(event) => setForm({ ...form, businessType: event.target.value })}>{selectedSubcategory?.businessTypes.length ? selectedSubcategory.businessTypes.map((businessType) => <option key={businessType.slug}>{businessType.name}</option>) : <option value="General Provider">General Provider</option>}</select></label>
         <label className="panel-field"><span>State *</span><select value={form.state} onChange={(event) => setForm({ ...form, city: "", state: event.target.value, subcity: "" })}>{indiaStates.map((state) => <option key={state.id}>{state.name}</option>)}</select></label>
         <label className="panel-field"><span>City / District *</span><select value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value, subcity: "" })}><option value="">Select city</option>{cityOptions.map((city) => <option key={city.id}>{city.name}</option>)}</select></label>

@@ -48,10 +48,11 @@ export async function GET(request: Request, { params }: RouteContext) {
     });
   } catch (error) {
     console.error("Member API read failed", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return Response.json({
       data: null,
       memberId,
-      message: "Member database is currently unavailable. Please try again after database connection is fixed.",
+      message: `Database Error: ${errorMessage}`,
       ok: false,
       resource: active,
     }, { status: 503 });
@@ -85,10 +86,11 @@ export async function POST(request: Request, { params }: RouteContext) {
     );
   } catch (error) {
     console.error("Member API write failed", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return Response.json({
       data: null,
       memberId,
-      message: "Member database is currently unavailable. Your changes were not saved.",
+      message: `Database Error: ${errorMessage}`,
       ok: false,
       resource: active,
     }, { status: 503 });
