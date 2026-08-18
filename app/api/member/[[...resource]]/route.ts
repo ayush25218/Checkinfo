@@ -59,6 +59,8 @@ export async function GET(request: Request, { params }: RouteContext) {
   }
 }
 
+import { revalidatePath } from "next/cache";
+
 export async function POST(request: Request, { params }: RouteContext) {
   const limited = rateLimit(request, "member:write", 90, 60_000);
   if (!limited.ok) return rateLimitResponse(limited);
@@ -77,9 +79,11 @@ export async function POST(request: Request, { params }: RouteContext) {
     : formDataToObject(await request.formData());
 
   try {
+    const data = await handleMemberActionAsync(memberId, active, payload);
+    try { revalidatePath("/", "layout"); } catch (e) { console.error("Revalidate failed", e); }
     return Response.json(
       createResponse("Member request processed", {
-        data: await handleMemberActionAsync(memberId, active, payload),
+        data,
         memberId,
         resource: active,
       }),

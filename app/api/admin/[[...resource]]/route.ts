@@ -86,6 +86,8 @@ export async function GET(request: Request, { params }: RouteContext) {
   }
 }
 
+import { revalidatePath } from "next/cache";
+
 export async function POST(request: Request, { params }: RouteContext) {
   const limited = rateLimit(request, "admin:write", 120, 60_000);
   if (!limited.ok) return rateLimitResponse(limited);
@@ -111,9 +113,11 @@ export async function POST(request: Request, { params }: RouteContext) {
   };
 
   try {
+    const data = await handleAdminActionAsync(active, actionPayload);
+    try { revalidatePath("/", "layout"); } catch (e) { console.error("Revalidate failed", e); }
     return Response.json(
       createResponse("Admin action queued", {
-        data: await handleAdminActionAsync(active, actionPayload),
+        data,
         resource: active,
       }),
     );
