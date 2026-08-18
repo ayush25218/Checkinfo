@@ -24,7 +24,10 @@ export function proxy(request: NextRequest) {
       !hasValidSession(request, "checkinfo_admin_auth", "admin") &&
       !hasValidSession(request, "checkinfo_subadmin_auth", "subadmin")
     ) {
-      return NextResponse.redirect(new URL("/admin/login", request.url));
+      const response = NextResponse.redirect(new URL("/admin/login", request.url));
+      response.cookies.delete("checkinfo_admin_auth");
+      response.cookies.delete("checkinfo_subadmin_auth");
+      return response;
     }
   }
 
@@ -32,7 +35,11 @@ export function proxy(request: NextRequest) {
 
   if (pathname.startsWith("/members") && !publicMemberPages.has(pathname)) {
     if (!hasValidSession(request, "checkinfo_member_auth", "member")) {
-      return NextResponse.redirect(new URL("/members/login", request.url));
+      const response = NextResponse.redirect(new URL("/members/login", request.url));
+      response.cookies.delete("checkinfo_member_auth");
+      response.cookies.delete("checkinfo_member_id");
+      response.cookies.delete("checkinfo_member_name");
+      return response;
     }
   }
 
