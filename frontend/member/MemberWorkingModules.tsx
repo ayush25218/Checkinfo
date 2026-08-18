@@ -33,6 +33,8 @@ type MemberListing = {
   name: string;
   state: string;
   status: ListingStatus;
+  approvalStatus?: "Draft" | "Pending" | "Approved" | "Rejected";
+  createdAt?: string;
   subcategory: string;
   subcity: string;
   website: string;

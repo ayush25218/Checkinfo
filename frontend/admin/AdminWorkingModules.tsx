@@ -1024,7 +1024,16 @@ export function ManageBusinessModule() {
         if (filters.status === "Rejected") return record.status === "Inactive";
         return record.status === filters.status;
       })
-      .filter((record) => filters.placement === "All" || defaultPlacements(record).includes(filters.placement as BusinessPlacement));
+      .filter((record) => filters.placement === "All" || defaultPlacements(record).includes(filters.placement as BusinessPlacement))
+      .sort((a, b) => {
+        const aPending = a.status === "Pending" || a.approvalStatus === "Pending" || a.status === "Draft";
+        const bPending = b.status === "Pending" || b.approvalStatus === "Pending" || b.status === "Draft";
+        if (aPending && !bPending) return -1;
+        if (!aPending && bPending) return 1;
+        const aTime = new Date(a.approvedAt || a.createdAt || 0).getTime();
+        const bTime = new Date(b.approvedAt || b.createdAt || 0).getTime();
+        return bTime - aTime;
+      });
   }, [filters, records]);
 
   useEffect(() => {

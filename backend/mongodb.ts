@@ -842,8 +842,10 @@ export async function syncMongoMemberListings(account: MemberAccount) {
 export async function saveMongoMember(account: MemberAccount) {
   const { members } = await getMongoCollections();
   const { _id, ...record } = account;
-  await members.updateOne({ _id: account.profile.id }, { $set: record, $setOnInsert: { _id: _id ?? account.profile.id } }, { upsert: true });
-  await syncMongoMemberListings(account);
+  await Promise.all([
+    members.updateOne({ _id: account.profile.id }, { $set: record, $setOnInsert: { _id: _id ?? account.profile.id } }, { upsert: true }),
+    syncMongoMemberListings(account)
+  ]);
 }
 
 export async function deleteMongoMembersByIds(ids: string[]) {
