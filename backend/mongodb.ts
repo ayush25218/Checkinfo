@@ -873,7 +873,7 @@ export async function countMongoMembers(filter: Record<string, unknown> = {}) {
 export async function listMongoBusinessListings(options: { limit?: number; status?: MemberListing["status"] } = {}) {
   const { businesses } = await getMongoCollections();
   const filter: Partial<Pick<BusinessListingRecord, "status">> = options.status ? { status: options.status } : {};
-  const cursor = businesses.find(filter).sort({ updatedAt: -1, createdAt: -1 });
+  const cursor = businesses.find(filter).sort({ updatedAt: -1 });
   if (options.limit && options.limit > 0) cursor.limit(options.limit);
   return cursor.toArray();
 }
