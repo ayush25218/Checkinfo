@@ -22,6 +22,18 @@ function oauthError(role: AuthRole, origin: string, message: string) {
   return NextResponse.redirect(new URL(`${errorPath(role)}?error=${encodeURIComponent(message)}`, origin));
 }
 
+function getAllowedGoogleRedirectUri(origin: string, value: string | null) {
+  const configuredRedirectUri = process.env.GOOGLE_REDIRECT_URI || "";
+  const callbackRedirectUri = `${origin}/api/auth/oauth/callback`;
+  const allowedRedirectUris = new Set([origin, callbackRedirectUri]);
+
+  if (configuredRedirectUri) {
+    allowedRedirectUris.add(configuredRedirectUri);
+  }
+
+  return value && allowedRedirectUris.has(value) ? value : configuredRedirectUri || callbackRedirectUri;
+}
+
 function normalizeMemberId(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/^-+|-+$/g, "").slice(0, 64);
 }
@@ -30,7 +42,7 @@ function memberIdFromGoogle(profile: GoogleUserInfo) {
   return normalizeMemberId(`google-${profile.sub || profile.email || "member"}`) || "google-member";
 }
 
-async function exchangeGoogleCode(origin: string, code: string) {
+async function exchangeGoogleCode(origin: string, code: string, redirectUriOverride: string | null) {
   const clientId = process.env.GOOGLE_CLIENT_ID || "";
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
 
@@ -38,7 +50,7 @@ async function exchangeGoogleCode(origin: string, code: string) {
     return { error: "Google sign-in is not configured yet" as const };
   }
 
-  const redirectUri = `${origin}/api/auth/oauth/callback`;
+  const redirectUri = getAllowedGoogleRedirectUri(origin, redirectUriOverride);
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     body: new URLSearchParams({
       client_id: clientId,
@@ -84,6 +96,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state") || "user:google";
+  const redirectUri = searchParams.get("redirect_uri");
   const origin = new URL(request.url).origin;
   const [rawRole, provider] = state.split(":");
   const role: AuthRole = isAuthRole(rawRole) ? rawRole : "member";
@@ -101,7 +114,7 @@ export async function GET(request: Request) {
     return oauthError(role, origin, "Google authorization was cancelled or failed");
   }
 
-  const exchange = await exchangeGoogleCode(origin, code);
+  const exchange = await exchangeGoogleCode(origin, code, redirectUri);
   if ("error" in exchange) {
     return oauthError(role, origin, exchange.error || "Google sign-in failed");
   }

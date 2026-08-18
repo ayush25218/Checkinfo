@@ -10,10 +10,12 @@ export function AdminShellFrame({
   active,
   children,
   groups,
+  roleLabel = "administrator",
 }: {
   active: string;
   children: ReactNode;
   groups: readonly AdminGroup[];
+  roleLabel?: string;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -49,8 +51,8 @@ export function AdminShellFrame({
             </a>
           </div>
           <div className="admin-topbar-actions">
-            <span>You are logged in as <strong>administrator</strong></span>
-            <a aria-label="Logout" href="/api/auth/logout?role=admin">Logout</a>
+            <span>You are logged in as <strong>{roleLabel}</strong></span>
+            <a aria-label="Logout" href={`/api/auth/logout?role=${roleLabel === "subadmin" ? "subadmin" : "admin"}`}>Logout</a>
           </div>
         </div>
         <AdminFormAutoToggle />

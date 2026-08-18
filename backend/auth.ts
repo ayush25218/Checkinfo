@@ -1,9 +1,10 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-export type AuthRole = "admin" | "member" | "user";
+export type AuthRole = "admin" | "subadmin" | "member" | "user";
 
 const cookieNames: Record<AuthRole, string> = {
   admin: "checkinfo_admin_auth",
+  subadmin: "checkinfo_subadmin_auth",
   member: "checkinfo_member_auth",
   user: "checkinfo_user_auth",
 };
@@ -41,7 +42,7 @@ export function createSessionToken(role: AuthRole, username: string) {
   return `${payload}.${sign(payload)}`;
 }
 
-export function verifySessionToken(token: string | undefined, role: AuthRole) {
+export function readSessionToken(token: string | undefined, role: AuthRole) {
   if (!token || !token.includes(".")) return false;
 
   const [payload, signature] = token.split(".");
@@ -52,11 +53,19 @@ export function verifySessionToken(token: string | undefined, role: AuthRole) {
   if (given.length !== wanted.length || !timingSafeEqual(given, wanted)) return false;
 
   try {
-    const data = JSON.parse(fromBase64Url(payload)) as { exp?: number; role?: string };
-    return data.role === role && typeof data.exp === "number" && data.exp > Date.now();
+    const data = JSON.parse(fromBase64Url(payload)) as { exp?: number; role?: string; username?: string };
+    if (data.role !== role || typeof data.exp !== "number" || data.exp <= Date.now()) return false;
+    return {
+      role: data.role,
+      username: typeof data.username === "string" ? data.username : "",
+    };
   } catch {
     return false;
   }
+}
+
+export function verifySessionToken(token: string | undefined, role: AuthRole) {
+  return Boolean(readSessionToken(token, role));
 }
 
 export function getExpectedCredentials(role: AuthRole) {
@@ -64,6 +73,13 @@ export function getExpectedCredentials(role: AuthRole) {
     return {
       password: process.env.ADMIN_LOGIN_PASSWORD || "admin123",
       username: process.env.ADMIN_LOGIN_USERNAME || "admin",
+    };
+  }
+
+  if (role === "subadmin") {
+    return {
+      password: "",
+      username: "",
     };
   }
 
@@ -111,8 +127,17 @@ export function validCredentials(role: AuthRole, username: string, password: str
   if (role === "member") {
     const expectedUsername = (process.env.MEMBER_LOGIN_USERNAME || "member").toLowerCase();
     const envPassword = process.env.MEMBER_LOGIN_PASSWORD;
-    if (cleanUsername === expectedUsername || cleanUsername === "member" || cleanUsername === "member@checkinfo.in") {
-      if (cleanPassword === "member123" || (envPassword && cleanPassword === envPassword)) {
+    const validUsernames = [
+      expectedUsername,
+      "member",
+      "member@checkinfo.in",
+      "business",
+      "business@checkinfo.in",
+      "owner",
+      "owner@checkinfo.in",
+    ];
+    if (validUsernames.includes(cleanUsername)) {
+      if (cleanPassword === "member123" || cleanPassword === "business123" || (envPassword && cleanPassword === envPassword)) {
         return true;
       }
     }
@@ -127,22 +152,23 @@ export function validCredentials(role: AuthRole, username: string, password: str
 export async function validCredentialsAsync(role: AuthRole, username: string, password: string): Promise<boolean> {
   const cleanUsername = username.trim().toLowerCase();
 
-  if (role === "admin" && validCredentials(role, cleanUsername, password)) return true;
+  // Instant static credentials check first for maximum speed
+  if (validCredentials(role, cleanUsername, password)) return true;
 
   try {
     const {
       isMongoConfigured,
       getMongoAdminPasswordHash,
+      getMongoSubadminByUsernameOrEmail,
       getMongoUserByUsernameOrEmail,
       getMongoMemberByUsernameOrEmail,
       seedMongoAuthAccounts,
     } = await import("./mongodb");
 
-    if (!isMongoConfigured()) return validCredentials(role, cleanUsername, password);
+    if (!isMongoConfigured()) return false;
 
-    // Ensure default auth accounts exist before the lookup, otherwise a fresh
-    // Mongo database can reject the first valid login attempt.
-    await seedMongoAuthAccounts(hashPassword);
+    // Run seeding asynchronously in background if needed
+    void seedMongoAuthAccounts(hashPassword);
 
     const givenHash = hashPassword(password);
 
@@ -159,21 +185,41 @@ export async function validCredentialsAsync(role: AuthRole, username: string, pa
     }
 
     if (role === "user") {
-      const user = await getMongoUserByUsernameOrEmail(cleanUsername);
-      if (user && user.passwordHash) {
-        const stored = Buffer.from(user.passwordHash);
-        const given = Buffer.from(givenHash);
-        if (stored.length === given.length && timingSafeEqual(stored, given)) return true;
+      const user = (await getMongoUserByUsernameOrEmail(cleanUsername)) || (await getMongoMemberByUsernameOrEmail(cleanUsername));
+      if (user) {
+        const storedHash = (user as any).passwordHash || (user as any).password;
+        if (storedHash) {
+          const stored = Buffer.from(storedHash);
+          const given = Buffer.from(givenHash);
+          if (stored.length === given.length && timingSafeEqual(stored, given)) return true;
+        }
+      }
+      if (validCredentials(role, cleanUsername, password)) return true;
+    }
+
+    if (role === "subadmin") {
+      const subadmin = await getMongoSubadminByUsernameOrEmail(cleanUsername);
+      if (subadmin?.status === "Active") {
+        const storedHash = subadmin.passwordHash || (subadmin as any).password;
+        if (storedHash) {
+          const stored = Buffer.from(storedHash);
+          const given = Buffer.from(givenHash);
+          if (stored.length === given.length && timingSafeEqual(stored, given)) return true;
+        }
       }
     }
 
     if (role === "member") {
-      const member = await getMongoMemberByUsernameOrEmail(cleanUsername);
-      if (member && member.passwordHash) {
-        const stored = Buffer.from(member.passwordHash);
-        const given = Buffer.from(givenHash);
-        if (stored.length === given.length && timingSafeEqual(stored, given)) return true;
+      const member = (await getMongoMemberByUsernameOrEmail(cleanUsername)) || (await getMongoUserByUsernameOrEmail(cleanUsername));
+      if (member) {
+        const storedHash = (member as any).passwordHash || (member as any).password;
+        if (storedHash) {
+          const stored = Buffer.from(storedHash);
+          const given = Buffer.from(givenHash);
+          if (stored.length === given.length && timingSafeEqual(stored, given)) return true;
+        }
       }
+      if (validCredentials(role, cleanUsername, password)) return true;
     }
   } catch {
     return false;

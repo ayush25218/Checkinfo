@@ -1,0 +1,18 @@
+{
+  "status": 307,
+  "headers": {
+    "location": "/members/login",
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/users/layout,_N_T_/users/login/layout,_N_T_/users/login/page,_N_T_/users/login"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/users/login/__PAGE__",
+    "/users/login",
+    "/users",
+    "/_index",
+    "/_head"
+  ]
+}

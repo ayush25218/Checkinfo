@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 function getRole(request: Request): AuthRole {
   const role = new URL(request.url).searchParams.get("role");
   if (role === "admin") return "admin";
+  if (role === "subadmin") return "subadmin";
   if (role === "user") return "user";
   return "member";
 }
@@ -16,6 +17,7 @@ function logout() {
 
     const allAuthCookies = [
       "checkinfo_admin_auth",
+      "checkinfo_subadmin_auth",
       "checkinfo_member_auth",
       "checkinfo_user_auth",
       "checkinfo_member_id",
@@ -34,6 +36,8 @@ function logout() {
 
     const redirectPath =
       activeRole === "admin"
+        ? "/admin/login"
+        : activeRole === "subadmin"
         ? "/admin/login"
         : activeRole === "user"
         ? "/?logout=success"

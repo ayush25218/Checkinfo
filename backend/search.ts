@@ -83,6 +83,16 @@ type SearchableListing = Partial<MemberListing> & {
   ownerName?: string;
 };
 
+function listingPlacements(listing: SearchableListing): Array<"new" | "featured" | "trending"> {
+  if (listing.placementStartsAt && Date.parse(listing.placementStartsAt) > Date.now()) return [];
+  if (listing.placementExpiresAt && Date.parse(listing.placementExpiresAt) < Date.now()) return ["new"];
+  if (Array.isArray(listing.placements) && listing.placements.length) return listing.placements;
+  if (listing.status === "Featured") return ["new", "featured"];
+  if (listing.status === "Popular") return ["new", "trending"];
+  if (listing.status === "Active") return ["new"];
+  return [];
+}
+
 function listingMatches(listing: SearchableListing, query = "", location = "", category = "") {
   const haystack = normalizeText([listing.name, listing.description, listing.keywords, listing.details, listing.location, listing.address, listing.category, listing.subcategory, listing.businessType, listing.city, listing.subcity, listing.state].join(" "));
   const tokens = queryTokens(query);
@@ -111,10 +121,16 @@ function listingToResult(listing: SearchableListing, source: "sponsored" | "loca
   };
 }
 
+function isApprovedListing(listing: SearchableListing) {
+  const activeStatus = listing.status === "Active" || listing.status === "Featured" || listing.status === "Popular";
+  return activeStatus && listing.approvalStatus !== "Pending" && listing.approvalStatus !== "Rejected";
+}
+
 async function getSponsoredListings(query = "", location = "", category = "") {
   const business = ((await getAdminResourceAsync("business")) ?? []) as SearchableListing[];
   return business
-    .filter((listing) => listing.status === "Featured")
+    .filter(isApprovedListing)
+    .filter((listing) => listingPlacements(listing).includes("featured"))
     .filter((listing) => listingMatches(listing, query, location, category))
     .map((listing) => listingToResult(listing, "sponsored"));
 }
@@ -122,7 +138,8 @@ async function getSponsoredListings(query = "", location = "", category = "") {
 async function getFallbackLocalListings(query = "", location = "", category = "") {
   const business = ((await getAdminResourceAsync("business")) ?? []) as SearchableListing[];
   return business
-    .filter((listing) => listing.status === "Active" || listing.status === "Popular")
+    .filter(isApprovedListing)
+    .filter((listing) => listingPlacements(listing).some((placement) => placement === "new" || placement === "trending"))
     .filter((listing) => listingMatches(listing, query, location, category))
     .map((listing) => listingToResult(listing, "local"));
 }

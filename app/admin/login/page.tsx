@@ -22,12 +22,18 @@ export default async function AdminLoginPage({
         </div>
         {error ? <p className="auth-error">{error}</p> : null}
         <form className="auth-form" action="/api/auth/login" method="post" autoComplete="off">
-          <input name="role" type="hidden" value="admin" />
           <input type="text" name="fake_username_remember" style={{ display: "none" }} tabIndex={-1} />
           <input type="password" name="fake_password_remember" style={{ display: "none" }} tabIndex={-1} />
           <label>
+            <span>Account Type</span>
+            <select name="role" defaultValue="admin">
+              <option value="admin">Admin</option>
+              <option value="subadmin">Subadmin</option>
+            </select>
+          </label>
+          <label>
             <span>Username</span>
-            <input autoComplete="off" name="username" placeholder="Enter admin username" required type="text" />
+            <input autoComplete="off" name="username" placeholder="Enter username or email" required type="text" />
           </label>
           <label>
             <span>Password</span>

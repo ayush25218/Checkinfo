@@ -7,13 +7,18 @@ export type ListingCollectionKind = "featured" | "new" | "trending" | "category"
 export async function getApprovedListings() {
   try {
     const business = (((await getAdminResourceAsync("business")) ?? []) as PublicBusinessListing[]);
-    return business.filter((listing) => listing.status === "Active" || listing.status === "Featured" || listing.status === "Popular");
+    return business.filter((listing) => {
+      const activeStatus = listing.status === "Active" || listing.status === "Featured" || listing.status === "Popular";
+      return activeStatus && listing.approvalStatus !== "Pending" && listing.approvalStatus !== "Rejected";
+    });
   } catch {
     return [];
   }
 }
 
 function listingPlacements(listing: PublicBusinessListing) {
+  if (listing.placementStartsAt && Date.parse(listing.placementStartsAt) > Date.now()) return [];
+  if (listing.placementExpiresAt && Date.parse(listing.placementExpiresAt) < Date.now()) return ["new"];
   if (Array.isArray(listing.placements) && listing.placements.length) return listing.placements;
   if (listing.status === "Featured") return ["new", "featured"];
   if (listing.status === "Popular") return ["new", "trending"];

@@ -15,6 +15,8 @@ import {
   deleteMongoMembersByIds,
   listMongoBusinessListings,
   listMongoMembers,
+  listMongoAdminAuditLogs,
+  logMongoAdminAudit,
   saveMongoMember,
   updateMongoBusinessPlacements,
   updateMongoBusinessStatus,
@@ -26,6 +28,10 @@ import {
   deleteMongoCategoryById,
   bulkUpdateMongoCategoryStatus,
   deleteMongoCategoriesByIds,
+  updateMongoCategoriesOrder,
+  listMongoSubcategories,
+  upsertMongoSubcategory,
+  deleteMongoSubcategoryById,
   // Newsletter
   listMongoNewsletter,
   upsertMongoNewsletterRecord,
@@ -176,6 +182,16 @@ function getMemberStateFromAccount(account: MemberAccount, resource = "dashboard
     enquiries: account.enquiries,
     listings: account.listings,
     notifications: account.notifications,
+    package: {
+      couponCode: account.couponCode ?? "",
+      invoices: account.invoices ?? [],
+      packageExpiresAt: (account as MemberAccount & { packageExpiresAt?: string | null }).packageExpiresAt ?? null,
+      packageName: account.packageName,
+      paymentStatus: account.paymentStatus ?? "Free",
+      trialEndsAt: account.trialEndsAt ?? null,
+      walletCredits: account.walletCredits ?? 0,
+    },
+    packageExpiresAt: (account as MemberAccount & { packageExpiresAt?: string | null }).packageExpiresAt ?? null,
     packageName: account.packageName,
     profile: account.profile,
     reviews: account.reviews,
@@ -197,36 +213,67 @@ export function handleMemberAction(memberId: string, resource: string, payload: 
 
 function mutateMemberAction(account: MemberAccount, resource: string, payload: Record<string, unknown>) {
   const action = String(payload.action ?? "");
+  const nowIso = new Date().toISOString();
 
   if (resource === "listing") {
-    if (action === "create") {
+    if (action === "create" || action === "draft") {
       const record = payload.record as Partial<MemberListing>;
+      const isDraft = action === "draft";
       const listing = {
         ...record,
+        approvalStatus: isDraft ? "Draft" : "Pending",
+        createdAt: record.createdAt || nowIso,
+        createdBy: account.profile.id,
+        editHistory: [
+          ...(Array.isArray(record.editHistory) ? record.editHistory : []),
+          { action: "created", actorId: account.profile.id, at: nowIso, notes: isDraft ? "Saved as draft" : "Submitted for admin approval" },
+        ],
         id: String(record.id || `list-${Date.now()}`),
-        status: "Pending",
+        memberId: account.profile.id,
+        ownerId: account.profile.id,
+        status: isDraft ? "Draft" : "Pending",
+        submittedAt: isDraft ? record.submittedAt : nowIso,
+        updatedAt: nowIso,
+        verificationStatus: isDraft ? "Unverified" : "Pending",
       } as MemberListing;
       account.listings = [listing, ...account.listings.filter((item) => item.id !== listing.id)];
       account.notifications.unshift({
         id: `notif-${Date.now()}`,
-        text: "Your business listing was submitted for admin approval.",
+        text: isDraft ? "Your business listing draft was saved." : "Your business listing was submitted for admin approval.",
         time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
-        title: "Listing Submitted",
+        title: isDraft ? "Draft Saved" : "Listing Submitted",
         unread: true,
       });
       return { listing, listings: account.listings };
     }
 
-    if (action === "update") {
+    if (action === "update" || action === "update-draft") {
       const id = String(payload.id ?? account.listings[0]?.id ?? "");
+      const isDraft = action === "update-draft";
       account.listings = account.listings.map((listing) =>
-        listing.id === id ? { ...listing, ...(payload.record as Partial<MemberListing>), status: "Pending" } : listing,
+        listing.id === id
+          ? {
+              ...listing,
+              ...(payload.record as Partial<MemberListing>),
+              approvalStatus: isDraft ? "Draft" : "Pending",
+              memberId: account.profile.id,
+              ownerId: account.profile.id,
+              editHistory: [
+                ...(Array.isArray(listing.editHistory) ? listing.editHistory : []),
+                { action: "updated", actorId: account.profile.id, at: nowIso, notes: isDraft ? "Member saved draft changes" : "Member submitted edits for review" },
+              ],
+              status: isDraft ? "Draft" : "Pending",
+              submittedAt: isDraft ? listing.submittedAt : nowIso,
+              updatedAt: nowIso,
+              verificationStatus: isDraft ? "Unverified" : "Pending",
+            }
+          : listing,
       );
       account.notifications.unshift({
         id: `notif-${Date.now()}`,
-        text: "Your business listing changes were submitted for admin review.",
+        text: isDraft ? "Your business listing draft changes were saved." : "Your business listing changes were submitted for admin review.",
         time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
-        title: "Listing Review Requested",
+        title: isDraft ? "Draft Updated" : "Listing Review Requested",
         unread: true,
       });
       return { listings: account.listings };
@@ -261,17 +308,76 @@ function mutateMemberAction(account: MemberAccount, resource: string, payload: R
 
   if (resource === "package") {
     account.packageName = String(payload.packageName ?? "Free Listing");
-    return { packageName: account.packageName };
+    const couponCode = String(payload.couponCode ?? "").trim().toUpperCase();
+    const action = String(payload.action ?? "select");
+    const now = new Date();
+    const isTrial = action === "trial" || account.packageName.toLowerCase().includes("trial");
+    const planPrice = account.packageName === "City Leader" ? 2499 : account.packageName === "Featured Boost" ? 999 : 0;
+    const discount = couponCode === "CHECKINFO20" ? Math.round(planPrice * 0.2) : couponCode === "WELCOME50" ? Math.min(500, planPrice) : 0;
+    const finalAmount = Math.max(0, planPrice - discount);
+    const expiresAt = account.packageName === "Free Listing"
+      ? null
+      : new Date(now.getTime() + (isTrial ? 14 : 365) * 24 * 60 * 60 * 1000).toISOString();
+    account.couponCode = couponCode || account.couponCode;
+    account.packageExpiresAt = expiresAt;
+    account.paymentStatus = account.packageName === "Free Listing" ? "Free" : isTrial ? "Trial" : "Paid";
+    account.trialEndsAt = isTrial ? expiresAt : account.trialEndsAt ?? null;
+    account.walletCredits = Number(account.walletCredits ?? 0) + (account.packageName === "City Leader" ? 100 : 0);
+    account.invoices = [
+      {
+        amount: finalAmount,
+        createdAt: now.toISOString(),
+        id: `inv-${Date.now()}`,
+        packageName: account.packageName,
+        status: isTrial ? "Trial" : account.paymentStatus === "Paid" ? "Paid" : "Manual",
+      },
+      ...(Array.isArray(account.invoices) ? account.invoices : []),
+    ];
+    account.notifications.unshift({
+      id: `notif-${Date.now()}`,
+      text: expiresAt ? `Your ${account.packageName} package is active until ${new Date(expiresAt).toLocaleDateString("en-IN")}. Renewal reminders will appear before expiry.` : "Free Listing package is active.",
+      time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+      title: "Package Updated",
+      unread: true,
+    });
+    return { couponCode, discount, invoice: account.invoices[0], packageExpiresAt: expiresAt, packageName: account.packageName, paymentStatus: account.paymentStatus, walletCredits: account.walletCredits };
   }
 
   if (resource === "notification") {
-    account.notifications = account.notifications.map((notification) => ({ ...notification, unread: false }));
+    if (action === "clear-all") {
+      account.notifications = [];
+    } else {
+      account.notifications = account.notifications.map((notification) => ({ ...notification, unread: false }));
+    }
     return { notifications: account.notifications };
   }
 
   if (resource === "support") {
-    const ticket = { ...(payload.ticket as Omit<SupportTicket, "id" | "status">), id: `ticket-${Date.now()}`, status: "Open" } as SupportTicket;
+    const ticket = { ...(payload.ticket as Omit<SupportTicket, "id" | "status">), createdAt: new Date().toISOString(), id: `ticket-${Date.now()}`, status: "Open" } as SupportTicket;
     account.tickets.push(ticket);
+    account.notifications.unshift({
+      id: `notif-${Date.now()}`,
+      text: `Support ticket ${ticket.id} has been created.`,
+      time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+      title: "Support Ticket Created",
+      unread: true,
+    });
+
+    // Save ticket into Mongo Enquiries collection so it shows up live in Admin Panel!
+    try {
+      const { saveContactEnquiry, isMongoConfigured } = require("./mongodb");
+      if (isMongoConfigured()) {
+        void saveContactEnquiry({
+          email: ticket.email || account.profile.email || "",
+          name: ticket.name || account.profile.name || "Member",
+          phone: ticket.phone || account.profile.phone || "",
+          subject: `Support Ticket: ${ticket.issue || 'General'}`,
+          message: ticket.message || "",
+          type: "Contact",
+        });
+      }
+    } catch {}
+
     return { ticket, tickets: account.tickets };
   }
 
@@ -307,21 +413,29 @@ function buildBusinessFromMembers(members: MemberAccount[]) {
     member.listings.map((listing) => ({
       address: listing.address || listingLocationText(listing),
       addressProofName: listing.addressProofName,
+      approvalStatus: listing.approvalStatus,
+      approvedAt: listing.approvedAt,
+      approvedBy: listing.approvedBy,
       badge: listing.status === "Featured" ? "Featured" : listing.status === "Popular" ? "Popular" : "Verified",
       businessType: listing.businessType,
       category: listing.category,
       city: listing.city,
       contact: listing.mobile || listing.email,
+      createdBy: listing.createdBy,
       details: listing.description || listing.keywords,
       id: listing.id,
       image: listing.image,
       location: listingLocationText(listing),
       mobile: listing.mobile,
       name: listing.name,
+      memberId: listing.memberId,
       ownerEmail: member.profile.email,
       ownerId: member.profile.id,
       ownerName: member.profile.name,
+      packageName: member.packageName,
+      placementExpiresAt: listing.placementExpiresAt,
       placements: listing.placements,
+      placementStartsAt: listing.placementStartsAt,
       publicPath: listingPublicPath(listing),
       state: listing.state,
       status: listing.status,
@@ -348,6 +462,19 @@ function normalizeBusinessPlacements(values: unknown) {
   return Array.from(new Set(raw.map(String).filter((value): value is BusinessPlacement => allowed.has(value))));
 }
 
+function duplicateBusinessKey(record: {
+  city?: string;
+  contact?: string;
+  mobile?: string;
+  name?: string;
+  ownerEmail?: string;
+}) {
+  return [record.name, record.city, record.mobile || record.contact || record.ownerEmail]
+    .map((part) => String(part ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, ""))
+    .filter(Boolean)
+    .join("|");
+}
+
 function importSlug(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 70);
 }
@@ -356,6 +483,13 @@ function validListingStatus(value: string): MemberListing["status"] {
   return ["Active", "Inactive", "Pending", "Draft", "Featured", "Popular"].includes(value)
     ? value as MemberListing["status"]
     : "Pending";
+}
+
+function approvalStatusForStatus(status: MemberListing["status"]): NonNullable<MemberListing["approvalStatus"]> {
+  if (status === "Active" || status === "Featured" || status === "Popular") return "Approved";
+  if (status === "Draft") return "Draft";
+  if (status === "Inactive") return "Rejected";
+  return "Pending";
 }
 
 async function bulkImportBusinesses(records: Array<Record<string, unknown>>) {
@@ -377,25 +511,33 @@ async function bulkImportBusinesses(records: Array<Record<string, unknown>>) {
     account.profile.username = account.profile.username || ownerId;
     account.profile.status = "Active";
 
+    const status = validListingStatus(String(record.status ?? "Pending"));
     const listing: MemberListing = {
       id: importSlug(String(record.id ?? `${name}-${now}-${index}`)) || `list-${now}-${index}`,
       address: String(record.address ?? "").trim(),
       addressProofName: String(record.addressProofName ?? record.proof ?? "").trim(),
+      approvalStatus: approvalStatusForStatus(status),
       businessType: String(record.businessType ?? "").trim(),
       category: String(record.category ?? categories[0] ?? "General").trim(),
       city: String(record.city ?? "").trim(),
       contactPerson: String(record.contactPerson ?? record.ownerName ?? account.profile.name ?? "").trim(),
+      createdAt: new Date().toISOString(),
+      createdBy: "admin",
       description: String(record.details ?? record.description ?? "").trim(),
       email,
       image: String(record.image ?? "").trim(),
       keywords: String(record.keywords ?? record.details ?? record.description ?? "").trim(),
       location: [record.subcity, record.city, record.state].map((part) => String(part ?? "").trim()).filter(Boolean).join(", "),
+      memberId: ownerId,
       mobile: phone,
       name,
+      ownerId,
       state: String(record.state ?? "").trim(),
-      status: validListingStatus(String(record.status ?? "Pending")),
+      status,
       subcategory: String(record.subcategory ?? "").trim(),
       subcity: String(record.subcity ?? record.area ?? record.location ?? "").trim(),
+      submittedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       website: String(record.website ?? "").trim(),
       youtube: String(record.youtube ?? "").trim(),
     };
@@ -435,25 +577,33 @@ async function upsertAdminBusiness(record: Record<string, unknown>) {
   account.profile.username = account.profile.username || ownerId;
   account.profile.status = "Active";
 
+  const status = validListingStatus(String(record.status ?? "Pending"));
   const listing: MemberListing = {
     id,
     address: String(record.address ?? "").trim(),
     addressProofName: String(record.addressProofName ?? record.proof ?? "").trim(),
+    approvalStatus: approvalStatusForStatus(status),
     businessType: String(record.businessType ?? "").trim(),
     category: String(record.category ?? categories[0] ?? "General").trim(),
     city: String(record.city ?? "").trim(),
     contactPerson: ownerName,
+    createdAt: new Date().toISOString(),
+    createdBy: "admin",
     description: String(record.details ?? record.description ?? "").trim(),
     email: ownerEmail,
     image: String(record.image ?? "").trim(),
     keywords: String(record.keywords ?? record.details ?? "").trim(),
     location: [record.subcity, record.city, record.state].map((part) => String(part ?? "").trim()).filter(Boolean).join(", "),
+    memberId: ownerId,
     mobile: contact,
     name,
+    ownerId,
     state: String(record.state ?? "").trim(),
-    status: validListingStatus(String(record.status ?? "Pending")),
+    status,
     subcategory: String(record.subcategory ?? "").trim(),
     subcity: String(record.subcity ?? "").trim(),
+    submittedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     website: String(record.website ?? "").trim(),
     youtube: String(record.youtube ?? "").trim(),
   };
@@ -525,6 +675,7 @@ export function getAdminResource(resource = "dashboard") {
       id: member.profile.id,
       listingCount: member.listings.length,
       name: member.profile.name,
+      packageName: member.packageName,
       phone: member.profile.phone,
       registeredAt: member.registeredAt,
       status: member.profile.status,
@@ -535,7 +686,7 @@ export function getAdminResource(resource = "dashboard") {
   return null;
 }
 
-export async function getAdminResourceAsync(resource = "dashboard") {
+export async function getAdminResourceAsync(resource = "dashboard"): Promise<unknown> {
   if (!isMongoConfigured()) return getAdminResource(resource);
 
   // Categories
@@ -558,8 +709,16 @@ export async function getAdminResourceAsync(resource = "dashboard") {
 
   // Subcategories
   if (resource === "subcategories") {
-    const globalRecs = (globalThis as typeof globalThis & { __checkinfoSubcategories?: unknown[] }).__checkinfoSubcategories ?? [];
-    return globalRecs;
+    const docs = await listMongoSubcategories();
+    return docs.map((doc) => ({
+      businessTypes: doc.businessTypes,
+      categoryName: doc.categoryName,
+      categorySlug: doc.categorySlug,
+      createdAt: doc.createdAt,
+      id: doc._id,
+      name: doc.name,
+      slug: doc.slug,
+    }));
   }
 
   // Newsletter
@@ -602,6 +761,7 @@ export async function getAdminResourceAsync(resource = "dashboard") {
         email: doc.email,
         id: doc._id,
         name: doc.name,
+        permissions: Array.isArray(doc.permissions) ? doc.permissions : ["dashboard"],
         phone: doc.phone,
         registeredAt: doc.registeredAt,
         status: doc.status,
@@ -739,6 +899,7 @@ export async function getAdminResourceAsync(resource = "dashboard") {
     try {
       const docs = await listMongoStates();
       return docs.map((doc) => ({
+        country: doc.countryName,
         countryName: doc.countryName,
         id: doc._id,
         name: doc.name,
@@ -755,9 +916,11 @@ export async function getAdminResourceAsync(resource = "dashboard") {
       const docs = await listMongoCities();
       return docs.map((doc) => ({
         cityName: doc.name,
+        country: doc.countryName,
         countryName: doc.countryName,
         id: doc._id,
         name: doc.name,
+        state: doc.stateName,
         stateName: doc.stateName,
         status: doc.status,
       }));
@@ -771,16 +934,35 @@ export async function getAdminResourceAsync(resource = "dashboard") {
     try {
       const docs = await listMongoLocations();
       return docs.map((doc) => ({
+        city: doc.cityName,
         cityName: doc.cityName,
+        country: doc.countryName,
         countryName: doc.countryName,
         id: doc._id,
         name: doc.name,
+        state: doc.stateName,
         stateName: doc.stateName,
         status: doc.status,
       }));
     } catch (error) {
       throw error;
     }
+  }
+
+  if (resource === "audit-logs") {
+    const docs = await listMongoAdminAuditLogs({ limit: 200 });
+    return docs.map((doc) => ({
+      action: doc.action,
+      actorId: doc.actorId,
+      actorRole: doc.actorRole,
+      businessId: doc.businessId,
+      createdAt: doc.createdAt,
+      details: doc.details,
+      id: doc._id,
+      memberId: doc.memberId,
+      ownerId: doc.ownerId,
+      resource: doc.resource,
+    }));
   }
 
   let members: MemberAccount[];
@@ -802,10 +984,26 @@ export async function getAdminResourceAsync(resource = "dashboard") {
           ...listing,
         addressProofName: listing.addressProofName,
         image: listing.image,
+        packageName: listing.packageName,
+        placementExpiresAt: listing.placementExpiresAt,
         placements: listing.placements,
+        placementStartsAt: listing.placementStartsAt,
         publicPath: listing.publicPath || listingPublicPath(listing),
       })) as ReturnType<typeof buildBusinessFromMembers>
       : buildBusinessFromMembers(members);
+    const duplicateCounts = new Map<string, number>();
+    business.forEach((listing) => {
+      const key = duplicateBusinessKey(listing);
+      if (key) duplicateCounts.set(key, (duplicateCounts.get(key) ?? 0) + 1);
+    });
+    business = business.map((listing) => {
+      const key = duplicateBusinessKey(listing);
+      return {
+        ...listing,
+        duplicateKey: key,
+        isDuplicate: Boolean(key && (duplicateCounts.get(key) ?? 0) > 1),
+      };
+    }) as typeof business;
     totalBusinessCount = business.length;
   } catch (error) {
     throw error;
@@ -863,10 +1061,13 @@ export async function getAdminResourceAsync(resource = "dashboard") {
 
     return {
       activeMembers: isMongoConfigured() ? await countMongoMembers({ "profile.status": "Active" }) : members.filter((member) => member.profile.status === "Active").length,
+      approvedBusiness: business.filter((listing) => listing.status === "Active" || listing.status === "Featured" || listing.status === "Popular").length,
       categoriesCount: mongoCategoriesCount,
       categoryDistribution,
+      featuredBusiness: business.filter((listing) => Array.isArray(listing.placements) && listing.placements.includes("featured")).length,
       membersCount: totalMembersCount,
       pendingBusiness: business.filter((listing) => listing.status === "Pending").length,
+      rejectedBusiness: business.filter((listing) => listing.status === "Inactive" || listing.approvalStatus === "Rejected").length,
       recentEnquiries,
       systemHealth: {
         dbName: process.env.MONGODB_DB?.trim() || "checkinfo",
@@ -876,6 +1077,7 @@ export async function getAdminResourceAsync(resource = "dashboard") {
       totalBusiness: totalBusinessCount,
       totalEnquiries: mongoEnquiries.length,
       totalUsers: mongoUsersCount,
+      trendingBusiness: business.filter((listing) => Array.isArray(listing.placements) && listing.placements.includes("trending")).length,
     };
   }
 
@@ -887,6 +1089,7 @@ export async function getAdminResourceAsync(resource = "dashboard") {
       id: member.profile.id,
       listingCount: member.listings.length,
       name: member.profile.name,
+      packageName: member.packageName,
       phone: member.profile.phone,
       registeredAt: member.registeredAt,
       status: member.profile.status,
@@ -990,6 +1193,7 @@ export function handleAdminAction(resource: string, payload: Record<string, unkn
       nextAccount.profile.email = email;
       nextAccount.profile.phone = phone;
       nextAccount.profile.status = record.status === "Inactive" ? "Inactive" : "Active";
+      nextAccount.packageName = String(record.packageName ?? nextAccount.packageName ?? "Free Listing");
       nextAccount.registeredAt = String(record.registeredAt ?? nextAccount.registeredAt);
 
       if (password) {
@@ -1020,6 +1224,9 @@ export function handleAdminAction(resource: string, payload: Record<string, unkn
 }
 
 export async function handleAdminActionAsync(resource: string, payload: Record<string, unknown>) {
+  const actorId = String(payload.__actorId ?? "admin");
+  const actorRole = payload.__actorRole === "subadmin" ? "subadmin" : "admin";
+
   // Categories
   if (resource === "categories") {
     const action = String(payload.action ?? "");
@@ -1060,7 +1267,37 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
       return { categories: await getAdminResourceAsync("categories") };
     }
 
+    if (action === "update-order" && Array.isArray(payload.records)) {
+      if (isMongoConfigured()) await updateMongoCategoriesOrder(payload.records as Array<{ id: string; order: number }>);
+      return { categories: await getAdminResourceAsync("categories") };
+    }
+
     return { categories: await getAdminResourceAsync("categories") };
+  }
+
+  // Subcategories
+  if (resource === "subcategories") {
+    const action = String(payload.action ?? "");
+
+    if (action === "upsert" && payload.record) {
+      const rec = payload.record as {
+        businessTypes: Array<{ name: string; slug: string }>;
+        categoryName: string;
+        categorySlug: string;
+        id: string;
+        name: string;
+        slug: string;
+      };
+      if (isMongoConfigured()) await upsertMongoSubcategory(rec);
+      return { subcategories: await getAdminResourceAsync("subcategories") };
+    }
+
+    if (action === "delete" && payload.id) {
+      if (isMongoConfigured()) await deleteMongoSubcategoryById(String(payload.id));
+      return { subcategories: await getAdminResourceAsync("subcategories") };
+    }
+
+    return { subcategories: await getAdminResourceAsync("subcategories") };
   }
 
   // Newsletter
@@ -1126,10 +1363,17 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
 
     if (action === "upsert" && payload.record) {
       const rec = payload.record as {
-        email: string; id: string; name: string; phone: string;
+        email: string; id: string; name: string; password?: string; permissions?: string[]; phone: string;
         registeredAt: string; status: "Active" | "Inactive"; username: string;
       };
-      if (isMongoConfigured()) await upsertMongoSubadmin(rec);
+      if (isMongoConfigured()) {
+        const { hashPassword } = await import("./auth");
+        await upsertMongoSubadmin({
+          ...rec,
+          passwordHash: rec.password ? hashPassword(rec.password) : undefined,
+          permissions: Array.isArray(rec.permissions) ? rec.permissions : ["dashboard"],
+        });
+      }
       return { ok: true };
     }
     if (action === "bulk-status" && Array.isArray(payload.ids) && payload.status) {
@@ -1352,6 +1596,13 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
     if (action === "bulk-import" && Array.isArray(payload.records)) {
       if (!isMongoConfigured()) return { imported: 0, message: "MongoDB is required for CSV/Excel store import." };
       const imported = await bulkImportBusinesses(payload.records as Array<Record<string, unknown>>);
+      await logMongoAdminAudit({
+        action: "bulk-import",
+        actorId,
+        actorRole,
+        details: { imported },
+        resource: "business",
+      });
       return { business: await getAdminResourceAsync("business"), imported };
     }
   }
@@ -1361,29 +1612,67 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
   if (resource === "business") {
     const action = String(payload.action ?? "");
     if (action === "upsert" && payload.record && typeof payload.record === "object") {
-      await upsertAdminBusiness(payload.record as Record<string, unknown>);
+      const listing = await upsertAdminBusiness(payload.record as Record<string, unknown>);
+      if (listing) {
+        await logMongoAdminAudit({
+          action: "upsert",
+          actorId,
+          actorRole,
+          businessId: listing.id,
+          memberId: listing.memberId,
+          ownerId: listing.ownerId,
+          resource: "business",
+        });
+      }
       return { business: await getAdminResourceAsync("business") };
     }
 
     if (action === "delete" && (Array.isArray(payload.ids) || payload.id)) {
       const ids = Array.isArray(payload.ids) ? payload.ids.map(String) : [String(payload.id)];
       await deleteAdminBusinesses(ids);
+      await logMongoAdminAudit({
+        action: "delete",
+        actorId,
+        actorRole,
+        details: { ids },
+        resource: "business",
+      });
       return { business: await getAdminResourceAsync("business") };
     }
 
     const ownerId = String(payload.ownerId ?? "");
     const id = String(payload.id ?? "");
+    const reason = String(payload.reason ?? payload.rejectionReason ?? "").trim();
+    const adminNotes = String(payload.adminNotes ?? "").trim();
     const account = ownerId ? await getOrCreateMongoMember(ownerId) : null;
 
     if (account && (action === "set-placements" || action === "unset-placements")) {
       const requested = normalizeBusinessPlacements(payload.placements ?? payload.placement);
+      const placementExpiresAt = String(payload.placementExpiresAt ?? "").trim() || undefined;
+      const placementStartsAt = String(payload.placementStartsAt ?? "").trim() || undefined;
       account.listings = account.listings.map((listing) => {
         if (listing.id !== id) return listing;
         const current = defaultPlacementsForListing(listing);
         const placements = action === "set-placements"
           ? Array.from(new Set([...current, ...requested]))
           : current.filter((placement) => !requested.includes(placement));
-        return { ...listing, placements, status: "Active" };
+        const updatedAt = new Date().toISOString();
+        return {
+          ...listing,
+          approvalStatus: "Approved",
+          approvedAt: updatedAt,
+          approvedBy: actorId,
+          editHistory: [
+            ...(Array.isArray(listing.editHistory) ? listing.editHistory : []),
+            { action: "admin-placement", actorId, at: updatedAt, notes: `Placement ${action}` },
+          ],
+          placementExpiresAt: placementExpiresAt ?? listing.placementExpiresAt,
+          placementStartsAt: placementStartsAt ?? listing.placementStartsAt,
+          placements,
+          status: "Active",
+          updatedAt,
+          verificationStatus: "Verified",
+        };
       });
       account.notifications.unshift({
         id: `notif-${Date.now()}`,
@@ -1393,29 +1682,78 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
         unread: true,
       });
       const listing = account.listings.find((item) => item.id === id);
-      await updateMongoBusinessPlacements(ownerId, id, defaultPlacementsForListing(listing ?? { status: "Active" }));
+      await updateMongoBusinessPlacements(ownerId, id, defaultPlacementsForListing(listing ?? { status: "Active" }), actorId, { placementExpiresAt, placementStartsAt });
+      await logMongoAdminAudit({
+        action,
+        actorId,
+        actorRole,
+        businessId: id,
+        details: { placementExpiresAt, placementStartsAt, placements: requested },
+        memberId: ownerId,
+        ownerId,
+        resource: "business",
+      });
       await saveMongoMember(account);
       return { business: await getAdminResourceAsync("business") };
     }
 
     if (account && ["Active", "Inactive", "Pending", "Draft", "Featured", "Popular"].includes(action)) {
+      const updatedAt = new Date().toISOString();
+      const approvalStatus = action === "Active" || action === "Featured" || action === "Popular"
+        ? "Approved"
+        : action === "Draft"
+          ? "Draft"
+          : action === "Inactive"
+            ? "Rejected"
+            : "Pending";
       account.listings = account.listings.map((listing) =>
-        listing.id === id ? { ...listing, status: action as MemberListing["status"] } : listing,
+        listing.id === id
+          ? {
+              ...listing,
+              approvalStatus,
+              adminNotes: adminNotes || listing.adminNotes,
+              approvedAt: approvalStatus === "Approved" ? updatedAt : listing.approvedAt,
+              approvedBy: approvalStatus === "Approved" ? actorId : listing.approvedBy,
+              editHistory: [
+                ...(Array.isArray(listing.editHistory) ? listing.editHistory : []),
+                { action: "admin-status", actorId, at: updatedAt, notes: reason || `Status changed to ${action}` },
+              ],
+              placements: approvalStatus === "Approved"
+                ? Array.from(new Set([...(listing.placements ?? []), "new" as const]))
+                : listing.placements,
+              rejectionReason: approvalStatus === "Rejected" ? reason : listing.rejectionReason,
+              status: action as MemberListing["status"],
+              updatedAt,
+              verificationStatus: approvalStatus === "Approved" ? "Verified" : approvalStatus === "Rejected" ? "Rejected" : "Pending",
+            }
+          : listing,
       );
       account.notifications.unshift({
         id: `notif-${Date.now()}`,
-        text: `Your listing status was updated to ${action} by Administrator.`,
+        text: `Your listing status was updated to ${action} by Administrator.${reason ? ` Reason: ${reason}` : ""}`,
         time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
         title: "Listing Status Update",
         unread: true,
       });
-      await updateMongoBusinessStatus(ownerId, id, action as MemberListing["status"]);
+      await updateMongoBusinessStatus(ownerId, id, action as MemberListing["status"], actorId);
+      await logMongoAdminAudit({
+        action: `status:${action}`,
+        actorId,
+        actorRole,
+        businessId: id,
+        details: { reason, status: action },
+        memberId: ownerId,
+        ownerId,
+        resource: "business",
+      });
       await saveMongoMember(account);
       return { business: await getAdminResourceAsync("business") };
     }
 
     if (!ownerId && id && (action === "set-placements" || action === "unset-placements")) {
       const requested = normalizeBusinessPlacements(payload.placements ?? payload.placement);
+      const placementExpiresAt = String(payload.placementExpiresAt ?? "").trim() || undefined;
+      const placementStartsAt = String(payload.placementStartsAt ?? "").trim() || undefined;
       const members = await listMongoMembers({ limit: 5000 });
       await Promise.all(members.map(async (member) => {
         if (!member.listings.some((listing) => listing.id === id)) return;
@@ -1425,7 +1763,40 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
           const placements = action === "set-placements"
             ? Array.from(new Set([...current, ...requested]))
             : current.filter((placement) => !requested.includes(placement));
-          return { ...listing, placements, status: "Active" };
+          const updatedAt = new Date().toISOString();
+          return {
+            ...listing,
+            approvalStatus: "Approved",
+            approvedAt: updatedAt,
+            approvedBy: actorId,
+            editHistory: [
+              ...(Array.isArray(listing.editHistory) ? listing.editHistory : []),
+              { action: "admin-placement", actorId, at: updatedAt, notes: `Placement ${action}` },
+            ],
+            placementExpiresAt: placementExpiresAt ?? listing.placementExpiresAt,
+            placementStartsAt: placementStartsAt ?? listing.placementStartsAt,
+            placements,
+            status: "Active",
+            updatedAt,
+            verificationStatus: "Verified",
+          };
+        });
+        member.notifications.unshift({
+          id: `notif-${Date.now()}`,
+          text: "Your listing placements were updated by Administrator.",
+          time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+          title: "Listing Placement Update",
+          unread: true,
+        });
+        await logMongoAdminAudit({
+          action,
+          actorId,
+          actorRole,
+          businessId: id,
+          details: { placementExpiresAt, placementStartsAt, placements: requested },
+          memberId: member.profile.id,
+          ownerId: member.profile.id,
+          resource: "business",
         });
         await saveMongoMember(member);
       }));
@@ -1436,9 +1807,53 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
       const members = await listMongoMembers({ limit: 5000 });
       await Promise.all(members.map(async (member) => {
         if (!member.listings.some((listing) => listing.id === id)) return;
+        const updatedAt = new Date().toISOString();
+        const approvalStatus = action === "Active" || action === "Featured" || action === "Popular"
+          ? "Approved"
+          : action === "Draft"
+            ? "Draft"
+            : action === "Inactive"
+              ? "Rejected"
+              : "Pending";
         member.listings = member.listings.map((listing) =>
-          listing.id === id ? { ...listing, status: action as MemberListing["status"] } : listing,
+          listing.id === id
+            ? {
+                ...listing,
+                approvalStatus,
+                adminNotes: adminNotes || listing.adminNotes,
+                approvedAt: approvalStatus === "Approved" ? updatedAt : listing.approvedAt,
+                approvedBy: approvalStatus === "Approved" ? actorId : listing.approvedBy,
+                editHistory: [
+                  ...(Array.isArray(listing.editHistory) ? listing.editHistory : []),
+                  { action: "admin-status", actorId, at: updatedAt, notes: reason || `Status changed to ${action}` },
+                ],
+                placements: approvalStatus === "Approved"
+                  ? Array.from(new Set([...(listing.placements ?? []), "new" as const]))
+                  : listing.placements,
+                rejectionReason: approvalStatus === "Rejected" ? reason : listing.rejectionReason,
+                status: action as MemberListing["status"],
+                updatedAt,
+                verificationStatus: approvalStatus === "Approved" ? "Verified" : approvalStatus === "Rejected" ? "Rejected" : "Pending",
+              }
+            : listing,
         );
+        member.notifications.unshift({
+          id: `notif-${Date.now()}`,
+          text: `Your listing status was updated to ${action} by Administrator.${reason ? ` Reason: ${reason}` : ""}`,
+          time: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+          title: "Listing Status Update",
+          unread: true,
+        });
+        await logMongoAdminAudit({
+          action: `status:${action}`,
+          actorId,
+          actorRole,
+          businessId: id,
+          details: { reason, status: action },
+          memberId: member.profile.id,
+          ownerId: member.profile.id,
+          resource: "business",
+        });
         await saveMongoMember(member);
       }));
       return { business: await getAdminResourceAsync("business") };
@@ -1478,6 +1893,7 @@ export async function handleAdminActionAsync(resource: string, payload: Record<s
       account.profile.email = email;
       account.profile.phone = phone;
       account.profile.status = record.status === "Inactive" ? "Inactive" : "Active";
+      account.packageName = String(record.packageName ?? account.packageName ?? "Free Listing");
       account.registeredAt = String(record.registeredAt ?? account.registeredAt);
 
       if (password) {

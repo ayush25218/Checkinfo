@@ -33,30 +33,64 @@ export type MemberProfile = {
 
 export type MemberAccount = {
   _id?: string;
+  couponCode?: string;
   enquiries: MemberEnquiry[];
+  invoices?: Array<{
+    amount: number;
+    createdAt: string;
+    id: string;
+    packageName: string;
+    status: "Paid" | "Trial" | "Manual";
+  }>;
   listings: MemberListing[];
   loggedOutAt: string | null;
   notifications: MemberNotification[];
+  packageExpiresAt?: string | null;
   packageName: string;
+  paymentStatus?: "Free" | "Trial" | "Paid" | "Manual";
   passwordHash?: string;
   passwordUpdatedAt: string | null;
   profile: MemberProfile;
   registeredAt: string;
   reviews: MemberReview[];
   tickets: SupportTicket[];
+  trialEndsAt?: string | null;
+  walletCredits?: number;
 };
 
 export type BusinessListingRecord = MemberListing & {
   _id: string;
+  approvalStatus: "Draft" | "Pending" | "Approved" | "Rejected";
+  approvedAt?: string;
+  approvedBy?: string;
   badge: "Featured" | "Popular" | "Verified";
   contact: string;
   createdAt: string;
+  createdBy: string;
   details: string;
+  memberId: string;
   ownerEmail: string;
   ownerId: string;
   ownerName: string;
+  packageName?: string;
+  placementExpiresAt?: string;
+  placementStartsAt?: string;
   publicPath: string;
+  submittedAt?: string;
   updatedAt: string;
+};
+
+export type AdminAuditRecord = {
+  _id: string;
+  action: string;
+  actorId: string;
+  actorRole: "admin" | "subadmin";
+  businessId?: string;
+  createdAt: string;
+  details?: Record<string, unknown>;
+  memberId?: string;
+  ownerId?: string;
+  resource: string;
 };
 
 type CategoryRecord = {
@@ -67,6 +101,17 @@ type CategoryRecord = {
   name: string;
   slug: string;
   status: "Active" | "Inactive";
+};
+
+type SubcategoryRecord = {
+  _id: string;
+  businessTypes: Array<{ name: string; slug: string }>;
+  categoryName: string;
+  categorySlug: string;
+  createdAt: string;
+  name: string;
+  slug: string;
+  updatedAt: string;
 };
 
 type NewsletterRecord = {
@@ -92,10 +137,12 @@ type MetaTagRecord = {
   url: string;
 };
 
-type SubadminRecord = {
+export type SubadminRecord = {
   _id: string;
   email: string;
   name: string;
+  passwordHash?: string;
+  permissions?: string[];
   phone: string;
   registeredAt: string;
   status: "Active" | "Inactive";
@@ -307,6 +354,7 @@ export async function getMongoCollections() {
 
   return {
     adminSettings: db.collection<AdminSettingsExtended>("admin_settings"),
+    auditLogs: db.collection<AdminAuditRecord>("audit_logs"),
     businesses: db.collection<BusinessListingRecord>("businesses"),
     categories: db.collection<CategoryRecord>("categories"),
     cities: db.collection<CityRecord>("cities"),
@@ -321,6 +369,7 @@ export async function getMongoCollections() {
     settings: db.collection<SettingRecord>("settings"),
     states: db.collection<StateRecord>("states"),
     staticPages: db.collection<StaticPageRecord>("static_pages"),
+    subcategories: db.collection<SubcategoryRecord>("subcategories"),
     subadmins: db.collection<SubadminRecord>("subadmins"),
     testimonials: db.collection<TestimonialRecord>("testimonials"),
     users: db.collection<UserAccount>("users"),
@@ -336,7 +385,10 @@ export function emptyMemberAccount(memberId: string): MemberAccount {
     listings: [],
     loggedOutAt: null,
     notifications: [],
+    invoices: [],
+    packageExpiresAt: null,
     packageName: "Free Listing",
+    paymentStatus: "Free",
     passwordUpdatedAt: null,
     profile: {
       email: "",
@@ -351,6 +403,8 @@ export function emptyMemberAccount(memberId: string): MemberAccount {
     registeredAt: new Date().toISOString(),
     reviews: [],
     tickets: [],
+    trialEndsAt: null,
+    walletCredits: 0,
   };
 }
 
@@ -361,12 +415,18 @@ function slugify(value: string) {
 async function ensureIndexes(collections: Awaited<ReturnType<typeof getMongoCollections>>) {
   await Promise.all([
     collections.businesses.createIndex({ ownerId: 1, updatedAt: -1 }),
+    collections.businesses.createIndex({ memberId: 1, updatedAt: -1 }),
+    collections.businesses.createIndex({ approvalStatus: 1, updatedAt: -1 }),
+    collections.businesses.createIndex({ placements: 1, status: 1, updatedAt: -1 }),
     collections.businesses.createIndex({ status: 1, updatedAt: -1 }),
     collections.businesses.createIndex({ category: 1, status: 1, updatedAt: -1 }),
     collections.businesses.createIndex({ state: 1, city: 1, subcity: 1, status: 1 }),
     collections.businesses.createIndex({ name: "text", category: "text", subcategory: "text", businessType: "text", city: "text", subcity: "text", state: "text", keywords: "text" }),
     collections.categories.createIndex({ slug: 1 }, { unique: true }),
+    collections.auditLogs.createIndex({ createdAt: -1 }),
+    collections.auditLogs.createIndex({ resource: 1, action: 1, createdAt: -1 }),
     collections.categories.createIndex({ status: 1, displayOrder: 1 }),
+    collections.subcategories.createIndex({ categorySlug: 1, slug: 1 }, { unique: true }),
     collections.enquiries.createIndex({ createdAt: -1 }),
     collections.enquiries.createIndex({ type: 1, status: 1 }),
     collections.faqs.createIndex({ displayOrder: 1 }),
@@ -377,6 +437,7 @@ async function ensureIndexes(collections: Awaited<ReturnType<typeof getMongoColl
     collections.newsletters.createIndex({ email: 1 }, { unique: true }),
     collections.staticPages.createIndex({ slug: 1 }, { unique: true }),
     collections.subadmins.createIndex({ username: 1 }, { unique: true }),
+    collections.subadmins.createIndex({ email: 1 }),
     collections.testimonials.createIndex({ displayOrder: 1 }),
     collections.users.createIndex({ username: 1 }, { unique: true }),
     collections.users.createIndex({ email: 1 }, { unique: true }),
@@ -389,8 +450,14 @@ export async function getMongoUserByUsernameOrEmail(identifier: string): Promise
   if (!isMongoConfigured() || !identifier) return null;
   const { users } = await getMongoCollections();
   const query = identifier.trim().toLowerCase();
+  const safeRegex = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return users.findOne({
-    $or: [{ username: query }, { email: query }],
+    $or: [
+      { username: query },
+      { email: query },
+      { email: { $regex: new RegExp(`^${safeRegex}$`, "i") } },
+      { username: { $regex: new RegExp(`^${safeRegex}$`, "i") } },
+    ],
   });
 }
 
@@ -432,12 +499,18 @@ export async function getMongoMemberByUsernameOrEmail(identifier: string): Promi
   if (!isMongoConfigured() || !identifier) return null;
   const { members } = await getMongoCollections();
   const query = identifier.trim().toLowerCase();
+  const safeRegex = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   return members.findOne({
     $or: [
       { _id: query },
       { "profile.username": query },
       { "profile.email": query },
+      { email: query },
+      { username: query },
+      { "profile.email": { $regex: new RegExp(`^${safeRegex}$`, "i") } },
+      { "profile.username": { $regex: new RegExp(`^${safeRegex}$`, "i") } },
+      { email: { $regex: new RegExp(`^${safeRegex}$`, "i") } },
     ],
   });
 }
@@ -452,34 +525,39 @@ export async function createMongoMember(data: {
   username: string;
 }): Promise<MemberAccount> {
   const { members } = await getMongoCollections();
-  const username = data.username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/^-+|-+$/g, "");
   const email = data.email.trim().toLowerCase();
+
+  // Check strictly by email address only
   const existing = await members.findOne({
     $or: [
-      { _id: username },
-      { "profile.username": username },
       { "profile.email": email },
+      { email: email },
     ],
   });
 
   if (existing) {
-    throw new Error("MEMBER_ALREADY_EXISTS");
+    throw new Error("EMAIL_ALREADY_EXISTS");
   }
 
-  const account = emptyMemberAccount(username);
+  // Generate 100% unique member ID so people with same name never clash
+  const uniqueId = `member_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+
+  const account = emptyMemberAccount(uniqueId);
+  account._id = uniqueId;
   account.passwordHash = data.passwordHash;
   account.passwordUpdatedAt = new Date().toISOString();
   account.profile.email = email;
+  account.profile.id = uniqueId;
   account.profile.initials = data.name
     .split(" ")
     .filter(Boolean)
     .map((part) => part[0])
     .join("")
     .toUpperCase()
-    .slice(0, 2) || username.slice(0, 2).toUpperCase();
+    .slice(0, 2) || "MB";
   account.profile.name = data.name;
   account.profile.phone = data.phone;
-  account.profile.username = username;
+  account.profile.username = email;
   account.registeredAt = new Date().toISOString();
 
   await members.insertOne(account);
@@ -537,8 +615,11 @@ export async function upsertMongoOAuthMember(data: {
   return account;
 }
 
+let hasSeededMongoAuth = false;
+
 export async function seedMongoAuthAccounts(hashPasswordFn: (password: string) => string) {
-  if (!isMongoConfigured()) return;
+  if (!isMongoConfigured() || hasSeededMongoAuth) return;
+  hasSeededMongoAuth = true;
   const { adminSettings, users, members } = await getMongoCollections();
 
   // 1. Seed Admin account passwordHash in site settings if not present
@@ -684,21 +765,46 @@ function badgeForPlacements(status: MemberListing["status"], placements: NonNull
   return badgeForStatus(status);
 }
 
+function approvalStatusForListing(listing: Pick<MemberListing, "approvalStatus" | "status">) {
+  if (listing.approvalStatus) return listing.approvalStatus;
+  if (listing.status === "Active" || listing.status === "Featured" || listing.status === "Popular") return "Approved";
+  if (listing.status === "Draft") return "Draft";
+  return "Pending";
+}
+
 function businessRecordFromListing(account: MemberAccount, listing: MemberListing): Omit<BusinessListingRecord, "createdAt"> {
   const placements = normalizePlacements(listing);
+  const ownerId = listing.ownerId || account.profile.id;
+  const memberId = listing.memberId || account.profile.id;
+  const createdBy = listing.createdBy || memberId;
+  const publishedReviews = account.reviews.filter((review) => review.status === "Published");
+  const rating = publishedReviews.length
+    ? Number((publishedReviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / publishedReviews.length).toFixed(1))
+    : listing.rating;
   return {
     ...listing,
     _id: businessId(account.profile.id, listing.id),
     address: listing.address || listingLocationText(listing),
+    approvalStatus: approvalStatusForListing(listing),
+    approvedAt: listing.approvedAt,
+    approvedBy: listing.approvedBy,
     badge: badgeForPlacements(listing.status, placements),
     contact: listing.mobile || listing.email,
+    createdBy,
     details: listing.description || listing.keywords,
     location: listingLocationText(listing),
+    memberId,
     ownerEmail: account.profile.email,
-    ownerId: account.profile.id,
+    ownerId,
     ownerName: account.profile.name,
+    packageName: account.packageName,
+    placementExpiresAt: listing.placementExpiresAt,
+    placementStartsAt: listing.placementStartsAt,
     placements,
     publicPath: listingPublicPath(listing),
+    rating,
+    reviewCount: publishedReviews.length || listing.reviewCount,
+    submittedAt: listing.submittedAt,
     updatedAt: new Date().toISOString(),
   };
 }
@@ -774,29 +880,87 @@ export async function countMongoBusinessListings(filter: Record<string, unknown>
   return businesses.countDocuments(filter);
 }
 
-export async function updateMongoBusinessStatus(ownerId: string, listingId: string, status: MemberListing["status"]) {
+export async function logMongoAdminAudit(record: Omit<AdminAuditRecord, "_id" | "createdAt">) {
+  const { auditLogs } = await getMongoCollections();
+  const now = new Date().toISOString();
+  const doc: AdminAuditRecord = {
+    _id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    createdAt: now,
+    ...record,
+  };
+  await auditLogs.insertOne(doc);
+  return doc;
+}
+
+export async function listMongoAdminAuditLogs(options: { limit?: number } = {}) {
+  const { auditLogs } = await getMongoCollections();
+  const cursor = auditLogs.find({}).sort({ createdAt: -1 });
+  if (options.limit && options.limit > 0) cursor.limit(options.limit);
+  return cursor.toArray();
+}
+
+export async function updateMongoBusinessStatus(
+  ownerId: string,
+  listingId: string,
+  status: MemberListing["status"],
+  actorId = "admin",
+) {
   const { businesses } = await getMongoCollections();
   const existing = await businesses.findOne({ _id: businessId(ownerId, listingId) }, { projection: { placements: 1 } });
   const placements = status === "Active"
     ? Array.from(new Set([...(normalizePlacements(existing ?? { status })), "new" as const]))
     : normalizePlacements(existing ?? { status });
+  const now = new Date().toISOString();
+  const approvalStatus = status === "Active" || status === "Featured" || status === "Popular"
+    ? "Approved"
+    : status === "Draft"
+      ? "Draft"
+      : status === "Inactive"
+        ? "Rejected"
+        : "Pending";
+  const setFields: Partial<BusinessListingRecord> = {
+    approvalStatus,
+    badge: badgeForPlacements(status, placements),
+    placements,
+    status,
+    updatedAt: now,
+  };
+  if (approvalStatus === "Approved") {
+    setFields.approvedAt = now;
+    setFields.approvedBy = actorId;
+  }
   await businesses.updateOne(
     { _id: businessId(ownerId, listingId) },
-    { $set: { status, badge: badgeForPlacements(status, placements), placements, updatedAt: new Date().toISOString() } },
+    {
+      $set: setFields,
+      ...(approvalStatus === "Approved" ? {} : { $unset: { approvedAt: "", approvedBy: "" } }),
+    },
   );
 }
 
-export async function updateMongoBusinessPlacements(ownerId: string, listingId: string, placements: NonNullable<MemberListing["placements"]>) {
+export async function updateMongoBusinessPlacements(
+  ownerId: string,
+  listingId: string,
+  placements: NonNullable<MemberListing["placements"]>,
+  actorId = "admin",
+  options: { placementExpiresAt?: string; placementStartsAt?: string } = {},
+) {
   const { businesses } = await getMongoCollections();
   const normalized = normalizePlacements({ placements, status: "Active" });
+  const now = new Date().toISOString();
   await businesses.updateOne(
     { _id: businessId(ownerId, listingId) },
     {
       $set: {
+        approvalStatus: "Approved",
+        approvedAt: now,
+        approvedBy: actorId,
         badge: badgeForPlacements("Active", normalized),
+        ...(options.placementExpiresAt ? { placementExpiresAt: options.placementExpiresAt } : {}),
+        ...(options.placementStartsAt ? { placementStartsAt: options.placementStartsAt } : {}),
         placements: normalized,
         status: "Active",
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       },
     },
   );
@@ -922,9 +1086,64 @@ export async function deleteMongoCategoryById(id: string) {
   await categories.deleteOne({ _id: id });
 }
 
+export async function listMongoSubcategories() {
+  const { subcategories } = await getMongoCollections();
+  return subcategories.find({}).sort({ categoryName: 1, name: 1 }).toArray();
+}
+
+export async function upsertMongoSubcategory(record: {
+  businessTypes: Array<{ name: string; slug: string }>;
+  categoryName: string;
+  categorySlug: string;
+  id: string;
+  name: string;
+  slug: string;
+}) {
+  const { subcategories } = await getMongoCollections();
+  const now = new Date().toISOString();
+  const doc: SubcategoryRecord = {
+    _id: record.id,
+    businessTypes: record.businessTypes,
+    categoryName: record.categoryName,
+    categorySlug: record.categorySlug,
+    createdAt: now,
+    name: record.name,
+    slug: record.slug,
+    updatedAt: now,
+  };
+  await subcategories.updateOne(
+    { _id: record.id },
+    {
+      $set: {
+        businessTypes: doc.businessTypes,
+        categoryName: doc.categoryName,
+        categorySlug: doc.categorySlug,
+        name: doc.name,
+        slug: doc.slug,
+        updatedAt: now,
+      },
+      $setOnInsert: { _id: doc._id, createdAt: now },
+    },
+    { upsert: true },
+  );
+  return doc;
+}
+
+export async function deleteMongoSubcategoryById(id: string) {
+  const { subcategories } = await getMongoCollections();
+  await subcategories.deleteOne({ _id: id });
+}
+
 export async function bulkUpdateMongoCategoryStatus(ids: string[], status: "Active" | "Inactive") {
   const { categories } = await getMongoCollections();
   await categories.updateMany({ _id: { $in: ids } }, { $set: { status } });
+}
+
+export async function updateMongoCategoriesOrder(records: Array<{ id: string; order: number }>) {
+  const { categories } = await getMongoCollections();
+  await Promise.all(
+    records.map((record) => categories.updateOne({ _id: record.id }, { $set: { displayOrder: record.order } })),
+  );
 }
 
 export async function deleteMongoCategoriesByIds(ids: string[]) {
@@ -1030,10 +1249,21 @@ export async function listMongoSubadmins() {
   return subadmins.find({}).sort({ registeredAt: -1 }).toArray();
 }
 
+export async function getMongoSubadminByUsernameOrEmail(identifier: string) {
+  if (!isMongoConfigured() || !identifier) return null;
+  const { subadmins } = await getMongoCollections();
+  const query = identifier.trim().toLowerCase();
+  return subadmins.findOne({
+    $or: [{ username: query }, { email: query }],
+  });
+}
+
 export async function upsertMongoSubadmin(record: {
   email: string;
   id: string;
   name: string;
+  passwordHash?: string;
+  permissions?: string[];
   phone: string;
   registeredAt: string;
   status: "Active" | "Inactive";
@@ -1042,16 +1272,19 @@ export async function upsertMongoSubadmin(record: {
   const { subadmins } = await getMongoCollections();
   const doc: SubadminRecord = {
     _id: record.id,
-    email: record.email,
+    email: record.email.trim().toLowerCase(),
     name: record.name,
+    permissions: Array.isArray(record.permissions) ? record.permissions : ["dashboard"],
     phone: record.phone,
     registeredAt: record.registeredAt,
     status: record.status,
-    username: record.username,
+    username: record.username.trim().toLowerCase(),
   };
+  if (record.passwordHash) doc.passwordHash = record.passwordHash;
+  const { _id, ...setFields } = doc;
   await subadmins.updateOne(
     { _id: record.id },
-    { $set: doc, $setOnInsert: { _id: record.id } },
+    { $set: setFields, $setOnInsert: { _id: record.id } },
     { upsert: true },
   );
   return doc;
@@ -1409,6 +1642,7 @@ export type MongoCollectionMap = {
   metaTags: import("mongodb").Collection<MetaTagRecord>;
   newsletters: import("mongodb").Collection<NewsletterRecord>;
   staticPages: import("mongodb").Collection<StaticPageRecord>;
+  subcategories: import("mongodb").Collection<SubcategoryRecord>;
   subadmins: import("mongodb").Collection<SubadminRecord>;
   testimonials: import("mongodb").Collection<TestimonialRecord>;
 };

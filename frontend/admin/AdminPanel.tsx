@@ -4,15 +4,21 @@ import { AdminShellFrame } from "./AdminShellFrame";
 
 export { adminPages };
 
+type AdminGroup = readonly [string, readonly (readonly [string, string])[]];
+
 export function AdminShell({
   active,
   children,
+  groups = adminGroups,
+  roleLabel = "administrator",
 }: {
   active: string;
   children: ReactNode;
+  groups?: readonly AdminGroup[];
+  roleLabel?: string;
 }) {
   return (
-    <AdminShellFrame active={active} groups={adminGroups}>
+    <AdminShellFrame active={active} groups={groups} roleLabel={roleLabel}>
       {children}
     </AdminShellFrame>
   );

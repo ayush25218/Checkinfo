@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const role = searchParams.get("role") || "user";
   const origin = new URL(request.url).origin;
 
-  const redirectUri = `${origin}/api/auth/oauth/callback`;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${origin}/api/auth/oauth/callback`;
 
   let clientId = "";
   let authUrl = "";

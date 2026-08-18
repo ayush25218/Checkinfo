@@ -1,0 +1,17 @@
+{
+  "node": {
+    "40dc952c4cd4e9605c51c42ac5857578b0661abf22": {
+      "workers": {
+        "app/members/register/page": {
+          "moduleId": 5096,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_0",
+          "filename": "app/members/register/page.tsx"
+        }
+      },
+      "exportedName": "$$RSC_SERVER_ACTION_0",
+      "filename": "app/members/register/page.tsx"
+    }
+  },
+  "edge": {}
+}

@@ -48,3 +48,5 @@ next-env.d.ts
 *.zip
 /public/fioxen/assets/php/
 /public/fioxen/assets/scss/
+
+.env*

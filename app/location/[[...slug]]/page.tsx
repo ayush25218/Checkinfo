@@ -17,7 +17,10 @@ type LocationPageProps = {
 
 async function getApprovedListings() {
   const business = ((await getAdminResourceAsync("business")) ?? []) as PublicBusinessListing[];
-  return business.filter((listing) => listing.status === "Active" || listing.status === "Featured" || listing.status === "Popular");
+  return business.filter((listing) => {
+    const activeStatus = listing.status === "Active" || listing.status === "Featured" || listing.status === "Popular";
+    return activeStatus && listing.approvalStatus !== "Pending" && listing.approvalStatus !== "Rejected";
+  });
 }
 
 function titleCaseSlug(value = "") {

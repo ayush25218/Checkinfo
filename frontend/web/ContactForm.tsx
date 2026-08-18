@@ -7,7 +7,7 @@ export function ContactForm() {
     name: "",
     email: "",
     phone: "",
-    subject: "General Enquiry",
+    address: "",
     message: "",
   });
   const [status, setStatus] = useState<{ type: "idle" | "loading" | "success" | "error"; msg: string }>({
@@ -21,18 +21,24 @@ export function ContactForm() {
     if (!formData.name.trim() || (!formData.phone.trim() && !formData.email.trim()) || !formData.message.trim()) {
       setStatus({
         type: "error",
-        msg: "Please fill in your Name, Message, and at least one Contact (Phone or Email).",
+        msg: "Please fill in your Name, Message, and at least one Contact detail.",
       });
       return;
     }
 
-    setStatus({ type: "loading", msg: "Submitting enquiry to Admin..." });
+    setStatus({ type: "loading", msg: "Submitting message to Admin..." });
 
     try {
       const res = await fetch("/api/web/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          subject: formData.address ? `Inquiry from ${formData.address}` : "Contact Inquiry",
+          message: formData.message,
+        }),
       });
 
       const data = await res.json();
@@ -40,19 +46,19 @@ export function ContactForm() {
       if (res.ok && data.ok) {
         setStatus({
           type: "success",
-          msg: "Your enquiry has been received! Our team will contact you within 30 minutes.",
+          msg: "Your message has been received! Our team will get back to you shortly.",
         });
         setFormData({
           name: "",
           email: "",
           phone: "",
-          subject: "General Enquiry",
+          address: "",
           message: "",
         });
       } else {
         setStatus({
           type: "error",
-          msg: data.message || "Failed to submit enquiry. Please try again.",
+          msg: data.message || "Failed to send message. Please try again.",
         });
       }
     } catch {
@@ -64,106 +70,142 @@ export function ContactForm() {
   }
 
   return (
-    <form className="check-contact-form-card" onSubmit={handleSubmit}>
-      <div className="contact-form-header">
-        <h3>Send Us a Direct Message</h3>
-        <p>Fill in the 5 details below. Your request will be routed directly to Admin Support.</p>
-      </div>
+    <div className="atlas-get-in-touch-section">
+      <div className="atlas-get-in-touch-container">
+        {/* Left Column: Title, Subtitle, Contact Items, Social Links */}
+        <div className="atlas-touch-left">
+          <h2 className="atlas-touch-heading">Get In Touch</h2>
+          <p className="atlas-touch-desc">
+            Promote your business and get discovered with ease — List your services on Checkinfo, the smart directory solution.
+          </p>
 
-      {status.msg ? (
-        <div className={`form-status-alert ${status.type}`}>
-          {status.type === "loading" ? "⏳ " : status.type === "success" ? "✅ " : "⚠️ "}
-          <span>{status.msg}</span>
-        </div>
-      ) : null}
+          <div className="atlas-touch-info-list">
+            <div className="atlas-touch-info-item">
+              <div className="atlas-touch-icon-badge">
+                <span className="atlas-touch-icon">📞</span>
+              </div>
+              <div className="atlas-touch-info-text">
+                <span className="atlas-info-label">Phone</span>
+                <a href="tel:9718290290" className="atlas-info-val">+91 9718-290-290</a>
+              </div>
+            </div>
 
-      <div className="form-grid-2">
-        <div className="form-field">
-          <label htmlFor="contact-name">Full Name *</label>
-          <div className="input-with-icon">
-            <span className="field-icon">👤</span>
-            <input
-              id="contact-name"
-              type="text"
-              placeholder="e.g. Rahul Sharma"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
+            <div className="atlas-touch-info-item">
+              <div className="atlas-touch-icon-badge">
+                <span className="atlas-touch-icon">✉️</span>
+              </div>
+              <div className="atlas-touch-info-text">
+                <span className="atlas-info-label">Email</span>
+                <a href="mailto:info@checkinfo.in" className="atlas-info-val">info@checkinfo.in</a>
+              </div>
+            </div>
+
+            <div className="atlas-touch-info-item">
+              <div className="atlas-touch-icon-badge">
+                <span className="atlas-touch-icon">📍</span>
+              </div>
+              <div className="atlas-touch-info-text">
+                <span className="atlas-info-label">Location</span>
+                <span className="atlas-info-val">Connaught Place, New Delhi, India</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="atlas-touch-socials" aria-label="Social links">
+            <a href="https://facebook.com/checkinfo" target="_blank" rel="noreferrer" title="Facebook">f</a>
+            <a href="https://twitter.com/checkinfo" target="_blank" rel="noreferrer" title="Twitter / X">𝕏</a>
+            <a href="https://linkedin.com/company/checkinfo" target="_blank" rel="noreferrer" title="LinkedIn">in</a>
           </div>
         </div>
 
-        <div className="form-field">
-          <label htmlFor="contact-phone">Phone / Mobile Number *</label>
-          <div className="input-with-icon">
-            <span className="field-icon">📞</span>
-            <input
-              id="contact-phone"
-              type="tel"
-              placeholder="e.g. +91 9876543210"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              required
-            />
-          </div>
+        {/* Right Column: Clean Floating White Form Box */}
+        <div className="atlas-touch-right">
+          <form className="atlas-touch-form-card" onSubmit={handleSubmit}>
+            {status.msg ? (
+              <div className={`form-status-alert ${status.type}`}>
+                {status.type === "loading" ? "⏳ " : status.type === "success" ? "✅ " : "⚠️ "}
+                <span>{status.msg}</span>
+              </div>
+            ) : null}
+
+            <div className="atlas-touch-form-grid">
+              {/* Name */}
+              <div className="atlas-touch-field">
+                <label htmlFor="touch-name">Name</label>
+                <input
+                  id="touch-name"
+                  type="text"
+                  placeholder="Your name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* Email */}
+              <div className="atlas-touch-field">
+                <label htmlFor="touch-email">Email</label>
+                <input
+                  id="touch-email"
+                  type="email"
+                  placeholder="Your email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* Phone */}
+              <div className="atlas-touch-field">
+                <label htmlFor="touch-phone">Phone</label>
+                <input
+                  id="touch-phone"
+                  type="tel"
+                  placeholder="Your number"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* Address / Subject */}
+              <div className="atlas-touch-field">
+                <label htmlFor="touch-address">Address</label>
+                <input
+                  id="touch-address"
+                  type="text"
+                  placeholder="Your address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                />
+              </div>
+
+              {/* Message */}
+              <div className="atlas-touch-field full-width">
+                <label htmlFor="touch-message">Message</label>
+                <textarea
+                  id="touch-message"
+                  rows={5}
+                  placeholder="Write here..."
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="atlas-touch-form-btn-wrap">
+              <button
+                type="submit"
+                className="atlas-touch-submit-btn"
+                disabled={status.type === "loading"}
+              >
+                {status.type === "loading" ? "Sending..." : "Send Message"}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-
-      <div className="form-grid-2">
-        <div className="form-field">
-          <label htmlFor="contact-email">Email Address *</label>
-          <div className="input-with-icon">
-            <span className="field-icon">✉️</span>
-            <input
-              id="contact-email"
-              type="email"
-              placeholder="e.g. rahul@example.com"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
-            />
-          </div>
-        </div>
-
-        <div className="form-field">
-          <label htmlFor="contact-subject">Enquiry Subject / Topic *</label>
-          <div className="input-with-icon">
-            <span className="field-icon">📋</span>
-            <select
-              id="contact-subject"
-              value={formData.subject}
-              onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-              required
-            >
-              <option value="General Enquiry">General Enquiry</option>
-              <option value="Business Listing Verification">Business Listing Verification</option>
-              <option value="Advertising & Sponsorship">Advertising & Sponsorship</option>
-              <option value="Technical & Website Support">Technical & Website Support</option>
-              <option value="Partnership Opportunity">Partnership Opportunity</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div className="form-field">
-        <label htmlFor="contact-message">Message & Details *</label>
-        <textarea
-          id="contact-message"
-          rows={4}
-          placeholder="Describe your query or business requirement in detail..."
-          value={formData.message}
-          onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-          required
-        />
-      </div>
-
-      <button
-        type="submit"
-        className="contact-submit-btn"
-        disabled={status.type === "loading"}
-      >
-        {status.type === "loading" ? "Submitting Enquiry..." : "Send Message to Admin →"}
-      </button>
-    </form>
+    </div>
   );
 }

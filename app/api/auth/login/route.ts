@@ -1,19 +1,20 @@
 import { createSessionToken, getAuthCookieName, validCredentialsAsync, type AuthRole } from "@/backend/auth";
+import { rateLimit } from "@/backend/security";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 function isAuthRole(value: FormDataEntryValue | null): value is AuthRole {
-  return value === "admin" || value === "member" || value === "user";
+  return value === "admin" || value === "subadmin" || value === "member" || value === "user";
 }
 
 function destinationFor(role: AuthRole) {
-  if (role === "admin") return "/admin";
+  if (role === "admin" || role === "subadmin") return "/admin";
   if (role === "user") return "/?login=success";
   return "/members/myaccount";
 }
 
 function loginPath(role: AuthRole, error = "") {
-  const path = role === "admin" ? "/admin/login" : role === "user" ? "/login" : "/members/login";
+  const path = role === "admin" || role === "subadmin" ? "/admin/login" : role === "user" ? "/login" : "/members/login";
   return error ? `${path}?error=${encodeURIComponent(error)}` : path;
 }
 
@@ -28,22 +29,44 @@ function readLoginField(formData: FormData, names: string[]) {
 }
 
 export async function POST(request: Request) {
-  const formData = await request.formData();
-  const role = formData.get("role");
-  const username =
-    role === "member"
-      ? readLoginField(formData, ["member_username", "username"])
-      : role === "admin"
-        ? readLoginField(formData, ["admin_username", "username"])
-        : readLoginField(formData, ["username"]);
-  const password =
-    role === "member"
-      ? readLoginField(formData, ["member_password", "password"])
-      : role === "admin"
-        ? readLoginField(formData, ["admin_password", "password"])
-        : readLoginField(formData, ["password"]);
+  const limited = rateLimit(request, "auth:login", 20, 60_000);
+  if (!limited.ok) redirect("/members/login?error=Too many login attempts. Try again shortly.");
 
-  if (!isAuthRole(role)) redirect("/members/login?error=Invalid login role");
+  let roleStr = "member";
+  let username = "";
+  let password = "";
+
+  const contentType = request.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    try {
+      const body = await request.json();
+      roleStr = String(body.role || "member").trim();
+      username = String(body.username || body.member_username || body.admin_username || body.email || "").trim();
+      password = String(body.password || body.member_password || body.admin_password || "");
+    } catch {}
+  } else {
+    const formData = await request.formData();
+    roleStr = String(formData.get("role") || "member").trim();
+    username =
+      roleStr === "member"
+        ? readLoginField(formData, ["member_username", "username", "email"])
+        : roleStr === "admin" || roleStr === "subadmin"
+          ? readLoginField(formData, ["admin_username", "username", "email"])
+          : readLoginField(formData, ["username", "email"]);
+    password =
+      roleStr === "member"
+        ? readLoginField(formData, ["member_password", "password"])
+        : roleStr === "admin" || roleStr === "subadmin"
+          ? readLoginField(formData, ["admin_password", "password"])
+          : readLoginField(formData, ["password"]);
+  }
+
+  const role: AuthRole = isAuthRole(roleStr) ? roleStr : "member";
+
+  if (!username || !password) {
+    redirect(loginPath(role, "Please enter both username/email and password"));
+  }
 
   if (!(await validCredentialsAsync(role, username, password))) {
     redirect(loginPath(role, "Invalid username or password"));
@@ -56,19 +79,23 @@ export async function POST(request: Request) {
 
   if (role === "member") {
     try {
-      const { getMongoMemberByUsernameOrEmail, isMongoConfigured } = await import("@/backend/mongodb");
+      const { getMongoMemberByUsernameOrEmail, getMongoUserByUsernameOrEmail, isMongoConfigured } = await import("@/backend/mongodb");
       if (isMongoConfigured()) {
-        const member = await getMongoMemberByUsernameOrEmail(username);
-        if (member?.profile) {
-          sessionUsername = member.profile.username || member.profile.id || username;
-          memberProfileId = member.profile.id || sessionUsername;
-          memberProfileName = member.profile.name || "";
+        const member = (await getMongoMemberByUsernameOrEmail(username)) || (await getMongoUserByUsernameOrEmail(username));
+        if ((member as Record<string, any>)?.profile) {
+          sessionUsername = (member as Record<string, any>).profile.username || (member as Record<string, any>).profile.id || username;
+          memberProfileId = (member as Record<string, any>).profile.id || sessionUsername;
+          memberProfileName = (member as Record<string, any>).profile.name || "";
+        } else if ((member as Record<string, any>)?._id) {
+          sessionUsername = (member as Record<string, any>).username || (member as Record<string, any>).email || username;
+          memberProfileId = String((member as Record<string, any>)._id);
+          memberProfileName = (member as Record<string, any>).name || "";
         }
       }
     } catch {}
   }
 
-  cookieStore.set(getAuthCookieName(role), createSessionToken(role, username), {
+  cookieStore.set(getAuthCookieName(role), createSessionToken(role, sessionUsername), {
     httpOnly: true,
     maxAge: 60 * 60 * 12,
     path: "/",

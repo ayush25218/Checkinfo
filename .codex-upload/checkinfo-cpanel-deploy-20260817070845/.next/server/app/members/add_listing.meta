@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/members/layout,_N_T_/members/add_listing/layout,_N_T_/members/add_listing/page,_N_T_/members/add_listing"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/members/add_listing/__PAGE__",
+    "/members/add_listing",
+    "/members",
+    "/_index",
+    "/_head"
+  ]
+}

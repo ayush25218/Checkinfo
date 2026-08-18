@@ -54,6 +54,7 @@ export const adminGroups = [
     [
       ["Manage Meta Tags", "meta"],
       ["Manage Subadmins", "subadmins"],
+      ["Audit Logs", "audit-logs"],
       ["Manage Admin Settings", "settings"],
       ["Change Password", "admin-password"],
     ],
@@ -81,6 +82,21 @@ export const adminGroups = [
     ],
   ],
 ] as const;
+
+export const adminPermissionSlugs = adminGroups.flatMap(([, items]) => items.map(([, slug]) => slug));
+
+export function filterAdminGroupsByPermissions(permissions: string[] | "all") {
+  if (permissions === "all") return adminGroups;
+  const allowed = new Set(["dashboard", ...permissions]);
+  return adminGroups
+    .map(([group, items]) => [group, items.filter(([, slug]) => allowed.has(slug))] as const)
+    .filter(([, items]) => items.length > 0);
+}
+
+export function canAccessAdminResource(resource: string, permissions: string[] | "all") {
+  if (permissions === "all") return true;
+  return resource === "dashboard" || permissions.includes(resource);
+}
 
 function enquiryPage(title: string, subtitle: string): AdminPageConfig {
   return {
@@ -149,6 +165,7 @@ export const adminPages: Record<string, AdminPageConfig> = {
   newsletter: tablePage("Newsletter", "Manage Newsletter", "Search subscriber records and send newsletter campaigns.", ["Email", "Current Status", "Action"], [], ["Send", "Delete"], ["Email", "Records Per Page"]),
   meta: tablePage("Manage Admin", "Manage Meta Tags", "Maintain SEO title, keywords, and descriptions for listing pages.", ["URL", "Meta Details", "Action"], [["/business/raghavendra", "Title, keyword, description", "Edit"], ["/category/website-developer", "Title, keyword, description", "Edit"]], undefined, ["URL", "Records Per Page"]),
   subadmins: tablePage("Manage Admin", "Manage Subadmins", "Add, activate, deactivate, and delete admin team users.", ["Email", "Username", "Name", "Phone", "Registration Date", "Status", "Action"], [], ["Add Sub Admin", "Activate", "Deactivate", "Delete"], ["Email, Username", "Status", "Records Per Page"]),
+  "audit-logs": tablePage("Manage Admin", "Audit Logs", "Review admin and subadmin actions across business approvals, placements, imports, and deletes.", ["Date", "Actor", "Resource", "Action", "Business", "Details"], [], undefined, ["Actor", "Resource", "Action"]),
   settings: tablePage("Manage Admin", "Manage Admin Settings", "Update admin email, phone, address, social links, analytics, and web code.", ["Setting", "Value", "Action"], [["Contact Email", "info@checkinfo.in", "Update"], ["Phone", "9718-290-290", "Update"], ["Analytics", "Google analytics and web code", "Update"]], ["Update Info"], ["Admin Email", "Phone", "Address", "Google Analytics ID"]),
   "admin-password": { actions: ["Update Info"], filters: ["Old Password", "New Password", "Confirm Password"], group: "Manage Admin", subtitle: "Change administrator login password.", title: "Change Password" },
   states: tablePage("Locations Management", "Manage States", "Add, search, activate, and delete states.", ["State Name", "Country Name", "Status", "Action"], [["Delhi", "India", "Active", "Edit"], ["Maharashtra", "India", "Active", "Edit"]], ["Add State", "Activate", "Deactivate", "Delete"], ["State Name", "Status", "Records Per Page"]),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { categories } from "@/backend/checkinfo";
+import { adminPermissionSlugs, adminPages, categories } from "@/backend/checkinfo";
 import {
   businessTaxonomy,
   getCustomSubcategories,
@@ -34,26 +34,39 @@ type BusinessRecord = {
   id: string;
   address: string;
   addressProofName?: string;
+  approvalStatus?: "Draft" | "Pending" | "Approved" | "Rejected";
+  approvedAt?: string;
+  approvedBy?: string;
   badge: string;
   businessType?: string;
   category: string;
   city?: string;
   contact: string;
+  createdAt?: string;
   details: string;
+  editHistory?: Array<{ action: string; actorId: string; at: string; notes?: string }>;
   email?: string;
   image?: string;
+  isDuplicate?: boolean;
   location?: string;
   mobile?: string;
   name: string;
   ownerEmail?: string;
   ownerId?: string;
   ownerName?: string;
+  packageName?: string;
+  placementExpiresAt?: string;
   placements?: Array<"new" | "featured" | "trending">;
+  placementStartsAt?: string;
   publicPath?: string;
+  rejectionReason?: string;
   state?: string;
   status: Status;
   subcategory?: string;
   subcity?: string;
+  submittedAt?: string;
+  updatedAt?: string;
+  verificationStatus?: "Unverified" | "Pending" | "Verified" | "Rejected";
   website?: string;
 };
 
@@ -63,6 +76,7 @@ type MemberRecord = {
   id: string;
   email: string;
   name: string;
+  packageName?: string;
   password?: string;
   phone: string;
   registeredAt: string;
@@ -118,10 +132,25 @@ type SubadminRecord = {
   id: string;
   email: string;
   name: string;
+  password?: string;
+  permissions?: string[];
   phone: string;
   registeredAt: string;
   status: "Active" | "Inactive";
   username: string;
+};
+
+type AuditLogRecord = {
+  action: string;
+  actorId: string;
+  actorRole: "admin" | "subadmin";
+  businessId?: string;
+  createdAt: string;
+  details?: Record<string, unknown>;
+  id: string;
+  memberId?: string;
+  ownerId?: string;
+  resource: string;
 };
 
 type AdminSettingsRecord = {
@@ -314,18 +343,38 @@ async function postAdminAction(resource: string, payload: Record<string, unknown
       headers: { "content-type": "application/json" },
       method: "POST",
     });
-    return await response.json() as {
+    const json = await response.json().catch(() => ({}));
+    if (!response.ok) return { ...json, ok: false } as {
       data?: {
         business?: BusinessRecord[];
         categories?: CategoryRecord[];
         imported?: number;
         members?: MemberRecord[];
+        subcategories?: CustomSubcategoryRecord[];
       };
       members?: MemberRecord[];
+      ok?: boolean;
+    };
+    return json as {
+      data?: {
+        business?: BusinessRecord[];
+        categories?: CategoryRecord[];
+        imported?: number;
+        members?: MemberRecord[];
+        subcategories?: CustomSubcategoryRecord[];
+      };
+      members?: MemberRecord[];
+      ok?: boolean;
     };
   } catch {
-    return {};
+    return { ok: false };
   }
+}
+
+async function postAndRefreshAdminData<T>(resource: string, payload: Record<string, unknown>, fallback: T) {
+  const result = await postAdminAction(resource, payload);
+  if (result.ok === false) return null;
+  return getAdminData<T>(resource, fallback);
 }
 
 function parseCsvRows(text: string) {
@@ -406,6 +455,22 @@ function rowsToBusinessRecords(rows: Array<Record<string, unknown>>) {
   }).filter((record) => record.name);
 }
 
+function validateBusinessImportRows(rows: BusinessRecord[]) {
+  const errors: string[] = [];
+  const seen = new Set<string>();
+  rows.forEach((row, index) => {
+    const rowNumber = index + 2;
+    if (!row.name.trim()) errors.push(`Row ${rowNumber}: Business Name missing`);
+    if (!row.contact.trim() && !row.mobile?.trim() && !row.ownerEmail?.trim()) errors.push(`Row ${rowNumber}: Phone or Email missing`);
+    if (!row.city?.trim()) errors.push(`Row ${rowNumber}: City missing`);
+    if (!row.category?.trim()) errors.push(`Row ${rowNumber}: Category missing`);
+    const duplicateKey = [row.name, row.city, row.contact || row.mobile || row.ownerEmail].join("|").toLowerCase();
+    if (seen.has(duplicateKey)) errors.push(`Row ${rowNumber}: Duplicate business in import file`);
+    seen.add(duplicateKey);
+  });
+  return errors;
+}
+
 async function parseBusinessImportFile(file: File) {
   const extension = file.name.split(".").pop()?.toLowerCase();
 
@@ -465,6 +530,12 @@ export function ManageCategoriesModule() {
         writeStored("checkinfo-admin-categories-v2", data);
       }
     });
+    void getAdminData<CustomSubcategoryRecord[]>("subcategories", []).then((data) => {
+      if (Array.isArray(data)) {
+        setCustomSubcategories(data);
+        saveCustomSubcategories(data);
+      }
+    });
   }, []);
 
   const filtered = useMemo(() => {
@@ -507,7 +578,7 @@ export function ManageCategoriesModule() {
     writeStored("checkinfo-admin-categories", next);
   }
 
-  function handleSaveSubcategory() {
+  async function handleSaveSubcategory() {
     if (!subForm.name.trim() || !activeMain) return;
 
     const subName = subForm.name.trim();
@@ -529,15 +600,17 @@ export function ManageCategoriesModule() {
       createdAt: new Date().toISOString(),
     };
 
-    const nextList = [...customSubcategories, newRecord];
+    const result = await postAdminAction("subcategories", { action: "upsert", record: newRecord });
+    const nextList = result.data?.subcategories ?? [...customSubcategories, newRecord];
     setCustomSubcategories(nextList);
     saveCustomSubcategories(nextList);
     setSubForm({ name: "", businessTypesStr: "" });
     setShowSubForm(false);
   }
 
-  function handleDeleteSubcategory(id: string) {
-    const nextList = customSubcategories.filter((item) => item.id !== id);
+  async function handleDeleteSubcategory(id: string) {
+    const result = await postAdminAction("subcategories", { action: "delete", id });
+    const nextList = result.data?.subcategories ?? customSubcategories.filter((item) => item.id !== id);
     setCustomSubcategories(nextList);
     saveCustomSubcategories(nextList);
   }
@@ -582,7 +655,7 @@ export function ManageCategoriesModule() {
     });
 
     if (result.data?.categories) sync(result.data.categories);
-    else sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    else return;
     resetForm();
   }
 
@@ -602,7 +675,6 @@ export function ManageCategoriesModule() {
   async function bulkStatus(nextStatus: "Active" | "Inactive") {
     const result = await postAdminAction("categories", { action: "bulk-status", ids: selected, status: nextStatus });
     if (result.data?.categories) sync(result.data.categories);
-    else sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
     setSelected([]);
   }
 
@@ -610,12 +682,16 @@ export function ManageCategoriesModule() {
     const toDelete = [...selected];
     const result = await postAdminAction("categories", { action: "bulk-delete", ids: toDelete });
     if (result.data?.categories) sync(result.data.categories);
-    else sync(records.filter((record) => !selected.includes(record.id)));
     setSelected([]);
   }
 
-  function updateOrder() {
-    sync(records.map((record, index) => ({ ...record, order: (index + 1) * 10 })));
+  async function updateOrder() {
+    const updated = records.map((record, index) => ({ ...record, order: (index + 1) * 10 }));
+    const result = await postAdminAction("categories", {
+      action: "update-order",
+      records: updated.map((record) => ({ id: record.id, order: record.order })),
+    });
+    if (result.data?.categories) sync(result.data.categories);
   }
 
   function uploadCategoryImage(file?: File) {
@@ -653,7 +729,7 @@ export function ManageCategoriesModule() {
           <span>Records Per Page</span>
           <input value={filtered.length} readOnly />
         </label>
-        <button type="button" onClick={() => undefined}>Submit</button>
+        <button type="button" onClick={() => { setQuery(""); setStatus("All"); }}>Clear</button>
       </div>
 
       <div className="admin-category-browser">
@@ -906,10 +982,12 @@ export function ManageCategoriesModule() {
 export function ManageBusinessModule() {
   const [records, setRecords] = useState<BusinessRecord[]>(businessSeed);
   const [selected, setSelected] = useState<string[]>([]);
-  const [filters, setFilters] = useState({ category: "All", name: "", status: "All", type: "" });
+  const [filters, setFilters] = useState({ category: "All", city: "", name: "", owner: "", package: "All", placement: "All", queue: "All", status: "All", type: "" });
   const [editing, setEditing] = useState<BusinessRecord | null>(null);
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState("");
+  const [ownerProfile, setOwnerProfile] = useState<BusinessRecord | null>(null);
+  const [placementSchedule, setPlacementSchedule] = useState({ expiresAt: "", startsAt: "" });
   const [setAsPlacement, setSetAsPlacement] = useState("");
   const [unsetAsPlacement, setUnsetAsPlacement] = useState("");
   const [form, setForm] = useState({
@@ -935,8 +1013,18 @@ export function ManageBusinessModule() {
     return records
       .filter((record) => record.name.toLowerCase().includes(filters.name.toLowerCase()))
       .filter((record) => record.details.toLowerCase().includes(filters.type.toLowerCase()))
+      .filter((record) => [record.ownerName, record.ownerEmail, record.ownerId].join(" ").toLowerCase().includes(filters.owner.toLowerCase()))
+      .filter((record) => String(record.city ?? "").toLowerCase().includes(filters.city.toLowerCase()))
       .filter((record) => filters.category === "All" || record.category === filters.category)
-      .filter((record) => filters.status === "All" || record.status === filters.status);
+      .filter((record) => filters.package === "All" || (record.packageName || "Free Listing") === filters.package)
+      .filter((record) => filters.queue === "All" || record.status === "Pending" || record.approvalStatus === "Pending")
+      .filter((record) => {
+        if (filters.status === "All") return true;
+        if (filters.status === "Approved") return record.status === "Active" || record.status === "Featured" || record.status === "Popular";
+        if (filters.status === "Rejected") return record.status === "Inactive";
+        return record.status === filters.status;
+      })
+      .filter((record) => filters.placement === "All" || defaultPlacements(record).includes(filters.placement as BusinessPlacement));
   }, [filters, records]);
 
   useEffect(() => {
@@ -954,6 +1042,8 @@ export function ManageBusinessModule() {
     () => records.filter((record) => selected.includes(record.id)),
     [records, selected],
   );
+  const pendingRecords = useMemo(() => records.filter((record) => record.status === "Pending" || record.approvalStatus === "Pending"), [records]);
+  const packages = useMemo(() => Array.from(new Set(records.map((record) => record.packageName || "Free Listing"))).sort(), [records]);
 
 function mapMemberListingToBusinessRecord(item: Record<string, unknown>): BusinessRecord {
   const contactPerson = String(item.contactPerson ?? item.ownerName ?? "").trim();
@@ -965,20 +1055,33 @@ function mapMemberListingToBusinessRecord(item: Record<string, unknown>): Busine
     id: String(item.id || `biz-${Date.now()}`),
     address: String(item.address || item.location || ""),
     addressProofName: String(item.addressProofName || ""),
+    approvalStatus: item.approvalStatus as BusinessRecord["approvalStatus"],
+    approvedAt: String(item.approvedAt || ""),
+    approvedBy: String(item.approvedBy || ""),
     badge: item.status === "Featured" ? "Featured" : item.status === "Popular" ? "Popular" : "Verified",
     businessType: String(item.businessType || ""),
     category: String(item.category || "General"),
     city: String(item.city || ""),
     contact: contactDisplay,
+    createdAt: String(item.createdAt || ""),
     details: String(item.description || item.keywords || ""),
+    editHistory: Array.isArray(item.editHistory) ? item.editHistory as BusinessRecord["editHistory"] : [],
+    isDuplicate: Boolean(item.isDuplicate),
     name: String(item.name || "Registered Business"),
     ownerEmail: email,
     ownerId: String(item.ownerId || item.id || ""),
     ownerName: contactPerson,
+    packageName: String(item.packageName || "Free Listing"),
+    placementExpiresAt: String(item.placementExpiresAt || ""),
+    placementStartsAt: String(item.placementStartsAt || ""),
+    rejectionReason: String(item.rejectionReason || ""),
     state: String(item.state || ""),
     status: (item.status as Status) || "Pending",
     subcategory: String(item.subcategory || ""),
     subcity: String(item.subcity || ""),
+    submittedAt: String(item.submittedAt || ""),
+    updatedAt: String(item.updatedAt || ""),
+    verificationStatus: item.verificationStatus as BusinessRecord["verificationStatus"],
   };
 }
 
@@ -1041,7 +1144,9 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
     setRecords(next);
   }
 
-  function defaultPlacements(record: Pick<BusinessRecord, "placements" | "status">): BusinessPlacement[] {
+  function defaultPlacements(record: Pick<BusinessRecord, "placementExpiresAt" | "placementStartsAt" | "placements" | "status">): BusinessPlacement[] {
+    if (record.placementStartsAt && Date.parse(record.placementStartsAt) > Date.now()) return [];
+    if (record.placementExpiresAt && Date.parse(record.placementExpiresAt) < Date.now()) return record.status === "Active" ? ["new"] : [];
     if (Array.isArray(record.placements) && record.placements.length) return record.placements;
     if (record.status === "Featured") return ["new", "featured"];
     if (record.status === "Popular") return ["new", "trending"];
@@ -1104,7 +1209,7 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
 
     const result = await postAdminAction("business", { action: "upsert", record: nextRecord });
     if (result.data?.business) setRecords(result.data.business);
-    else sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    else return;
     resetForm();
   }
 
@@ -1128,15 +1233,18 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
   }
 
   async function bulkStatus(nextStatus: Status) {
+    const reason = nextStatus === "Inactive"
+      ? window.prompt("Reason for rejecting selected business listing(s)?")?.trim() ?? ""
+      : "";
+    if (nextStatus === "Inactive" && !reason) return;
     let latest: BusinessRecord[] | undefined;
     for (const id of selected) {
       const record = records.find((item) => item.id === id);
       if (!record) continue;
-      const result = await postAdminAction("business", { action: nextStatus, id: record.id, ownerId: record.ownerId });
+      const result = await postAdminAction("business", { action: nextStatus, id: record.id, ownerId: record.ownerId, reason });
       latest = result.data?.business ?? latest;
     }
     if (latest) setRecords(latest);
-    else sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
     setSelected([]);
   }
 
@@ -1146,46 +1254,56 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
     for (const id of selected) {
       const record = records.find((item) => item.id === id);
       if (!record) continue;
-      const result = await postAdminAction("business", { action: "set-placements", id: record.id, ownerId: record.ownerId, placements: [placement] });
+      const result = await postAdminAction("business", {
+        action: "set-placements",
+        id: record.id,
+        ownerId: record.ownerId,
+        placementExpiresAt: placementSchedule.expiresAt || undefined,
+        placements: [placement],
+        placementStartsAt: placementSchedule.startsAt || undefined,
+      });
       latest = result.data?.business ?? latest;
     }
     if (latest) setRecords(latest);
-    else sync(records.map((record) => {
-      if (!selected.includes(record.id)) return record;
-      return { ...record, placements: Array.from(new Set([...defaultPlacements(record), placement])), status: "Active" };
-    }));
     setSelected([]);
+    setPlacementSchedule({ expiresAt: "", startsAt: "" });
     setSetAsPlacement("");
   }
 
   async function unsetPlacement(currentStatus: Status) {
-    const placement = currentStatus === "Featured" ? "featured" : currentStatus === "Popular" ? "trending" : placementActionValue(currentStatus.toLowerCase());
+    const placement = currentStatus === "Featured"
+      ? "featured"
+      : currentStatus === "Popular"
+        ? "trending"
+        : currentStatus === "Active"
+          ? "new"
+          : placementActionValue(currentStatus.toLowerCase());
     if (!placement) {
-      setUnsetAsPlacement("");
-      return;
-    }
-    const affected = selectedRecords.filter((record) => defaultPlacements(record).includes(placement));
-    if (!affected.length) {
       setUnsetAsPlacement("");
       return;
     }
 
     let latest: BusinessRecord[] | undefined;
-    for (const record of affected) {
+    for (const id of selected) {
+      const record = records.find((item) => item.id === id);
+      if (!record) continue;
       const result = await postAdminAction("business", { action: "unset-placements", id: record.id, ownerId: record.ownerId, placements: [placement] });
       latest = result.data?.business ?? latest;
     }
 
     if (latest) setRecords(latest);
-    else sync(records.map((record) => (affected.some((item) => item.id === record.id) ? { ...record, placements: defaultPlacements(record).filter((item) => item !== placement), status: "Active" } : record)));
     setSelected([]);
     setUnsetAsPlacement("");
   }
 
   async function setRecordStatus(record: BusinessRecord, nextStatus: Status) {
-    const result = await postAdminAction("business", { action: nextStatus, id: record.id, ownerId: record.ownerId });
+    const reason = nextStatus === "Inactive"
+      ? window.prompt(`Reason for rejecting ${record.name}?`)?.trim() ?? ""
+      : "";
+    if (nextStatus === "Inactive" && !reason) return;
+    const result = await postAdminAction("business", { action: nextStatus, id: record.id, ownerId: record.ownerId, reason });
     if (result.data?.business) setRecords(result.data.business);
-    else sync(records.map((item) => (item.id === record.id ? { ...item, status: nextStatus } : item)));
+    else return;
 
     if (typeof window !== "undefined") {
       try {
@@ -1211,16 +1329,21 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
   }
 
   async function setRecordPlacement(record: BusinessRecord, placement: BusinessPlacement) {
-    const result = await postAdminAction("business", { action: "set-placements", id: record.id, ownerId: record.ownerId, placements: [placement] });
+    const result = await postAdminAction("business", {
+      action: "set-placements",
+      id: record.id,
+      ownerId: record.ownerId,
+      placementExpiresAt: placementSchedule.expiresAt || undefined,
+      placements: [placement],
+      placementStartsAt: placementSchedule.startsAt || undefined,
+    });
     if (result.data?.business) setRecords(result.data.business);
-    else sync(records.map((item) => (item.id === record.id ? { ...item, placements: Array.from(new Set([...defaultPlacements(item), placement])), status: "Active" } : item)));
   }
 
   async function deleteSelected() {
     const toDelete = [...selected];
     const result = await postAdminAction("business", { action: "delete", ids: toDelete });
     if (result.data?.business) setRecords(result.data.business);
-    else sync(records.filter((record) => !selected.includes(record.id)));
     setSelected([]);
   }
 
@@ -1235,6 +1358,11 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
         setImportMessage("No valid business rows found. Add a Business Name column and try again.");
         return;
       }
+      const validationErrors = validateBusinessImportRows(parsed);
+      if (validationErrors.length) {
+        setImportMessage(`Import blocked: ${validationErrors.slice(0, 5).join("; ")}${validationErrors.length > 5 ? ` and ${validationErrors.length - 5} more issue(s).` : ""}`);
+        return;
+      }
 
       const response = await postAdminAction("business", { action: "bulk-import", records: parsed });
       const fresh = await getAdminData<BusinessRecord[]>("business", []);
@@ -1247,23 +1375,50 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
     }
   }
 
+  function exportFilteredReport() {
+    if (!filtered.length) return;
+    const headers = ["Business", "Owner", "Owner Email", "City", "Category", "Package", "Status", "Placements", "Starts", "Expires", "Approved By"];
+    const rows = filtered.map((record) => [
+      record.name,
+      record.ownerName || "",
+      record.ownerEmail || "",
+      record.city || "",
+      record.category,
+      record.packageName || "Free Listing",
+      record.status,
+      defaultPlacements(record).join("|"),
+      record.placementStartsAt || "",
+      record.placementExpiresAt || "",
+      record.approvedBy || "",
+    ]);
+    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `checkinfo-business-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <section className="admin-card">
       {/* Pending Approval Notice for Admin */}
-      {records.some((r) => r.status === "Pending") ? (
+      {pendingRecords.length ? (
         <div style={{ background: "#fffbeb", border: "1px solid #f59e0b", borderRadius: "10px", padding: "0.85rem 1.25rem", margin: "0 0 1.25rem", color: "#92400e", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <span style={{ fontSize: "1.35rem" }}>🔔</span>
             <div>
               <strong style={{ fontSize: "0.95rem", color: "#78350f" }}>
-                {records.filter((r) => r.status === "Pending").length} Business Listing(s) Waiting For Approval
+                {pendingRecords.length} Business Listing(s) Waiting For Approval
               </strong>
               <span style={{ fontSize: "0.825rem" }}>Review details below and click &quot;Approve &amp; Publish&quot; to make them live on the website.</span>
             </div>
           </div>
           <button
             type="button"
-            onClick={() => setFilters({ ...filters, status: "Pending" })}
+            onClick={() => setFilters({ ...filters, queue: "Pending", status: "Pending" })}
             style={{ background: "#d97706", color: "#ffffff", border: "none", borderRadius: "6px", padding: "6px 14px", fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", whiteSpace: "nowrap" }}
           >
             View Pending Listings
@@ -1273,6 +1428,13 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
 
       <div className="admin-filters">
         <label>
+          <span>Approval Queue</span>
+          <select value={filters.queue} onChange={(event) => setFilters({ ...filters, queue: event.target.value })}>
+            <option>All</option>
+            <option value="Pending">Pending Queue</option>
+          </select>
+        </label>
+        <label>
           <span>Business Name</span>
           <input value={filters.name} onChange={(event) => setFilters({ ...filters, name: event.target.value })} placeholder="Business Name" />
         </label>
@@ -1280,12 +1442,38 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
           <span>Status</span>
           <select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
             <option>All</option>
+            <option>Approved</option>
+            <option>Rejected</option>
             <option>Active</option>
             <option>Inactive</option>
             <option>Pending</option>
             <option>Draft</option>
             <option>Featured</option>
             <option>Popular</option>
+          </select>
+        </label>
+        <label>
+          <span>Owner</span>
+          <input value={filters.owner} onChange={(event) => setFilters({ ...filters, owner: event.target.value })} placeholder="Owner name, email, ID" />
+        </label>
+        <label>
+          <span>City</span>
+          <input value={filters.city} onChange={(event) => setFilters({ ...filters, city: event.target.value })} placeholder="City" />
+        </label>
+        <label>
+          <span>Placement</span>
+          <select value={filters.placement} onChange={(event) => setFilters({ ...filters, placement: event.target.value })}>
+            <option>All</option>
+            <option value="new">New Ads</option>
+            <option value="featured">Featured Ads</option>
+            <option value="trending">Trending Ads</option>
+          </select>
+        </label>
+        <label>
+          <span>Package</span>
+          <select value={filters.package} onChange={(event) => setFilters({ ...filters, package: event.target.value })}>
+            <option>All</option>
+            {packages.map((name) => <option key={name}>{name}</option>)}
           </select>
         </label>
         <label>
@@ -1307,8 +1495,23 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
           <span>Business Type</span>
           <input value={form.businessType} onChange={(event) => setForm({ ...form, businessType: event.target.value })} />
         </label>
-        <button type="button" onClick={() => undefined}>Submit</button>
+        <button type="button" onClick={() => setFilters({ category: "All", city: "", name: "", owner: "", package: "All", placement: "All", queue: "All", status: "All", type: "" })}>Clear</button>
+        <button type="button" onClick={exportFilteredReport}>Export Filtered</button>
       </div>
+
+      {pendingRecords.length ? (
+        <div className="admin-real-table" style={{ marginBottom: "1rem" }}>
+          <div className="admin-real-row admin-real-head"><span>Pending Approval Queue</span><span>Owner</span><span>Submitted</span><span>Action</span></div>
+          {pendingRecords.slice(0, 5).map((record) => (
+            <div className="admin-real-row" key={`queue-${record.id}`}>
+              <span><strong>{record.name}</strong><small>{record.category} / {record.city || "City missing"}</small></span>
+              <span>{record.ownerName || "Business owner"}<small>{record.ownerEmail || record.ownerId}</small></span>
+              <span>{record.submittedAt ? new Date(record.submittedAt).toLocaleString("en-IN") : "New submission"}</span>
+              <span><button type="button" className="admin-link-button" onClick={() => setRecordStatus(record, "Active")}>Approve Now</button></span>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <div className="admin-business-import">
         <div>
@@ -1410,6 +1613,14 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
         <div className="admin-bulk-placement-actions">
           <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Approve (New Ads)</button>
           <button type="button" onClick={() => bulkStatus("Pending")} disabled={!selected.length}>Unapproved</button>
+          <label style={{ display: "grid", gap: "0.2rem", fontSize: "0.7rem", fontWeight: 700 }}>
+            <span>Start</span>
+            <input type="date" value={placementSchedule.startsAt} onChange={(event) => setPlacementSchedule({ ...placementSchedule, startsAt: event.target.value })} />
+          </label>
+          <label style={{ display: "grid", gap: "0.2rem", fontSize: "0.7rem", fontWeight: 700 }}>
+            <span>Expiry</span>
+            <input type="date" value={placementSchedule.expiresAt} onChange={(event) => setPlacementSchedule({ ...placementSchedule, expiresAt: event.target.value })} />
+          </label>
           <select
             aria-label="Set selected businesses as"
             disabled={!selected.length}
@@ -1420,7 +1631,7 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
               if (value) void applyPlacement(value);
             }}
           >
-            <option value="">Event Set As</option>
+            <option value="">Business Set As</option>
             <option value="Active">New Ads</option>
             <option value="Featured">Featured Ads</option>
             <option value="Popular">Trending</option>
@@ -1435,7 +1646,7 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
               if (value) void unsetPlacement(value);
             }}
           >
-            <option value="">Event Unset As</option>
+            <option value="">Business Unset As</option>
             <option value="Active">Remove New Ads</option>
             <option value="Featured">Remove Featured</option>
             <option value="Popular">Remove Trending</option>
@@ -1457,7 +1668,13 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
         {paginatedListings.map((record) => (
           <div className="admin-real-row" key={record.id}>
             <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
-            <span>{record.name}<small>{[record.category, record.subcategory, record.businessType].filter(Boolean).join(" / ")}{record.ownerName ? ` / ${record.ownerName}` : ""}</small></span>
+            <span>
+              {record.name}
+              <small>{[record.category, record.subcategory, record.businessType].filter(Boolean).join(" / ")}{record.ownerName ? ` / ${record.ownerName}` : ""}</small>
+              {record.isDuplicate ? <b className="admin-status admin-status-inactive">Possible Duplicate</b> : null}
+              {record.approvedBy ? <small>Approved by {record.approvedBy}</small> : null}
+              <button type="button" className="admin-link-button" onClick={() => setOwnerProfile(record)}>Owner Profile</button>
+            </span>
             <span>{record.address}<small>{record.subcity || record.city || record.state ? [record.subcity, record.city, record.state].filter(Boolean).join(", ") : record.location}</small></span>
             <span>{record.contact}<small>{record.ownerEmail || ""}</small></span>
             <span>
@@ -1467,6 +1684,8 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
                 )) : <b className={`admin-placement-pill admin-placement-${record.status.toLowerCase().replace(/\s+/g, "-")}`}>{record.status === "Pending" ? "Waiting Approval" : "Not Live"}</b>}
               </span>
               <small>{record.badge} / {record.details || "No description added"}</small>
+              {record.packageName ? <small>Package: {record.packageName}</small> : null}
+              {record.placementStartsAt || record.placementExpiresAt ? <small>Placement: {record.placementStartsAt || "Now"} to {record.placementExpiresAt || "No expiry"}</small> : null}
               {record.addressProofName ? <small>Proof: {record.addressProofName}</small> : null}
               {record.publicPath ? <a className="admin-mini-link" href={record.publicPath} target="_blank" rel="noreferrer">SEO page</a> : null}
             </span>
@@ -1491,6 +1710,42 @@ function readGlobalRegisteredListings(): BusinessRecord[] {
           </div>
         ))}
       </div>
+
+      {ownerProfile ? (
+        <div className="admin-card" style={{ marginTop: "1rem", border: "1px solid #cbd5e1", boxShadow: "none" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "flex-start" }}>
+            <div>
+              <span style={{ color: "#0284c7", fontSize: "0.75rem", fontWeight: 800, textTransform: "uppercase" }}>Business Owner Profile</span>
+              <h3 style={{ margin: "0.25rem 0", fontSize: "1.1rem" }}>{ownerProfile.ownerName || "Business owner"}</h3>
+              <p style={{ margin: 0, color: "#475569", fontSize: "0.85rem" }}>{ownerProfile.ownerEmail || ownerProfile.ownerId || "No owner email"} / {ownerProfile.contact}</p>
+            </div>
+            <button type="button" className="admin-light-button" onClick={() => setOwnerProfile(null)}>Close</button>
+          </div>
+          <div className="admin-real-table" style={{ marginTop: "1rem" }}>
+            <div className="admin-real-row admin-real-head"><span>Profile</span><span>Business</span><span>Package</span><span>Verification</span></div>
+            <div className="admin-real-row">
+              <span>ID: {ownerProfile.ownerId || ownerProfile.id}<small>Submitted: {ownerProfile.submittedAt ? new Date(ownerProfile.submittedAt).toLocaleString("en-IN") : "N/A"}</small></span>
+              <span>{ownerProfile.name}<small>{ownerProfile.address}</small></span>
+              <span>{ownerProfile.packageName || "Free Listing"}<small>{ownerProfile.placementExpiresAt ? `Expires ${new Date(ownerProfile.placementExpiresAt).toLocaleDateString("en-IN")}` : "No paid placement expiry"}</small></span>
+              <span>{ownerProfile.verificationStatus || ownerProfile.approvalStatus || ownerProfile.status}<small>{ownerProfile.rejectionReason ? `Reason: ${ownerProfile.rejectionReason}` : ownerProfile.approvedBy ? `Approved by ${ownerProfile.approvedBy}` : ""}</small></span>
+            </div>
+          </div>
+          <div style={{ marginTop: "1rem" }}>
+            <strong style={{ display: "block", marginBottom: "0.6rem" }}>Member Activity Timeline</strong>
+            <div className="timeline">
+              {(ownerProfile.editHistory?.length ? ownerProfile.editHistory : [
+                { action: "created", actorId: ownerProfile.ownerId || "member", at: ownerProfile.createdAt || ownerProfile.submittedAt || new Date().toISOString(), notes: "Business record created" },
+              ]).map((event, index) => (
+                <article className="timeline-item" key={`${event.at}-${index}`}>
+                  <span>{event.at ? new Date(event.at).toLocaleString("en-IN") : "N/A"}</span>
+                  <strong>{event.action} / {event.actorId}</strong>
+                  <p>{event.notes || "Activity recorded"}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Dynamic 20 Items Per Page Pagination Controls */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderTop: "1px solid #e2e8f0", flexWrap: "wrap", gap: "0.75rem", background: "#f8fafc", borderRadius: "0 0 12px 12px" }}>
@@ -1555,6 +1810,7 @@ export function ManageMembersModule() {
   const [form, setForm] = useState({
     email: "",
     name: "",
+    packageName: "Free Listing",
     password: "",
     phone: "",
     registeredAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
@@ -1585,6 +1841,7 @@ export function ManageMembersModule() {
     setForm({
       email: "",
       name: "",
+      packageName: "Free Listing",
       password: "",
       phone: "",
       registeredAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
@@ -1601,13 +1858,13 @@ export function ManageMembersModule() {
       id: editing?.id ?? `mem-${Date.now()}`,
       email: form.email.trim(),
       name: form.name.trim(),
+      packageName: form.packageName,
       phone: form.phone.trim(),
       registeredAt: form.registeredAt,
       status: form.status,
       username: form.username.trim().toLowerCase(),
     };
 
-    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
     const upsertPayload: Record<string, unknown> = {
       ...nextRecord,
       id: nextRecord.id.startsWith("mem-") ? nextRecord.username : nextRecord.id,
@@ -1619,23 +1876,27 @@ export function ManageMembersModule() {
     const result = await postAdminAction("members", { action: "upsert", record: upsertPayload });
     if (result.members) setRecords(result.members);
     else if (result.data?.members) setRecords(result.data.members);
+    else return;
     resetForm();
   }
 
   function editRecord(record: MemberRecord) {
     setEditing(record);
-    setForm({ ...record, password: "" });
+    setForm({ ...record, packageName: record.packageName || "Free Listing", password: "" });
   }
 
-  function bulkStatus(nextStatus: "Active" | "Inactive") {
-    sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
-    selected.forEach((id) => void postAdminAction("members", { action: nextStatus, id }));
+  async function bulkStatus(nextStatus: "Active" | "Inactive") {
+    let latest: MemberRecord[] | null = null;
+    for (const id of selected) {
+      latest = await postAndRefreshAdminData<MemberRecord[]>("members", { action: nextStatus, id }, records);
+    }
+    if (latest) setRecords(latest);
     setSelected([]);
   }
 
-  function deleteSelected() {
-    sync(records.filter((record) => !selected.includes(record.id)));
-    void postAdminAction("members", { action: "delete", ids: selected });
+  async function deleteSelected() {
+    const latest = await postAndRefreshAdminData<MemberRecord[]>("members", { action: "delete", ids: selected }, records);
+    if (latest) setRecords(latest);
     setSelected([]);
   }
 
@@ -1658,7 +1919,7 @@ export function ManageMembersModule() {
           <span>Records Per Page</span>
           <input value={filtered.length} readOnly />
         </label>
-        <button type="button" onClick={() => undefined}>Submit</button>
+        <button type="button" onClick={() => setFilters({ keyword: "", status: "All" })}>Clear</button>
       </div>
 
       <div className="admin-editor admin-editor-members">
@@ -1667,6 +1928,7 @@ export function ManageMembersModule() {
         <label><span>Email</span><input value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
         <label><span>{editing ? "New Password" : "Password"}</span><input type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} placeholder={editing ? "Leave blank to keep current" : "Set member password"} /></label>
         <label><span>Phone</span><input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
+        <label><span>Package</span><select value={form.packageName} onChange={(event) => setForm({ ...form, packageName: event.target.value })}><option>Free Listing</option><option>Featured Boost</option><option>City Leader</option><option>Featured Boost Trial</option><option>City Leader Trial</option></select></label>
         <label><span>Registration Date</span><input value={form.registeredAt} onChange={(event) => setForm({ ...form, registeredAt: event.target.value })} /></label>
         <label>
           <span>Status</span>
@@ -1687,12 +1949,12 @@ export function ManageMembersModule() {
 
       <div className="admin-real-table admin-real-table-members">
         <div className="admin-real-row admin-real-head">
-          <span>Select</span><span>Name</span><span>Username</span><span>Email</span><span>Phone</span><span>Registration Date</span><span>Status</span><span>Action</span>
+          <span>Select</span><span>Name</span><span>Username</span><span>Email</span><span>Phone</span><span>Package</span><span>Registration Date</span><span>Status</span><span>Action</span>
         </div>
         {filtered.map((record) => (
           <div className="admin-real-row" key={record.id}>
             <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
-            <span>{record.name}</span><span>{record.username}</span><span>{record.email}</span><span>{record.phone}</span><span>{record.registeredAt}</span>
+            <span>{record.name}</span><span>{record.username}</span><span>{record.email}</span><span>{record.phone}</span><span>{record.packageName || "Free Listing"}</span><span>{record.registeredAt}</span>
             <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
             <span><button type="button" className="admin-link-button" onClick={() => editRecord(record)}>View / Send Mail</button></span>
           </div>
@@ -1731,40 +1993,40 @@ export function ManageNewsletterModule() {
     setForm({ email: "", joinedAt: new Date().toLocaleDateString("en-IN"), lastSent: "Not sent", status: "Subscribed" });
   }
 
-  function saveRecord() {
+  async function saveRecord() {
     if (!form.email.trim()) return;
     const nextRecord: NewsletterRecord = { id: editing?.id ?? `news-${Date.now()}`, ...form, email: form.email.trim() };
-    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction("newsletter", {
+    const latest = await postAndRefreshAdminData<NewsletterRecord[]>("newsletter", {
       action: "upsert",
       record: { email: nextRecord.email, joinedAt: nextRecord.joinedAt, lastSent: nextRecord.lastSent, status: nextRecord.status },
-    });
+    }, records);
+    if (!latest) return;
+    sync(latest);
     resetForm();
   }
 
-  function sendSelected() {
+  async function sendSelected() {
     const emails = selected.map((id) => records.find((r) => r.id === id)?.email).filter(Boolean) as string[];
-    const stamp = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-    sync(records.map((record) => (selected.includes(record.id) ? { ...record, lastSent: `Campaign sent ${stamp}` } : record)));
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction("newsletter", { action: "send", emails });
+    const latest = await postAndRefreshAdminData<NewsletterRecord[]>("newsletter", { action: "send", emails }, records);
+    if (latest) sync(latest);
     setSelected([]);
   }
 
-  function unsubscribeSelected() {
+  async function unsubscribeSelected() {
     const emails = selected.map((id) => records.find((r) => r.id === id)?.email).filter(Boolean) as string[];
-    sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: "Unsubscribed" } : record)));
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction("newsletter", { action: "unsubscribe", emails });
+    const latest = await postAndRefreshAdminData<NewsletterRecord[]>("newsletter", { action: "unsubscribe", emails }, records);
+    if (latest) sync(latest);
     setSelected([]);
   }
 
-  function deleteSelected() {
+  async function deleteSelected() {
     const emails = selected.map((id) => records.find((r) => r.id === id)?.email).filter(Boolean) as string[];
-    sync(records.filter((record) => !selected.includes(record.id)));
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction("newsletter", { action: "delete", emails });
+    const latest = await postAndRefreshAdminData<NewsletterRecord[]>("newsletter", { action: "delete", emails }, records);
+    if (latest) sync(latest);
     setSelected([]);
   }
 
@@ -1773,7 +2035,7 @@ export function ManageNewsletterModule() {
       <div className="admin-filters">
         <label><span>Email</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Email" /></label>
         <label><span>Records Per Page</span><input value={filtered.length} readOnly /></label>
-        <button type="button" onClick={() => undefined}>Submit</button>
+        <button type="button" onClick={() => setQuery("")}>Clear</button>
       </div>
 
       <div className="admin-editor">
@@ -1847,6 +2109,29 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
     state: stateRecords[0]?.name ?? "",
     status: "Active" as "Active" | "Inactive",
   });
+
+  useEffect(() => {
+    void getAdminData<Array<Record<string, unknown>>>(kind, []).then((data) => {
+      if (!Array.isArray(data) || !data.length) return;
+      const normalized = data.map((record) => ({
+        city: String(record.city ?? record.cityName ?? ""),
+        country: String(record.country ?? record.countryName ?? "India"),
+        district: String(record.district ?? ""),
+        id: String(record.id ?? ""),
+        kind: String(record.kind ?? (isStates ? "State" : isCities ? "City" : "District")) as LocationRecord["kind"],
+        name: String(record.name ?? record.cityName ?? ""),
+        state: String(record.state ?? record.stateName ?? ""),
+        status: record.status === "Inactive" ? "Inactive" : "Active",
+      })).map((record) => (
+        isStates
+          ? { country: record.country, id: record.id, name: record.name, status: record.status }
+          : isCities
+            ? { country: record.country, id: record.id, name: record.name, state: record.state, status: record.status }
+            : record
+      )) as LocationAdminRecord[];
+      sync(normalized);
+    });
+  }, [kind, isCities, isStates]);
 
   const filtered = useMemo(() => {
     return records
@@ -1926,7 +2211,7 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
     });
   }
 
-  function saveRecord() {
+  async function saveRecord() {
     if (!form.name.trim()) return;
     const id = editing?.id ?? `${kind}-${Date.now()}`;
     const base = { id, country: form.country.trim() || "India", name: form.name.trim(), status: form.status };
@@ -1936,7 +2221,13 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
         ? { ...base, state: form.state }
         : { ...base, city: form.kind === "City" ? form.city : undefined, district: form.kind === "Sub-district" ? form.district : undefined, kind: form.kind, state: form.state };
 
-    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    const apiRecord = isStates
+      ? { countryName: form.country.trim() || "India", id, name: form.name.trim(), status: form.status }
+      : isCities
+        ? { countryName: form.country.trim() || "India", id, name: form.name.trim(), stateName: form.state, status: form.status }
+        : { cityName: form.city || form.district || form.name.trim(), countryName: form.country.trim() || "India", id, name: form.name.trim(), stateName: form.state, status: form.status };
+    const latest = await postAndRefreshAdminData<LocationAdminRecord[]>(kind, { action: "upsert", record: apiRecord }, records);
+    if (latest) sync(latest);
     resetForm();
   }
 
@@ -1953,13 +2244,15 @@ function LocationAdminModule({ kind }: { kind: "states" | "cities" | "locations"
     });
   }
 
-  function bulkStatus(nextStatus: "Active" | "Inactive") {
-    sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
+  async function bulkStatus(nextStatus: "Active" | "Inactive") {
+    const latest = await postAndRefreshAdminData<LocationAdminRecord[]>(kind, { action: "bulk-status", ids: selected, status: nextStatus }, records);
+    if (latest) sync(latest);
     setSelected([]);
   }
 
-  function deleteSelected() {
-    sync(records.filter((record) => !selected.includes(record.id)));
+  async function deleteSelected() {
+    const latest = await postAndRefreshAdminData<LocationAdminRecord[]>(kind, { action: "bulk-delete", ids: selected }, records);
+    if (latest) sync(latest);
     setSelected([]);
   }
 
@@ -2217,7 +2510,7 @@ export function ManageMetaTagsModule() {
     setForm({ description: "", keywords: "", title: "", url: "" });
   }
 
-  function saveRecord() {
+  async function saveRecord() {
     if (!form.url.trim() || !form.title.trim()) return;
     const nextRecord: MetaRecord = {
       id: editing?.id ?? `meta-${Date.now()}`,
@@ -2226,20 +2519,22 @@ export function ManageMetaTagsModule() {
       title: form.title.trim(),
       url: form.url.trim(),
     };
-    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction("meta", {
+    const latest = await postAndRefreshAdminData<MetaRecord[]>("meta", {
       action: "upsert",
       record: { description: nextRecord.description, id: nextRecord.id, keywords: nextRecord.keywords, title: nextRecord.title, url: nextRecord.url },
-    });
+    }, records);
+    if (!latest) return;
+    sync(latest);
     resetForm();
   }
 
-  function deleteRecord(id: string) {
-    sync(records.filter((record) => record.id !== id));
-    if (editing?.id === id) resetForm();
+  async function deleteRecord(id: string) {
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction("meta", { action: "delete", id });
+    const latest = await postAndRefreshAdminData<MetaRecord[]>("meta", { action: "delete", id }, records);
+    if (!latest) return;
+    sync(latest);
+    if (editing?.id === id) resetForm();
   }
 
   return (
@@ -2247,7 +2542,7 @@ export function ManageMetaTagsModule() {
       <div className="admin-filters">
         <label><span>URL</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="URL" /></label>
         <label><span>Records Per Page</span><input value={filtered.length} readOnly /></label>
-        <button type="button" onClick={() => undefined}>Submit</button>
+        <button type="button" onClick={() => setQuery("")}>Clear</button>
       </div>
 
       <div className="admin-editor admin-editor-meta">
@@ -2285,6 +2580,8 @@ export function ManageSubadminsModule() {
   const [form, setForm] = useState({
     email: "",
     name: "",
+    password: "",
+    permissions: ["dashboard", "business", "members"] as string[],
     phone: "",
     registeredAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
     status: "Active" as "Active" | "Inactive",
@@ -2319,6 +2616,8 @@ export function ManageSubadminsModule() {
     setForm({
       email: "",
       name: "",
+      password: "",
+      permissions: ["dashboard", "business", "members"],
       phone: "",
       registeredAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
       status: "Active",
@@ -2326,28 +2625,34 @@ export function ManageSubadminsModule() {
     });
   }
 
-  function saveRecord() {
+  async function saveRecord() {
     if (!form.email.trim() || !form.username.trim()) return;
     const nextRecord: SubadminRecord = {
       id: editing?.id ?? `sub-${Date.now()}`,
       email: form.email.trim(),
       name: form.name.trim(),
+      password: form.password.trim(),
+      permissions: Array.from(new Set(["dashboard", ...form.permissions])),
       phone: form.phone.trim(),
       registeredAt: form.registeredAt,
       status: form.status,
       username: form.username.trim(),
     };
-    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
+    const latest = await postAndRefreshAdminData<SubadminRecord[]>("subadmins", { action: "upsert", record: nextRecord }, records);
+    if (!latest) return;
+    sync(latest);
     resetForm();
   }
 
-  function bulkStatus(nextStatus: "Active" | "Inactive") {
-    sync(records.map((record) => (selected.includes(record.id) ? { ...record, status: nextStatus } : record)));
+  async function bulkStatus(nextStatus: "Active" | "Inactive") {
+    const latest = await postAndRefreshAdminData<SubadminRecord[]>("subadmins", { action: "bulk-status", ids: selected, status: nextStatus }, records);
+    if (latest) sync(latest);
     setSelected([]);
   }
 
-  function deleteSelected() {
-    sync(records.filter((record) => !selected.includes(record.id)));
+  async function deleteSelected() {
+    const latest = await postAndRefreshAdminData<SubadminRecord[]>("subadmins", { action: "bulk-delete", ids: selected }, records);
+    if (latest) sync(latest);
     setSelected([]);
   }
 
@@ -2362,12 +2667,13 @@ export function ManageSubadminsModule() {
           </select>
         </label>
         <label><span>Records Per Page</span><input value={filtered.length} readOnly /></label>
-        <button type="button" onClick={() => undefined}>Submit</button>
+        <button type="button" onClick={() => setFilters({ keyword: "", status: "All" })}>Clear</button>
       </div>
 
       <div className="admin-editor admin-editor-subadmins">
         <label><span>Email</span><input value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
         <label><span>Username</span><input value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} /></label>
+        <label><span>Password</span><input value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} placeholder={editing ? "Leave blank to keep current password" : "Set login password"} type="password" /></label>
         <label><span>Name</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
         <label><span>Phone</span><input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
         <label><span>Registration Date</span><input value={form.registeredAt} onChange={(event) => setForm({ ...form, registeredAt: event.target.value })} /></label>
@@ -2377,6 +2683,27 @@ export function ManageSubadminsModule() {
             <option>Active</option><option>Inactive</option>
           </select>
         </label>
+        <fieldset className="admin-wide-field" style={{ border: "1px solid #d8e0ea", padding: "0.85rem", display: "grid", gap: "0.65rem" }}>
+          <legend style={{ padding: "0 0.35rem", fontWeight: 700 }}>Module Permissions</legend>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.5rem" }}>
+            {adminPermissionSlugs.map((slug) => (
+              <label key={slug} style={{ alignItems: "center", display: "flex", flexDirection: "row", gap: "0.45rem" }}>
+                <input
+                  checked={form.permissions.includes(slug)}
+                  disabled={slug === "dashboard"}
+                  type="checkbox"
+                  onChange={(event) => {
+                    const permissions = event.target.checked
+                      ? Array.from(new Set([...form.permissions, slug]))
+                      : form.permissions.filter((item) => item !== slug);
+                    setForm({ ...form, permissions });
+                  }}
+                />
+                <span>{adminPages[slug]?.title ?? slug}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <button type="button" onClick={saveRecord}>{editing ? "Update Sub Admin" : "Add Sub Admin"}</button>
         {editing ? <button type="button" className="admin-light-button" onClick={resetForm}>Cancel</button> : null}
       </div>
@@ -2396,7 +2723,7 @@ export function ManageSubadminsModule() {
             <span><input type="checkbox" checked={selected.includes(record.id)} onChange={(event) => setSelected(toggleSelection(selected, record.id, event.target.checked))} /></span>
             <span>{record.email}</span><span>{record.username}</span><span>{record.name}</span><span>{record.phone}</span><span>{record.registeredAt}</span>
             <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
-            <span><button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm(record); }}>Edit</button></span>
+            <span><button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm({ ...record, password: "", permissions: record.permissions?.length ? record.permissions : ["dashboard"] }); }}>Edit</button></span>
           </div>
         ))}
       </div>
@@ -2423,10 +2750,12 @@ export function ManageAdminSettingsModule() {
     setSettings({ ...settings, [key]: value });
   }
 
-  function saveSettings() {
-    writeStored("checkinfo-admin-settings", settings);
+  async function saveSettings() {
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction("settings", { action: "save", record: settings });
+    const latest = await postAndRefreshAdminData<AdminSettingsRecord>("settings", { action: "save", record: settings }, settings);
+    if (!latest) return;
+    setSettings(latest);
+    writeStored("checkinfo-admin-settings", latest);
     setSaved(true);
   }
 
@@ -2479,11 +2808,18 @@ export function ChangeAdminPasswordModule() {
     // ── Backend sync ──────────────────────────────────────────────────────────
     setMessage("Saving...");
     const result = await postAdminAction("admin-password", { action: "update", newPassword: form.newPassword });
-    writeStored("checkinfo-admin-password-updated", { updatedAt: new Date().toISOString() });
-    setForm({ confirmPassword: "", newPassword: "", oldPassword: "" });
+    if (result.ok === false) {
+      setMessage("Password update failed. Please check backend connection and try again.");
+      return;
+    }
     const saved = (result as Record<string, unknown>)?.data;
     const ok = (saved as Record<string, unknown>)?.saved ?? (saved as Record<string, unknown>)?.ok;
-    setMessage(ok ? "Password updated successfully in database." : "Password validation passed. Saved locally (DB not configured).");
+    if (!ok) {
+      setMessage("Password update was not confirmed by server.");
+      return;
+    }
+    setForm({ confirmPassword: "", newPassword: "", oldPassword: "" });
+    setMessage("Password updated successfully in database.");
   }
 
   return (
@@ -2533,16 +2869,22 @@ export function ManageStaticPagesModule() {
     setForm({ content: "", slug: "", status: "Active", title: "" });
   }
 
-  function saveRecord() {
+  async function saveRecord() {
     if (!form.title.trim() || !form.slug.trim()) return;
     const nextRecord: StaticPageRecord = { id: editing?.id ?? `page-${Date.now()}`, ...form, slug: form.slug.trim(), title: form.title.trim() };
-    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction("static-pages", {
+    const latest = await postAndRefreshAdminData<StaticPageRecord[]>("static-pages", {
       action: "upsert",
       record: { content: nextRecord.content, id: nextRecord.id, slug: nextRecord.slug, status: nextRecord.status, title: nextRecord.title },
-    });
+    }, records);
+    if (!latest) return;
+    sync(latest);
     resetForm();
+  }
+
+  async function deleteRecord(id: string) {
+    const latest = await postAndRefreshAdminData<StaticPageRecord[]>("static-pages", { action: "delete", id }, records);
+    if (latest) sync(latest);
   }
 
   return (
@@ -2550,7 +2892,7 @@ export function ManageStaticPagesModule() {
       <div className="admin-filters">
         <label><span>Page Name</span><input value={query} onChange={(event) => setQuery(event.target.value)} /></label>
         <label><span>Records Per Page</span><input value={filtered.length} readOnly /></label>
-        <button type="button" onClick={() => undefined}>Submit</button>
+        <button type="button" onClick={() => setQuery("")}>Clear</button>
       </div>
       <div className="admin-editor admin-editor-content">
         <label><span>Page Name</span><input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} /></label>
@@ -2566,7 +2908,7 @@ export function ManageStaticPagesModule() {
           <div className="admin-real-row" key={record.id}>
             <span>{record.title}</span><span>{record.slug}</span><span>{record.content}</span>
             <span><b className={`admin-status admin-status-${record.status.toLowerCase()}`}>{record.status}</b></span>
-            <span><button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm(record); }}>View / Edit</button><button type="button" className="admin-link-button" onClick={() => sync(records.filter((item) => item.id !== record.id))}>Delete</button></span>
+            <span><button type="button" className="admin-link-button" onClick={() => { setEditing(record); setForm(record); }}>View / Edit</button><button type="button" className="admin-link-button" onClick={() => deleteRecord(record.id)}>Delete</button></span>
           </div>
         ))}
       </div>
@@ -2611,18 +2953,18 @@ export function ManageEnquiriesModule({ type }: { type: EnquiryRecord["type"] })
     writeStored(storageKey, next);
   }
 
-  function markStatus(status: EnquiryRecord["status"]) {
-    sync(records.map((record) => (selected.includes(record.id) ? { ...record, status } : record)));
+  async function markStatus(status: EnquiryRecord["status"]) {
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction(apiResource, { action: "bulk-status", ids: selected, status });
+    const latest = await postAndRefreshAdminData<EnquiryRecord[]>(apiResource, { action: "bulk-status", ids: selected, status }, records);
+    if (latest) sync(latest);
     setSelected([]);
   }
 
-  function deleteSelected() {
+  async function deleteSelected() {
     const toDelete = [...selected];
-    sync(records.filter((record) => !selected.includes(record.id)));
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction(apiResource, { action: "bulk-delete", ids: toDelete });
+    const latest = await postAndRefreshAdminData<EnquiryRecord[]>(apiResource, { action: "bulk-delete", ids: toDelete }, records);
+    if (latest) sync(latest);
     setSelected([]);
   }
 
@@ -2632,7 +2974,7 @@ export function ManageEnquiriesModule({ type }: { type: EnquiryRecord["type"] })
         <label><span>Name, Email</span><input value={filters.keyword} onChange={(event) => setFilters({ ...filters, keyword: event.target.value })} /></label>
         <label><span>Status</span><select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}><option>All</option><option>New</option><option>Replied</option><option>Closed</option></select></label>
         <label><span>Records Per Page</span><input value={filtered.length} readOnly /></label>
-        <button type="button" onClick={() => undefined}>Submit</button>
+        <button type="button" onClick={() => setFilters({ keyword: "", status: "All" })}>Clear</button>
       </div>
       <div className="admin-editor admin-editor-content">
         <label className="admin-wide-field"><span>Reply Message</span><textarea value={reply} onChange={(event) => setReply(event.target.value)} placeholder="Write reply note for selected enquiries" /></label>
@@ -2686,22 +3028,29 @@ export function ManageMediaModule({ kind }: { kind: "banners" | "header-images" 
     setForm({ image: "", lineOne: "", lineTwo: "", position: "", status: "Active" });
   }
 
-  function saveRecord() {
+  async function saveRecord() {
     if (!form.position.trim()) return;
     const nextRecord: MediaRecord = { id: editing?.id ?? `${kind}-${Date.now()}`, ...form, image: form.image.trim() || "Image" };
-    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction(apiResource, {
+    const latest = await postAndRefreshAdminData<MediaRecord[]>(apiResource, {
       action: "upsert",
       record: { id: nextRecord.id, image: nextRecord.image, lineOne: nextRecord.lineOne, lineTwo: nextRecord.lineTwo, position: nextRecord.position, status: nextRecord.status, kind: mediaKind },
-    });
+    }, records);
+    if (!latest) return;
+    sync(latest);
     resetForm();
   }
 
-  function bulkStatus(status: "Active" | "Inactive") {
-    sync(records.map((record) => (selected.includes(record.id) ? { ...record, status } : record)));
+  async function bulkStatus(status: "Active" | "Inactive") {
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction(apiResource, { action: "bulk-status", ids: selected, status });
+    const latest = await postAndRefreshAdminData<MediaRecord[]>(apiResource, { action: "bulk-status", ids: selected, status }, records);
+    if (latest) sync(latest);
+    setSelected([]);
+  }
+
+  async function deleteSelected() {
+    const latest = await postAndRefreshAdminData<MediaRecord[]>(apiResource, { action: "bulk-delete", ids: selected }, records);
+    if (latest) sync(latest);
     setSelected([]);
   }
 
@@ -2719,7 +3068,7 @@ export function ManageMediaModule({ kind }: { kind: "banners" | "header-images" 
       <div className="admin-actions">
         <button type="button" onClick={() => bulkStatus("Active")} disabled={!selected.length}>Activate</button>
         <button type="button" onClick={() => bulkStatus("Inactive")} disabled={!selected.length}>Deactivate</button>
-        <button type="button" onClick={() => { const toDelete = [...selected]; sync(records.filter((record) => !selected.includes(record.id))); void postAdminAction(apiResource, { action: "bulk-delete", ids: toDelete }); setSelected([]); }} disabled={!selected.length}>Delete</button>
+        <button type="button" onClick={deleteSelected} disabled={!selected.length}>Delete</button>
       </div>
       <div className="admin-real-table admin-real-table-media">
         <div className="admin-real-row admin-real-head"><span>Select</span><span>Position</span><span>Image</span><span>Line One</span><span>Line Two</span><span>Status</span><span>Action</span></div>
@@ -2758,23 +3107,24 @@ export function ManageTestimonialsModule() {
     writeStored("checkinfo-admin-testimonials", next);
   }
 
-  function saveRecord() {
+  async function saveRecord() {
     if (!form.name.trim() || !form.description.trim()) return;
     const nextRecord: TestimonialRecord = { id: editing?.id ?? `test-${Date.now()}`, description: form.description.trim(), name: form.name.trim(), order: Number(form.order) || records.length * 10 + 10, status: form.status };
-    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction("testimonials", {
+    const latest = await postAndRefreshAdminData<TestimonialRecord[]>("testimonials", {
       action: "upsert",
       record: { description: nextRecord.description, id: nextRecord.id, name: nextRecord.name, order: nextRecord.order, status: nextRecord.status },
-    });
+    }, records);
+    if (!latest) return;
+    sync(latest);
     setEditing(null);
     setForm({ description: "", name: "", order: "", status: "Active" });
   }
 
-  function deleteRecord(id: string) {
-    sync(records.filter((item) => item.id !== id));
+  async function deleteRecord(id: string) {
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction("testimonials", { action: "delete", id });
+    const latest = await postAndRefreshAdminData<TestimonialRecord[]>("testimonials", { action: "delete", id }, records);
+    if (latest) sync(latest);
   }
 
   return (
@@ -2821,33 +3171,34 @@ export function ManageFaqsModule() {
     writeStored("checkinfo-admin-faqs", next);
   }
 
-  function saveRecord() {
+  async function saveRecord() {
     if (!form.question.trim() || !form.answer.trim()) return;
     const nextRecord: FaqRecord = { answer: form.answer.trim(), id: editing?.id ?? `faq-${Date.now()}`, order: Number(form.order) || records.length * 10 + 10, question: form.question.trim(), status: form.status };
-    sync(editing ? records.map((record) => (record.id === editing.id ? nextRecord : record)) : [...records, nextRecord]);
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction("faqs", {
+    const latest = await postAndRefreshAdminData<FaqRecord[]>("faqs", {
       action: "upsert",
       record: { answer: nextRecord.answer, id: nextRecord.id, order: nextRecord.order, question: nextRecord.question, status: nextRecord.status },
-    });
+    }, records);
+    if (!latest) return;
+    sync(latest);
     setEditing(null);
     setForm({ answer: "", order: "", question: "", status: "Active" });
   }
 
-  function deleteRecord(id: string) {
-    sync(records.filter((item) => item.id !== id));
+  async function deleteRecord(id: string) {
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction("faqs", { action: "delete", id });
+    const latest = await postAndRefreshAdminData<FaqRecord[]>("faqs", { action: "delete", id }, records);
+    if (latest) sync(latest);
   }
 
-  function updateOrder() {
+  async function updateOrder() {
     const updated = records.map((record, index) => ({ ...record, order: (index + 1) * 10 }));
-    sync(updated);
     // ── Backend sync ──────────────────────────────────────────────────────────
-    void postAdminAction("faqs", {
+    const latest = await postAndRefreshAdminData<FaqRecord[]>("faqs", {
       action: "update-order",
       records: updated.map((r) => ({ id: r.id, order: r.order })),
-    });
+    }, records);
+    if (latest) sync(latest);
   }
 
   return (
@@ -2980,12 +3331,76 @@ export function ManageExportModule() {
   );
 }
 
+export function ManageAuditLogsModule() {
+  const [records, setRecords] = useState<AuditLogRecord[]>([]);
+  const [filters, setFilters] = useState({ action: "", actor: "", resource: "All" });
+
+  useEffect(() => {
+    void getAdminData<AuditLogRecord[]>("audit-logs", []).then((data) => {
+      setRecords(Array.isArray(data) ? data : []);
+    });
+  }, []);
+
+  const filtered = useMemo(
+    () =>
+      records
+        .filter((record) => [record.actorId, record.actorRole].join(" ").toLowerCase().includes(filters.actor.toLowerCase()))
+        .filter((record) => record.action.toLowerCase().includes(filters.action.toLowerCase()))
+        .filter((record) => filters.resource === "All" || record.resource === filters.resource),
+    [filters, records],
+  );
+
+  const resources = Array.from(new Set(records.map((record) => record.resource))).sort();
+
+  return (
+    <section className="admin-card">
+      <div className="admin-filters">
+        <label><span>Actor</span><input value={filters.actor} onChange={(event) => setFilters({ ...filters, actor: event.target.value })} placeholder="admin username" /></label>
+        <label><span>Action</span><input value={filters.action} onChange={(event) => setFilters({ ...filters, action: event.target.value })} placeholder="approve, delete, placement" /></label>
+        <label>
+          <span>Resource</span>
+          <select value={filters.resource} onChange={(event) => setFilters({ ...filters, resource: event.target.value })}>
+            <option>All</option>
+            {resources.map((resource) => <option key={resource}>{resource}</option>)}
+          </select>
+        </label>
+        <label><span>Records</span><input value={filtered.length} readOnly /></label>
+        <button type="button" onClick={() => setFilters({ action: "", actor: "", resource: "All" })}>Clear</button>
+      </div>
+
+      <div className="admin-real-table admin-real-table-audit">
+        <div className="admin-real-row admin-real-head">
+          <span>Date</span><span>Actor</span><span>Resource</span><span>Action</span><span>Business</span><span>Details</span>
+        </div>
+        {filtered.map((record) => (
+          <div className="admin-real-row" key={record.id}>
+            <span>{new Date(record.createdAt).toLocaleString("en-IN")}</span>
+            <span>{record.actorId}<br /><small>{record.actorRole}</small></span>
+            <span>{record.resource}</span>
+            <span><b>{record.action}</b></span>
+            <span>{record.businessId || record.ownerId || "-"}</span>
+            <span>{record.details ? JSON.stringify(record.details) : "-"}</span>
+          </div>
+        ))}
+        {!filtered.length ? (
+          <div className="admin-real-row">
+            <span>No audit activity found.</span><span /><span /><span /><span /><span />
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
 type DashboardRealData = {
   activeMembers: number;
+  approvedBusiness: number;
   categoriesCount: number;
   categoryDistribution: Array<{ count: number; name: string }>;
+  featuredBusiness: number;
   membersCount: number;
   pendingBusiness: number;
+  rejectedBusiness: number;
   recentEnquiries: Array<{
     email: string;
     id: string;
@@ -3004,6 +3419,7 @@ type DashboardRealData = {
   totalBusiness: number;
   totalEnquiries: number;
   totalUsers: number;
+  trendingBusiness: number;
 };
 
 export function AdminDashboardModule() {
@@ -3022,6 +3438,10 @@ export function AdminDashboardModule() {
   const totalEnquiries = data?.totalEnquiries ?? 0;
   const totalCategories = data?.categoriesCount ?? 24;
   const pendingCount = data?.pendingBusiness ?? 0;
+  const approvedCount = data?.approvedBusiness ?? 0;
+  const rejectedCount = data?.rejectedBusiness ?? 0;
+  const featuredCount = data?.featuredBusiness ?? 0;
+  const trendingCount = data?.trendingBusiness ?? 0;
   const activeMembersCount = data?.activeMembers ?? 0;
   const isMongo = data?.systemHealth?.isMongoConfigured ?? false;
   const dbName = data?.systemHealth?.dbName ?? "checkinfo";
@@ -3079,6 +3499,32 @@ export function AdminDashboardModule() {
       </div>
 
       {/* ── Quick Action Shortcuts Grid ── */}
+      <div style={{ background: "#fff", padding: "1.5rem", borderRadius: "16px", border: "1px solid #e2e8f0" }}>
+        <h3 style={{ margin: "0 0 1rem", fontSize: "1.05rem", fontWeight: "700", color: "#0f172a" }}>Approval & Placement Charts</h3>
+        <div style={{ display: "grid", gap: "0.8rem" }}>
+          {[
+            ["Approved", approvedCount, "#16a34a"],
+            ["Pending", pendingCount, "#d97706"],
+            ["Rejected", rejectedCount, "#dc2626"],
+            ["Featured", featuredCount, "#2563eb"],
+            ["Trending", trendingCount, "#7c3aed"],
+          ].map(([label, value, color]) => {
+            const numeric = Number(value);
+            const width = totalListings > 0 ? Math.max(4, Math.round((numeric / totalListings) * 100)) : 4;
+            return (
+              <div key={String(label)}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.3rem" }}>
+                  <span>{label}</span><span>{numeric}</span>
+                </div>
+                <div style={{ background: "#f1f5f9", borderRadius: "999px", height: "10px", overflow: "hidden" }}>
+                  <div style={{ background: String(color), width: `${width}%`, height: "100%" }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div style={{ background: "#fff", padding: "1.5rem", borderRadius: "16px", border: "1px solid #e2e8f0" }}>
         <h3 style={{ margin: "0 0 1rem", fontSize: "1.1rem", fontWeight: "700", color: "#0f172a" }}>Quick Management Hub</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem" }}>

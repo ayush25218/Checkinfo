@@ -73,6 +73,7 @@ export function LocationSearchForm({
   const [filterOpen, setFilterOpen] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [location, setLocation] = useState(defaultLocation);
   const [options, setOptions] = useState<SearchOptionsPayload>({ categories: [], cities: [] });
   const [query, setQuery] = useState(defaultQuery);
@@ -133,6 +134,7 @@ export function LocationSearchForm({
     const data = new FormData(form);
     const q = String(data.get("q") ?? "");
     const searchLocation = String(data.get("location") ?? "");
+    setIsSubmitting(true);
 
     if (!isNearMeSearch(q, searchLocation) || !navigator.geolocation) return;
 
@@ -330,8 +332,9 @@ export function LocationSearchForm({
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <span>{isLocating ? "Locating..." : "Search"}</span>
+        <span>{isLocating ? "Locating..." : isSubmitting ? "Searching..." : "Search"}</span>
       </button>
+      {isSubmitting || isLocating ? <span className="search-live-status" role="status">{isLocating ? "Finding nearby businesses..." : "Loading results..."}</span> : null}
       {showSuggestions ? (
         <div className="check-search-suggestions" aria-label="Popular searches">
           {suggestions.map(([suggestedQuery, suggestedLocation, icon]) => (

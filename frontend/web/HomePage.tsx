@@ -9,6 +9,12 @@ import { LeadCallbackForm } from "./LeadCallbackForm";
 import { SiteHeader } from "./SiteHeader";
 import { SiteFooter } from "./SiteFooter";
 import { CityCarousel } from "./CityCarousel";
+import { AtlasHeroSlider } from "./AtlasHeroSlider";
+import { AtlasStatsCard } from "./AtlasStatsCard";
+import { AtlasTopCategoriesGrid } from "./AtlasTopCategoriesGrid";
+import { AtlasFeaturedListings } from "./AtlasFeaturedListings";
+import { AtlasPickupUpdates } from "./AtlasPickupUpdates";
+import { AtlasAdvertiseContactCard } from "./AtlasAdvertiseContactCard";
 
 const footerLinks = {
   info: ["How to buy", "FAQs", "Career", "Privacy Policy", "Legal Disclaimer", "Terms And Conditions", "Refer to Friend"],
@@ -119,7 +125,7 @@ export async function HomePage() {
   const trending = filterCollectionListings(business, "trending").slice(0, 6);
 
   return (
-    <main className="check-home">
+    <main className="check-home atlas-home">
       {/* Schema.org JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -128,53 +134,11 @@ export async function HomePage() {
 
       <SiteHeader />
 
-      <section className="check-hero" id="top">
-        <span className="check-hero-aurora" aria-hidden="true" />
-        <span className="check-hero-grid" aria-hidden="true" />
-        <div>
-          <p className="eyebrow">India's Trusted Local Search Engine</p>
-          <h1>Discover & Connect with Verified Businesses</h1>
-          <p>
-            India's Trusted Business Discovery Engine — Connect directly with 100% verified local vendors, corporate listings, and service providers across all major cities.
-          </p>
-          <LocationSearchForm className="check-hero-search" />
-          <div className="check-trending-searches" aria-label="Trending searches">
-            {trendingSearches.map(({ label, icon }) => (
-              <a href={`/search?q=${encodeURIComponent(label)}`} key={label} className="check-trending-pill">
-                <span className="trending-icon" aria-hidden="true">{icon}</span>
-                <span>{label}</span>
-              </a>
-            ))}
-          </div>
-        </div>
-        <div className="check-hero-panel">
-          <span className="check-hero-panel-light" aria-hidden="true" />
-          <strong>Checkinfo</strong>
-          <span>Business Owner: <a href="/members/login" style={{ color: "inherit", textDecoration: "underline" }}>Login</a></span>
-          <a href="/members/login">List Your Business</a>
-        </div>
-      </section>
+      {/* Atlas Multi-Slide Interactive Corporate Hero Slider */}
+      <AtlasHeroSlider />
 
-      {/* Live Statistics Counter Section */}
-      <section className="check-stats-section" aria-label="Checkinfo Directory Statistics">
-        <div className="check-stats-grid">
-          <div className="check-stat-card">
-            <span className="stat-icon">📊</span>
-            <strong className="stat-number">1,50,000+</strong>
-            <span className="stat-label">Listed Businesses</span>
-          </div>
-          <div className="check-stat-card">
-            <span className="stat-icon">🌆</span>
-            <strong className="stat-number">100+</strong>
-            <span className="stat-label">Cities Covered</span>
-          </div>
-          <div className="check-stat-card">
-            <span className="stat-icon">🤝</span>
-            <strong className="stat-number">1M+</strong>
-            <span className="stat-label">Customer Enquiries</span>
-          </div>
-        </div>
-      </section>
+      {/* Atlas Floating Dark Statistics Counter Box */}
+      <AtlasStatsCard />
 
       <GoogleAdSlot label="Top homepage advertisement" slot="1111111111" />
 
@@ -203,13 +167,8 @@ export async function HomePage() {
         </div>
       </section>
 
-      <section className="check-section" id="categories">
-        <div className="check-section-title">
-          <h2>Top Categories by Ads</h2>
-          <p>Explore business categories through a clean, high-speed discovery grid.</p>
-        </div>
-        <CategoryTransitionGrid categories={categoryExperiences} />
-      </section>
+      {/* Atlas "Browse Top Categories." Image Grid */}
+      <AtlasTopCategoriesGrid />
 
       {/* City Discovery Section with Landmark Covers & Carousel */}
       <section className="check-city-discovery" aria-label="Explore city business listings">
@@ -244,78 +203,19 @@ export async function HomePage() {
         </div>
       </section>
 
-      <section className="check-featured" id="featured">
-        <div className="check-featured-copy">
-          <h2>Find Your Needs In Our Best <span>Featured Ads</span></h2>
-          <p>
-            Featured placements keep premium businesses visible across search,
-            category, and buyer-intent journeys with a sharper profile card.
-          </p>
-          <a href="/featured">View More</a>
-        </div>
-        <div className="check-card-row">
-          {featured.length ? featured.map((listing) => <BusinessCard listing={listing} key={listing.id} />) : (
-            <article className="check-empty-listing">
-              <strong>No sponsored listings published yet</strong>
-              <span>Approved paid listings from admin will appear here.</span>
-            </article>
-          )}
-        </div>
-      </section>
+      {/* Atlas Modern Featured Listings Section */}
+      <AtlasFeaturedListings listings={featured} />
 
-      <section className="check-section check-new-ads">
-        <div className="check-section-title centered">
-          <h2>Our New Ads</h2>
-          <p>Freshly submitted business profiles, ready for discovery and enquiries.</p>
-        </div>
-        <div className="check-new-grid">
-          {newest.length ? newest.map((listing) => <BusinessCard listing={listing} key={listing.id} />) : (
-            <article className="check-empty-listing">
-              <strong>No new listings published yet</strong>
-              <span>User submitted listings will show after admin approval.</span>
-            </article>
-          )}
-        </div>
-        <a className="check-more-button" href="/new">View More</a>
-      </section>
+      {/* Atlas Pickup New Updates Section */}
+      <AtlasPickupUpdates />
 
       <GoogleAdSlot label="Middle homepage advertisement" slot="2222222222" />
 
-      <section className="check-section check-trending">
-        <div className="check-section-title centered">
-          <h2>Popular Trending Ads</h2>
-          <p>
-            High-interest listings surfaced for faster comparison and customer action.
-          </p>
-        </div>
-        <div className="check-trending-grid">
-          {trending.length ? trending.map((listing) => <BusinessCard listing={listing} key={listing.id} />) : (
-            <article className="check-empty-listing">
-              <strong>No trending listings yet</strong>
-              <span>Trending placement will be calculated from real search and enquiry activity.</span>
-            </article>
-          )}
-        </div>
-        <a className="check-more-button" href="/trending">View More</a>
-      </section>
+      {/* Atlas Popular Trending Ads Section (Corporate Card Grid) */}
+      <AtlasFeaturedListings title="Popular Trending Ads" id="trending" listings={trending} />
 
-      <section className="advertise" id="advertise">
-        <div className="advertise-copy">
-          <p className="eyebrow">Advertise with us</p>
-          <h2>List your business and stand out where customers search.</h2>
-          <p>
-            Add your profile, publish contact details, highlight services, and
-            upgrade to featured placement for stronger visibility.
-          </p>
-          <div className="advertise-points" aria-label="Advertising benefits">
-            <span>Search priority</span>
-            <span>Verified enquiries</span>
-            <span>Featured placement</span>
-          </div>
-        </div>
-        {/* ✅ FIX: Client Component handles fetch to avoid page reload to raw JSON */}
-        <LeadCallbackForm />
-      </section>
+      {/* Atlas Modern Advertise With Us / Contact Card (Matching Reference Design) */}
+      <AtlasAdvertiseContactCard />
 
       <SiteFooter />
 

@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/members/layout,_N_T_/members/reviewlisting/layout,_N_T_/members/reviewlisting/page,_N_T_/members/reviewlisting"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/members/reviewlisting/__PAGE__",
+    "/members/reviewlisting",
+    "/members",
+    "/_index",
+    "/_head"
+  ]
+}

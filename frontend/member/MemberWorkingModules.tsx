@@ -12,7 +12,7 @@ import {
 import { indiaDistricts, indiaStates, indiaSubdistricts } from "@/frontend/admin/indiaLocations";
 import { businessTaxonomy, getEffectiveTaxonomy } from "@/backend/businessTaxonomy";
 
-type ListingStatus = "Draft" | "Pending" | "Active" | "Featured" | "Popular";
+type ListingStatus = "Draft" | "Pending" | "Active" | "Featured" | "Popular" | "Inactive";
 
 type MemberListing = {
   id: string;
@@ -21,8 +21,10 @@ type MemberListing = {
   contactPerson: string;
   description: string;
   email: string;
+  gallery?: string[];
   keywords: string;
   image?: string;
+  logo?: string;
   addressProofName?: string;
   businessType: string;
   city: string;
@@ -64,6 +66,7 @@ type NotificationRecord = {
 };
 
 type SupportTicket = {
+  createdAt?: string;
   id: string;
   email: string;
   issue: string;
@@ -72,6 +75,62 @@ type SupportTicket = {
   phone: string;
   status: "Open" | "Resolved";
 };
+
+type PackageState = {
+  couponCode?: string;
+  invoices?: Array<{ amount: number; createdAt: string; id: string; packageName: string; status: string }>;
+  packageExpiresAt?: string | null;
+  packageName?: string;
+  paymentStatus?: string;
+  trialEndsAt?: string | null;
+  walletCredits?: number;
+};
+
+function calculateProfileScore(listing?: Partial<MemberListing>) {
+  if (!listing) return 0;
+  const weightedFields: Array<[unknown, number]> = [
+    [listing.name, 12],
+    [listing.contactPerson, 8],
+    [listing.mobile, 10],
+    [listing.email, 8],
+    [listing.address, 12],
+    [listing.state, 6],
+    [listing.city, 8],
+    [listing.category, 8],
+    [listing.subcategory, 6],
+    [listing.businessType, 6],
+    [listing.description, 8],
+    [listing.image, 4],
+    [listing.website || listing.youtube, 4],
+  ];
+  return Math.min(100, weightedFields.reduce((sum, [value, points]) => {
+    const filled = Array.isArray(value) ? value.length > 0 : Boolean(String(value ?? "").trim());
+    return sum + (filled ? points : 0);
+  }, 0));
+}
+
+function readImageAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function validateImageUpload(file: File) {
+  const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  if (!allowed.includes(file.type)) return "Only JPG, PNG, WEBP, or GIF images are allowed.";
+  if (file.size > 2 * 1024 * 1024) return "Image must be 2MB or smaller.";
+  return "";
+}
+
+function validateProofUpload(file: File) {
+  const allowed = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+  if (!allowed.includes(file.type)) return "Address proof must be PDF, JPG, PNG, or WEBP.";
+  if (file.size > 4 * 1024 * 1024) return "Address proof must be 4MB or smaller.";
+  return "";
+}
 
 const listingSeed: MemberListing[] = [];
 
@@ -153,8 +212,11 @@ function postMemberAction(resource: string, payload: Record<string, unknown>) {
     headers: { "content-type": "application/json", "x-checkinfo-member-id": getMemberId() },
     method: "POST",
   })
-    .then((res) => res.json())
-    .catch(() => undefined);
+    .then(async (res) => {
+      const json = await res.json().catch(() => ({}));
+      return res.ok ? json : { ...json, ok: false };
+    })
+    .catch(() => ({ ok: false, message: "Network error. Changes were not saved." }));
 }
 
 function getMemberData<T>(resource: string, fallback: T): Promise<T> {
@@ -167,10 +229,9 @@ function getMemberData<T>(resource: string, fallback: T): Promise<T> {
 }
 
 function useStoredState<T>(key: string, fallback: T) {
-  const [value, setValue] = useState(() => readStored(memberStorageKey(key), fallback));
+  const [value, setValue] = useState(fallback);
   function sync(next: T) {
     setValue(next);
-    writeStored(memberStorageKey(key), next);
   }
   return [value, sync] as const;
 }
@@ -182,8 +243,10 @@ function initialListing(): Omit<MemberListing, "id" | "status"> {
     contactPerson: "",
     description: "",
     email: "",
+    gallery: [],
     keywords: "",
     image: "",
+    logo: "",
     addressProofName: "",
     businessType: businessTaxonomy[0]?.subcategories[0]?.businessTypes[0]?.name ?? "",
     city: "",
@@ -202,12 +265,15 @@ function ListingForm({
   buttonLabel,
   initial,
   onSave,
+  onSaveDraft,
 }: {
   buttonLabel: string;
   initial?: Partial<MemberListing>;
   onSave: (record: Omit<MemberListing, "id" | "status">) => void | Promise<void>;
+  onSaveDraft?: (record: Omit<MemberListing, "id" | "status">) => void | Promise<void>;
 }) {
   const [form, setForm] = useState({ ...initialListing(), ...initial });
+  const [previewOpen, setPreviewOpen] = useState(false);
   const effectiveTaxonomy = useMemo(() => getEffectiveTaxonomy(), []);
   const selectedTaxonomy = useMemo(
     () => effectiveTaxonomy.find((category) => category.name === form.category) ?? effectiveTaxonomy[0],
@@ -226,9 +292,8 @@ function ListingForm({
     [form.city, form.state],
   );
 
-  function submit() {
-    if (!form.name.trim() || !form.mobile.trim() || !form.email.trim() || !form.address.trim() || !form.city.trim()) return;
-    onSave({
+  function buildRecord() {
+    return {
       address: form.address.trim(),
       addressProofName: form.addressProofName?.trim(),
       businessType: form.businessType.trim(),
@@ -237,7 +302,9 @@ function ListingForm({
       contactPerson: form.contactPerson.trim(),
       description: form.description.trim(),
       email: form.email.trim(),
+      gallery: Array.isArray(form.gallery) ? form.gallery : [],
       image: form.image?.trim() ?? "",
+      logo: form.logo?.trim() ?? "",
       keywords: form.keywords.trim(),
       location: [form.subcity, form.city, form.state].filter(Boolean).join(", "),
       mobile: form.mobile.trim(),
@@ -247,7 +314,17 @@ function ListingForm({
       subcity: form.subcity.trim(),
       website: form.website.trim(),
       youtube: form.youtube.trim(),
-    });
+    };
+  }
+
+  function submit() {
+    if (!form.name.trim() || !form.mobile.trim() || !form.email.trim() || !form.address.trim() || !form.city.trim()) return;
+    onSave(buildRecord());
+  }
+
+  function saveDraft() {
+    if (!form.name.trim()) return;
+    void onSaveDraft?.(buildRecord());
   }
 
   return (
@@ -275,7 +352,7 @@ function ListingForm({
             onChange={(event) => setForm({ ...form, youtube: event.target.value })}
           />
         </label>
-        <label className="panel-field wide"><span>Business Photo URL</span><input value={form.image ?? ""} placeholder="https://example.com/photo.jpg" onChange={(event) => setForm({ ...form, image: event.target.value })} /><small>Paste a direct image URL (JPG/PNG) for your business cover photo.</small></label>
+        <label className="panel-field wide"><span>Business Photo</span><input value={form.image ?? ""} placeholder="https://example.com/photo.jpg or upload below" onChange={(event) => setForm({ ...form, image: event.target.value })} /><small>Paste a direct image URL or upload an image from gallery manager.</small></label>
         <label className="panel-field wide"><span>Address *</span><textarea value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} /></label>
         <label className="panel-field"><span>Main Category *</span><select value={form.category} onChange={(event) => { const next = businessTaxonomy.find((category) => category.name === event.target.value); const firstSub = next?.subcategories[0]; setForm({ ...form, businessType: firstSub?.businessTypes[0]?.name ?? "General Provider", category: event.target.value, subcategory: firstSub?.name ?? "General Services" }); }}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>
         <label className="panel-field"><span>Subcategory</span><select value={form.subcategory} onChange={(event) => { const next = selectedTaxonomy?.subcategories.find((subcategory) => subcategory.name === event.target.value); setForm({ ...form, businessType: next?.businessTypes[0]?.name ?? "General Provider", subcategory: event.target.value }); }}>{selectedTaxonomy?.subcategories.length ? selectedTaxonomy.subcategories.map((subcategory) => <option key={subcategory.slug}>{subcategory.name}</option>) : <option value="General Services">General Services</option>}</select></label>
@@ -286,13 +363,45 @@ function ListingForm({
         <label className="panel-field"><span>Service Keywords</span><input value={form.keywords} onChange={(event) => setForm({ ...form, keywords: event.target.value })} /></label>
         <label className="panel-field wide"><span>Description</span><textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label>
       </div>
-      <h3>Optional Verification</h3>
-      <div className="upload-grid optional-proof-grid" aria-label="Optional address proof upload">
+      <h3>Business Logo</h3>
+      <div className="upload-grid optional-proof-grid" aria-label="Upload business logo">
         <label className="upload-card">
-          <span>Business address proof</span>
-          <input type="file" accept="image/*,.pdf" onChange={(event) => setForm({ ...form, addressProofName: event.target.files?.[0]?.name ?? "" })} />
-          <small>Optional only. No document is required to submit.</small>
-          {form.addressProofName ? <b>{form.addressProofName}</b> : null}
+          <span>Upload Business Logo</span>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              const error = validateImageUpload(file);
+              if (error) {
+                window.alert(error);
+                event.currentTarget.value = "";
+                return;
+              }
+              const dataUrl = await readImageAsDataUrl(file);
+              setForm({ ...form, logo: dataUrl });
+            }}
+          />
+          <small>Upload official business logo (PNG, JPG, SVG). Best format: Square (200x200).</small>
+          {form.logo ? (
+            <div style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "10px" }}>
+              <img src={form.logo} alt="Business logo preview" style={{ width: 56, height: 56, objectFit: "contain", borderRadius: 8, border: "1px solid #cbd5e1", background: "#ffffff", padding: 4 }} />
+              <button type="button" onClick={() => setForm({ ...form, logo: "" })} style={{ fontSize: "0.8rem", color: "#ef4444", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>Remove logo</button>
+            </div>
+          ) : null}
+        </label>
+
+        <label className="upload-card" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <span>Or Logo Image URL</span>
+          <input
+            type="url"
+            placeholder="https://example.com/logo.png"
+            value={form.logo && !form.logo.startsWith("data:") ? form.logo : ""}
+            onChange={(e) => setForm({ ...form, logo: e.target.value })}
+            style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "0.9rem", width: "100%", boxSizing: "border-box" }}
+          />
+          <small>Direct image URL for your business logo icon</small>
         </label>
       </div>
       <h3>Upload Images</h3>
@@ -300,36 +409,72 @@ function ListingForm({
         {imageSlots.map((slot) => (
           <label className="upload-card" key={slot}>
             <span>{slot}</span>
-            <input type="file" />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={async (event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                const error = validateImageUpload(file);
+                if (error) {
+                  window.alert(error);
+                  event.currentTarget.value = "";
+                  return;
+                }
+                const dataUrl = await readImageAsDataUrl(file);
+                const gallery = Array.from(new Set([...(form.gallery ?? []), dataUrl])).slice(0, 5);
+                setForm({ ...form, gallery, image: form.image || dataUrl });
+              }}
+            />
             <small>JPG, PNG or GIF. Best size 800 x 560.</small>
           </label>
         ))}
       </div>
-      <div className="member-actions"><button type="button" onClick={submit}>{buttonLabel}</button></div>
+      {(form.gallery?.length || form.image) ? (
+        <div className="upload-grid" aria-label="Gallery preview">
+          {[form.image, ...(form.gallery ?? [])].filter(Boolean).slice(0, 6).map((src, index) => (
+            <div className="upload-card" key={`${src}-${index}`}>
+              <img src={src} alt={`Gallery image ${index + 1}`} style={{ height: 120, objectFit: "cover", width: "100%" }} />
+              <button type="button" onClick={() => setForm({ ...form, image: String(src) })}>Set primary</button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {previewOpen ? (
+        <div className="member-notice" style={{ marginTop: "1rem" }}>
+          <strong>Listing Preview</strong>
+          <p>{form.name || "Business name"} - {form.category} / {form.subcategory}</p>
+          <p>{[form.subcity, form.city, form.state].filter(Boolean).join(", ") || "Location not selected"}</p>
+          <p>{form.mobile || "Phone"} | {form.email || "Email"}</p>
+          <p>{form.description || "Description preview will appear here."}</p>
+        </div>
+      ) : null}
+      <div className="member-actions">
+        {onSaveDraft ? <button type="button" className="secondary-button" onClick={saveDraft}>Save Draft</button> : null}
+        <button type="button" className="secondary-button" onClick={() => setPreviewOpen((open) => !open)}>{previewOpen ? "Hide Preview" : "Preview Listing"}</button>
+        <button type="button" onClick={submit}>{buttonLabel}</button>
+      </div>
     </>
   );
 }
 
 export function MemberDashboardModule() {
   const [listings, setListings] = useStoredState("checkinfo-member-listings", listingSeed);
-  const [enquiries] = useStoredState("checkinfo-member-enquiries", enquirySeed);
+  const [enquiries, setEnquiries] = useStoredState("checkinfo-member-enquiries", enquirySeed);
 
   useEffect(() => {
     void getMemberData<MemberListing[]>("listings", []).then((data) => {
       if (Array.isArray(data)) setListings(data);
+    });
+    void getMemberData<MemberEnquiry[]>("enquiries", []).then((data) => {
+      if (Array.isArray(data)) setEnquiries(data);
     });
   }, []);
 
   const activeListings = listings.filter((listing) => listing.status === "Active" || listing.status === "Featured" || listing.status === "Popular").length;
   const newEnquiries = enquiries.filter((enquiry) => enquiry.status === "New").length;
 
-  let profileStatus = 0;
-  if (listings.length > 0) {
-    const l = listings[0];
-    const fields = [l.name, l.contactPerson, l.mobile, l.email, l.address, l.category, l.subcategory, l.city, l.description, l.website];
-    const filledCount = fields.filter((f) => Boolean(f && f.trim())).length;
-    profileStatus = Math.round((filledCount / fields.length) * 100);
-  }
+  const profileStatus = calculateProfileScore(listings[0]);
 
   const dashboardCards = [
     [
@@ -693,29 +838,49 @@ export function MyBusinessListingModule() {
     } catch {}
   }
 
-  async function handleSaveListing(record: Omit<MemberListing, "id" | "status">) {
+  async function persistListing(record: Omit<MemberListing, "id" | "status">, mode: "submit" | "draft") {
     if (hasListing && currentListing) {
-      const updated: MemberListing = { ...currentListing, ...record, status: "Pending" };
-      const response = await postMemberAction("listing", { action: "update", id: currentListing.id, record });
+      const updated: MemberListing = { ...currentListing, ...record, status: mode === "draft" ? "Draft" : "Pending" };
+      const response = await postMemberAction("listing", { action: mode === "draft" ? "update-draft" : "update", id: currentListing.id, record });
+      if (!response?.ok) {
+        setMessage(response?.message || "Business details could not be saved. Please try again.");
+        return;
+      }
       const serverListings = response?.data?.listings;
       const nextListings = Array.isArray(serverListings) && serverListings.length ? serverListings as MemberListing[] : [updated];
       setListings(nextListings);
       saveGlobalRegisteredListing(nextListings[0]);
-      setMessage("⏳ Business details updated successfully! Your listing has been submitted for Admin Review and will be updated on the website after approval.");
+      setMessage(mode === "draft"
+        ? "Draft saved successfully. You can submit it for admin approval when ready."
+        : "Business details updated successfully. Your listing is pending admin review and will update on the website after approval.");
     } else {
       const newListing: MemberListing = {
         ...record,
         id: `list-${Date.now()}`,
-        status: "Pending",
+        status: mode === "draft" ? "Draft" : "Pending",
       };
-      const response = await postMemberAction("listing", { action: "create", record: newListing });
+      const response = await postMemberAction("listing", { action: mode === "draft" ? "draft" : "create", record: newListing });
+      if (!response?.ok) {
+        setMessage(response?.message || "Business profile could not be saved. Please try again.");
+        return;
+      }
       const serverListing = response?.data?.listing as MemberListing | undefined;
       const nextListing = serverListing || newListing;
       setListings([nextListing]);
       saveGlobalRegisteredListing(nextListing);
-      setMessage("⏳ Business profile created successfully! It is now Pending Admin Approval and will go live on the website once approved by Administrator.");
+      setMessage(mode === "draft"
+        ? "Business draft saved successfully. It will stay private until you submit it for approval."
+        : "Business profile created successfully. It is pending admin approval and will go live once approved.");
     }
     setIsEditing(false);
+  }
+
+  async function handleSaveListing(record: Omit<MemberListing, "id" | "status">) {
+    await persistListing(record, "submit");
+  }
+
+  async function handleSaveDraft(record: Omit<MemberListing, "id" | "status">) {
+    await persistListing(record, "draft");
   }
 
   if (!hasListing) {
@@ -731,6 +896,7 @@ export function MyBusinessListingModule() {
           <ListingForm
             buttonLabel="Save & Publish Business Listing"
             onSave={handleSaveListing}
+            onSaveDraft={handleSaveDraft}
           />
         </PanelSection>
       </MemberShell>
@@ -761,6 +927,7 @@ export function MyBusinessListingModule() {
             buttonLabel="Save & Update Changes"
             initial={currentListing}
             onSave={handleSaveListing}
+            onSaveDraft={handleSaveDraft}
           />
         </PanelSection>
       </MemberShell>
@@ -906,6 +1073,8 @@ export function EditAccountModule() {
 export function EnquiriesModule() {
   const [records, setRecords] = useStoredState("checkinfo-member-enquiries", enquirySeed);
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"All" | MemberEnquiry["status"]>("All");
+  const [dateFilter, setDateFilter] = useState("");
 
   useEffect(() => {
     void getMemberData<MemberEnquiry[]>("enquiries", []).then((data) => {
@@ -913,17 +1082,28 @@ export function EnquiriesModule() {
     });
   }, [setRecords]);
 
-  const filtered = useMemo(() => records.filter((record) => [record.name, record.email, record.contact, record.message].join(" ").toLowerCase().includes(query.toLowerCase())), [query, records]);
+  const filtered = useMemo(() => records.filter((record) => {
+    const matchesQuery = [record.name, record.email, record.contact, record.message].join(" ").toLowerCase().includes(query.toLowerCase());
+    const matchesStatus = statusFilter === "All" || record.status === statusFilter;
+    const matchesDate = !dateFilter || record.date.toLowerCase().includes(dateFilter.toLowerCase());
+    return matchesQuery && matchesStatus && matchesDate;
+  }), [dateFilter, query, records, statusFilter]);
   async function status(id: string, next: MemberEnquiry["status"]) {
     const response = await postMemberAction("enquiry", { id, status: next });
+    if (!response?.ok) return;
     const serverRecords = response?.data?.enquiries;
-    setRecords(Array.isArray(serverRecords) ? serverRecords : records.map((record) => record.id === id ? { ...record, status: next } : record));
+    if (Array.isArray(serverRecords)) setRecords(serverRecords);
   }
   return (
     <MemberShell active="My Enquiries">
       <AccountHeader eyebrow="Manage Enquiries" subtitle="Search buyer leads by user name, email, phone number, and date range." title="My Enquiries" />
       <PanelSection eyebrow="Filter By" title="Find enquiry records">
-        <div className="member-filter"><label className="panel-field"><span>User Name / Email / Contact</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search..." /></label></div>
+        <div className="member-filter">
+          <label className="panel-field"><span>User Name / Email / Contact</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search..." /></label>
+          <label className="panel-field"><span>Status</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}><option>All</option><option>New</option><option>Read</option><option>Closed</option></select></label>
+          <label className="panel-field"><span>Date</span><input value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} placeholder="14 Aug 2026" /></label>
+          <button type="button" className="secondary-button" onClick={() => { setQuery(""); setStatusFilter("All"); setDateFilter(""); }}>Clear</button>
+        </div>
         {filtered.length > 0 ? (
           <div className="data-table member-table-enquiries">
             <div className="data-row data-head"><span>User</span><span>Email</span><span>Contact</span><span>Message</span><span>Action</span></div>
@@ -950,6 +1130,8 @@ export function EnquiriesModule() {
 
 export function ReviewsModule() {
   const [reviews, setReviews] = useStoredState("checkinfo-member-reviews", reviewSeed);
+  const [statusFilter, setStatusFilter] = useState<"All" | MemberReview["status"]>("All");
+  const [minimumRating, setMinimumRating] = useState("0");
 
   useEffect(() => {
     void getMemberData<MemberReview[]>("reviews", []).then((data) => {
@@ -957,19 +1139,30 @@ export function ReviewsModule() {
     });
   }, [setReviews]);
 
+  const filteredReviews = useMemo(() => reviews.filter((review) => {
+    const matchesStatus = statusFilter === "All" || review.status === statusFilter;
+    const matchesRating = review.rating >= Number(minimumRating || 0);
+    return matchesStatus && matchesRating;
+  }), [minimumRating, reviews, statusFilter]);
+
   async function update(id: string, status: MemberReview["status"]) {
     const response = await postMemberAction("review", { id, status });
+    if (!response?.ok) return;
     const serverReviews = response?.data?.reviews;
-    setReviews(Array.isArray(serverReviews) ? serverReviews : reviews.map((review) => review.id === id ? { ...review, status } : review));
+    if (Array.isArray(serverReviews)) setReviews(serverReviews);
   }
   return (
     <MemberShell active="Manage Reviews">
       <AccountHeader eyebrow="Manage Reviews" subtitle="Track published, pending, and moderated customer feedback for your listing." title="Customer Reviews" />
       <PanelSection eyebrow="Reviews" title="Customer feedback">
-        {reviews.length > 0 ? (
+        <div className="member-filter">
+          <label className="panel-field"><span>Status</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}><option>All</option><option>Pending</option><option>Published</option><option>Hidden</option></select></label>
+          <label className="panel-field"><span>Minimum Rating</span><select value={minimumRating} onChange={(event) => setMinimumRating(event.target.value)}><option value="0">All ratings</option><option value="3">3+ stars</option><option value="4">4+ stars</option><option value="5">5 stars</option></select></label>
+        </div>
+        {filteredReviews.length > 0 ? (
           <div className="data-table member-table-reviews">
             <div className="data-row data-head"><span>Customer</span><span>Rating</span><span>Review</span><span>Status</span><span>Action</span></div>
-            {reviews.map((review) => (
+            {filteredReviews.map((review) => (
               <div className="data-row" key={review.id}>
                 <strong>{review.author}</strong>
                 <span>{review.rating} / 5</span>
@@ -1050,14 +1243,35 @@ const featuredPackagesData: PackagePlan[] = [
 ];
 
 export function PackagesModule() {
-  const [selectedPlan, setSelectedPlan] = useState(() => readStored(memberStorageKey("member-package"), "Free Listing"));
+  const [couponCode, setCouponCode] = useState("");
+  const [invoices, setInvoices] = useState<NonNullable<PackageState["invoices"]>>([]);
+  const [paymentStatus, setPaymentStatus] = useState("Free");
+  const [selectedPlan, setSelectedPlan] = useState("Free Listing");
+  const [packageExpiresAt, setPackageExpiresAt] = useState<string | null>(null);
+  const [walletCredits, setWalletCredits] = useState(0);
 
-  async function choose(name: string) {
-    const response = await postMemberAction("package", { packageName: name });
+  useEffect(() => {
+    void getMemberData<PackageState>("package", { packageName: "Free Listing", packageExpiresAt: null }).then((data) => {
+      if (data && typeof data === "object") {
+        setCouponCode(data.couponCode ?? "");
+        setInvoices(Array.isArray(data.invoices) ? data.invoices : []);
+        if (typeof data.packageName === "string") setSelectedPlan(data.packageName);
+        setPackageExpiresAt(data.packageExpiresAt ?? null);
+        setPaymentStatus(data.paymentStatus ?? "Free");
+        setWalletCredits(Number(data.walletCredits ?? 0));
+      }
+    });
+  }, []);
+
+  async function choose(name: string, action = "select") {
+    const response = await postMemberAction("package", { action, couponCode, packageName: name });
+    if (!response?.ok) return;
     const savedPlan = response?.data?.packageName;
-    const nextPlan = typeof savedPlan === "string" ? savedPlan : name;
-    setSelectedPlan(nextPlan);
-    writeStored(memberStorageKey("member-package"), nextPlan);
+    if (typeof savedPlan === "string") setSelectedPlan(savedPlan);
+    setPackageExpiresAt(response?.data?.packageExpiresAt ?? null);
+    setPaymentStatus(response?.data?.paymentStatus ?? paymentStatus);
+    setWalletCredits(Number(response?.data?.walletCredits ?? walletCredits));
+    if (response?.data?.invoice) setInvoices([response.data.invoice, ...invoices]);
   }
 
   return (
@@ -1068,6 +1282,15 @@ export function PackagesModule() {
         title="Featured Packages"
       />
       <PanelSection eyebrow="Visibility Plans" title="Boost Search & Customer Discovery">
+        <div className="member-notice" style={{ marginBottom: "1rem" }}>
+          {packageExpiresAt
+            ? `Active package: ${selectedPlan}. ${paymentStatus} status. Expires on ${new Date(packageExpiresAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}. Renewal reminder active.`
+            : `Active package: ${selectedPlan}. No paid package expiry is active.`}
+        </div>
+        <div className="member-filter" style={{ marginBottom: "1rem" }}>
+          <label className="panel-field"><span>Coupon Code</span><input value={couponCode} onChange={(event) => setCouponCode(event.target.value.toUpperCase())} placeholder="CHECKINFO20" /></label>
+          <div className="member-notice" style={{ alignSelf: "end", margin: 0 }}>Wallet credits: {walletCredits}</div>
+        </div>
         <div className="modern-package-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem", marginTop: "0.5rem" }}>
           {featuredPackagesData.map((pkg) => {
             const isSelected = selectedPlan === pkg.name;
@@ -1173,41 +1396,124 @@ export function PackagesModule() {
                   >
                     {isSelected ? "✔ Currently Active Plan" : `Select ${pkg.name}`}
                   </button>
+                  {pkg.name !== "Free Listing" ? (
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => choose(`${pkg.name} Trial`, "trial")}
+                      style={{ marginTop: "0.6rem", width: "100%" }}
+                    >
+                      Start 14 Day Trial
+                    </button>
+                  ) : null}
                 </div>
               </article>
             );
           })}
         </div>
+        {invoices.length ? (
+          <div className="data-table" style={{ marginTop: "1.25rem" }}>
+            <div className="data-row data-head"><span>Invoice</span><span>Package</span><span>Amount</span><span>Status</span></div>
+            {invoices.slice(0, 5).map((invoice) => (
+              <div className="data-row" key={invoice.id}>
+                <span>{invoice.id}<small>{new Date(invoice.createdAt).toLocaleDateString("en-IN")}</small></span>
+                <span>{invoice.packageName}</span>
+                <span>Rs {invoice.amount}</span>
+                <span className="status-pill active">{invoice.status}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </PanelSection>
     </MemberShell>
   );
 }
 
 export function NotificationsModule() {
-  const [notifications, setNotifications] = useStoredState("checkinfo-member-notifications", notificationSeed);
+  const [notifications, setNotifications] = useStoredState<NotificationRecord[]>("checkinfo-member-notifications", []);
+  const [filter, setFilter] = useState<"All" | "Unread">("All");
 
   useEffect(() => {
     void getMemberData<NotificationRecord[]>("notifications", []).then((data) => {
-      if (Array.isArray(data) && data.length > 0) setNotifications(data);
+      if (Array.isArray(data)) setNotifications(data);
     });
   }, [setNotifications]);
 
+  const visibleNotifications = useMemo(() => notifications.filter((item) => filter === "All" || item.unread), [filter, notifications]);
+  const unreadCount = notifications.filter((item) => item.unread).length;
+
   async function markAllRead() {
+    const updated = notifications.map((item) => ({ ...item, unread: false }));
+    setNotifications(updated);
     const response = await postMemberAction("notification", { action: "mark-all-read" });
-    const serverNotifications = response?.data?.notifications;
-    setNotifications(Array.isArray(serverNotifications) ? serverNotifications : notifications.map((item) => ({ ...item, unread: false })));
+    if (response?.ok && Array.isArray(response?.data?.notifications)) {
+      setNotifications(response.data.notifications);
+    }
   }
+
+  async function clearAll() {
+    if (!window.confirm("Are you sure you want to clear all notifications?")) return;
+    setNotifications([]);
+    await postMemberAction("notification", { action: "clear-all" });
+  }
+
   return (
     <MemberShell active="Notifications">
-      <AccountHeader action={notifications.length > 0 ? <button className="primary-button" type="button" onClick={markAllRead}>Mark all read</button> : undefined} eyebrow="Notifications" subtitle="Stay updated on profile health, reviews, enquiries, and promotions." title="Activity Center" />
+      <AccountHeader
+        action={
+          notifications.length > 0 ? (
+            <div style={{ display: "flex", gap: "10px" }}>
+              {unreadCount > 0 ? (
+                <button className="primary-button" type="button" onClick={markAllRead}>
+                  Mark all read
+                </button>
+              ) : null}
+              <button className="secondary-button" type="button" onClick={clearAll} style={{ color: "#ef4444", borderColor: "#fca5a5" }}>
+                Clear all
+              </button>
+            </div>
+          ) : undefined
+        }
+        eyebrow="Notifications"
+        subtitle="Stay updated on profile health, reviews, enquiries, and promotions."
+        title="Activity Center"
+      />
       <PanelSection eyebrow="Recent Updates" title="Member alerts">
-        {notifications.length > 0 ? (
+        <div className="member-filter">
+          <label className="panel-field">
+            <span>View</span>
+            <select value={filter} onChange={(event) => setFilter(event.target.value as typeof filter)}>
+              <option value="All">All Notifications ({notifications.length})</option>
+              <option value="Unread">Unread Only ({unreadCount})</option>
+            </select>
+          </label>
+          <div className="member-notice" style={{ alignSelf: "end", margin: 0, fontWeight: 600 }}>
+            {unreadCount > 0 ? `🔴 ${unreadCount} unread alert${unreadCount === 1 ? "" : "s"}` : "🟢 All caught up!"}
+          </div>
+        </div>
+
+        {visibleNotifications.length > 0 ? (
           <div className="timeline">
-            {notifications.map((item) => (
-              <article className="timeline-item" key={item.id}>
-                <span>{item.time}{item.unread ? " / Unread" : ""}</span>
-                <strong>{item.title}</strong>
-                <p>{item.text}</p>
+            {visibleNotifications.map((item) => (
+              <article
+                className="timeline-item"
+                key={item.id}
+                style={{
+                  borderLeft: item.unread ? "4px solid #2563eb" : "4px solid #cbd5e1",
+                  background: item.unread ? "#f8fafc" : "#ffffff",
+                  padding: "1rem 1.25rem",
+                  borderRadius: "8px",
+                  marginBottom: "0.75rem",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                  <strong style={{ fontSize: "1rem", color: "#0f172a" }}>{item.title}</strong>
+                  <span style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 500 }}>
+                    {item.time} {item.unread ? <b style={{ color: "#2563eb", marginLeft: "6px" }}>• NEW</b> : null}
+                  </span>
+                </div>
+                <p style={{ margin: 0, color: "#475569", fontSize: "0.9rem", lineHeight: "1.45" }}>{item.text}</p>
               </article>
             ))}
           </div>
@@ -1222,21 +1528,52 @@ export function NotificationsModule() {
 export function SupportModule() {
   const [tickets, setTickets] = useStoredState<SupportTicket[]>("checkinfo-member-support", []);
   const [form, setForm] = useState({ email: "", issue: "", message: "", name: "", phone: "" });
+  const [ticketFilter, setTicketFilter] = useState<"All" | SupportTicket["status"]>("All");
+
+  useEffect(() => {
+    void getMemberData<SupportTicket[]>("tickets", []).then((data) => {
+      if (Array.isArray(data) && data.length > 0) setTickets(data);
+    });
+  }, [setTickets]);
+
+  const visibleTickets = useMemo(() => tickets.filter((ticket) => ticketFilter === "All" || ticket.status === ticketFilter), [ticketFilter, tickets]);
+
+  const [successMessage, setSuccessMessage] = useState("");
+
   async function submit() {
-    if (!form.name.trim() || !form.message.trim()) return;
-    const ticket = { ...form, id: `ticket-${Date.now()}`, status: "Open" as const };
+    if (!form.name.trim() || !form.message.trim()) {
+      window.alert("Please fill in your Name and Message.");
+      return;
+    }
     const response = await postMemberAction("support", { ticket: form });
+    if (!response?.ok) {
+      window.alert("Failed to submit support ticket. Please try again.");
+      return;
+    }
     const serverTickets = response?.data?.tickets;
-    setTickets(Array.isArray(serverTickets) ? serverTickets : [...tickets, ticket]);
-    setForm({ email: "", issue: "", message: "", name: "", phone: "" });
+    if (Array.isArray(serverTickets)) {
+      setTickets(serverTickets);
+      setForm({ email: "", issue: "", message: "", name: "", phone: "" });
+      setSuccessMessage("🎉 Support ticket submitted! Checkinfo Admin team has received your ticket.");
+    }
   }
   return (
     <MemberShell active="Support">
       <AccountHeader eyebrow="Customer Care" subtitle="Reach Checkinfo support for listing updates, enquiry issues, packages, or account help." title="Support Center" />
       <PanelSection eyebrow="Need Help?" title="Create support request">
+        {successMessage ? (
+          <div className="member-notice" style={{ background: "#f0fdf4", borderColor: "#86efac", color: "#166534", marginBottom: "1rem", fontWeight: 600 }}>
+            {successMessage}
+          </div>
+        ) : null}
         <div className="form-grid"><label className="panel-field"><span>Name *</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label><label className="panel-field"><span>Phone Number *</span><input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label><label className="panel-field"><span>Email ID</span><input value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label><label className="panel-field"><span>Issue Type</span><select value={form.issue} onChange={(event) => setForm({ ...form, issue: event.target.value })}><option value="">Select issue</option><option>Listing update</option><option>Package or payment</option><option>Enquiry issue</option><option>Account access</option></select></label><label className="panel-field wide"><span>Message *</span><textarea value={form.message} onChange={(event) => setForm({ ...form, message: event.target.value })} /></label></div>
         <div className="member-actions"><button type="button" onClick={submit}>Submit Ticket</button></div>
-        {tickets.length ? <div className="data-table member-table-support"><div className="data-row data-head"><span>Ticket</span><span>Issue</span><span>Message</span><span>Status</span></div>{tickets.map((ticket) => <div className="data-row" key={ticket.id}><strong>{ticket.name}<small>{ticket.phone}</small></strong><span>{ticket.issue || "General"}</span><span>{ticket.message}</span><span className="status-pill pending">{ticket.status}</span></div>)}</div> : null}
+        {tickets.length ? (
+          <>
+            <div className="member-filter"><label className="panel-field"><span>Ticket Status</span><select value={ticketFilter} onChange={(event) => setTicketFilter(event.target.value as typeof ticketFilter)}><option>All</option><option>Open</option><option>Resolved</option></select></label></div>
+            <div className="data-table member-table-support"><div className="data-row data-head"><span>Ticket</span><span>Issue</span><span>Created</span><span>Message</span><span>Status</span></div>{visibleTickets.map((ticket) => <div className="data-row" key={ticket.id}><strong>{ticket.name}<small>{ticket.phone}</small></strong><span>{ticket.issue || "General"}</span><span>{ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString("en-IN") : "New"}</span><span>{ticket.message}</span><span className="status-pill pending">{ticket.status}</span></div>)}</div>
+          </>
+        ) : null}
       </PanelSection>
     </MemberShell>
   );

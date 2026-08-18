@@ -6,9 +6,9 @@ import { SocialLoginButtons } from "@/frontend/web/SocialLoginButtons";
 export default async function MemberLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; email?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, email } = await searchParams;
   const demo = getExpectedCredentials("member");
 
   return (
@@ -22,6 +22,13 @@ export default async function MemberLoginPage({
           <h1>Business Owner Login</h1>
           <p>Sign in to access your Business Member Panel: manage listings, review buyer enquiries, update packages, and view customer ratings.</p>
         </div>
+
+        <div className="auth-credentials-hint" style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: "10px", padding: "12px 16px", margin: "1rem 0", fontSize: "0.85rem", color: "#0369a1" }}>
+          <strong style={{ display: "block", marginBottom: "4px", color: "#0284c7" }}>🔑 Business Owner Demo Credentials:</strong>
+          <div>Email / Username: <code style={{ background: "#e0f2fe", padding: "2px 6px", borderRadius: "4px", fontWeight: "bold" }}>business@checkinfo.in</code> (or <code style={{ background: "#e0f2fe", padding: "2px 6px", borderRadius: "4px", fontWeight: "bold" }}>member</code>)</div>
+          <div>Password: <code style={{ background: "#e0f2fe", padding: "2px 6px", borderRadius: "4px", fontWeight: "bold" }}>business123</code> (or <code style={{ background: "#e0f2fe", padding: "2px 6px", borderRadius: "4px", fontWeight: "bold" }}>member123</code>)</div>
+        </div>
+
         {error ? <p className="auth-error">{error}</p> : null}
         <form className="auth-form" action="/api/auth/login" method="post" autoComplete="off">
           <input name="role" type="hidden" value="member" />
@@ -31,7 +38,8 @@ export default async function MemberLoginPage({
             <span>Username / Email</span>
             <AutofillSafeInput
               autoComplete="new-password"
-              initiallyReadOnly
+              defaultValue={email || ""}
+              initiallyReadOnly={!email}
               name="member_username"
               placeholder="Enter username or email"
               required
@@ -40,11 +48,10 @@ export default async function MemberLoginPage({
           <label>
             <span>Password</span>
             <PasswordFieldWithToggle
-              autoComplete="new-password"
+              autoComplete="current-password"
               name="member_password"
               placeholder="Enter password"
               required
-              readOnly
             />
           </label>
           <button type="submit">Login to Business Member Panel</button>

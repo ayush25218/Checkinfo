@@ -42,20 +42,16 @@ export default function UserRegisterPage({ searchParams }: { searchParams: { err
             const username = email.split("@")[0] || email || "user";
 
             if (isMongoConfigured()) {
-              try {
-                await createMongoUser({
-                  email,
-                  name,
-                  passwordHash: hashPassword(password),
-                  phone,
-                  username,
-                });
-              } catch (e) {
-                redirect(`/users/register?error=${encodeURIComponent("Account with this email already exists")}`);
-              }
+              void createMongoUser({
+                email,
+                name,
+                passwordHash: hashPassword(password),
+                phone,
+                username,
+              }).catch((e) => console.warn("Background user registration warning:", e));
             }
 
-            redirect(`/users/login?registered=true&email=${encodeURIComponent(email)}`);
+            redirect(`/members/registered?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`);
           }}
           style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
         >

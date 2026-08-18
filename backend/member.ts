@@ -1,11 +1,26 @@
 export type MemberListing = {
   id: string;
   address: string;
+  approvalStatus?: "Draft" | "Pending" | "Approved" | "Rejected";
+  approvedAt?: string;
+  approvedBy?: string;
+  adminNotes?: string;
   category: string;
   contactPerson: string;
+  createdAt?: string;
+  createdBy?: string;
   description: string;
+  duplicateKey?: string;
+  editHistory?: Array<{
+    action: "created" | "updated" | "admin-status" | "admin-placement";
+    actorId: string;
+    at: string;
+    notes?: string;
+  }>;
   email: string;
   image?: string;
+  logo?: string;
+  gallery?: string[];
   keywords: string;
   addressProofName?: string;
   businessType: string;
@@ -13,11 +28,22 @@ export type MemberListing = {
   location: string;
   mobile: string;
   name: string;
+  memberId?: string;
+  ownerId?: string;
+  rating?: number;
+  reviewCount?: number;
   state: string;
+  packageName?: string;
+  placementExpiresAt?: string;
   placements?: Array<"new" | "featured" | "trending">;
+  placementStartsAt?: string;
+  rejectionReason?: string;
   status: "Draft" | "Pending" | "Active" | "Featured" | "Popular" | "Inactive";
   subcategory: string;
   subcity: string;
+  submittedAt?: string;
+  updatedAt?: string;
+  verificationStatus?: "Unverified" | "Pending" | "Verified" | "Rejected";
   website: string;
   youtube: string;
 };
@@ -49,6 +75,7 @@ export type MemberNotification = {
 };
 
 export type SupportTicket = {
+  createdAt?: string;
   id: string;
   email: string;
   issue: string;

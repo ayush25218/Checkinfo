@@ -13,9 +13,30 @@ export function BusinessDetailView({ listing, isExact = true }: { listing: Publi
 
   const isPlaceholder = !listing.image || listing.image.includes("370X290") || listing.image.includes("fioxen") || listing.image.includes("dummy");
   const coverImage = isPlaceholder ? getCategoryCoverImage(`${listing.name} ${category}`) : listing.image;
+  const ratingValue = Number(listing.rating || 0);
+  const reviewCount = Number(listing.reviewCount || 0);
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    address: listing.address || location,
+    aggregateRating: ratingValue > 0 ? {
+      "@type": "AggregateRating",
+      ratingCount: reviewCount || 1,
+      ratingValue,
+    } : undefined,
+    areaServed: listing.city || listing.state || "India",
+    image: coverImage,
+    name: listing.name,
+    telephone: cleanPhone.length >= 10 ? `+91${cleanPhone.slice(-10)}` : undefined,
+    url: listing.website || listing.publicPath,
+  };
 
   return (
     <main className="check-home check-business-detail-page">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+      />
       <SiteHeader activeNav="Business" />
 
       {/* Hero Header Section */}
@@ -42,7 +63,12 @@ export function BusinessDetailView({ listing, isExact = true }: { listing: Publi
                 {listing.website ? <span className="detail-badge badge-website">🌐 Has Website</span> : null}
               </div>
 
-              <h1>{listing.name}</h1>
+              <div style={{ display: "flex", alignItems: "center", gap: "14px", margin: "0.25rem 0 0.5rem" }}>
+                {listing.logo ? (
+                  <img src={listing.logo} alt={`${listing.name} Logo`} style={{ width: 52, height: 52, objectFit: "contain", borderRadius: "10px", background: "#ffffff", padding: "4px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", flexShrink: 0 }} />
+                ) : null}
+                <h1 style={{ margin: 0 }}>{listing.name}</h1>
+              </div>
 
               <div className="business-category-tags">
                 <span className="category-tag">{category}</span>
@@ -53,6 +79,9 @@ export function BusinessDetailView({ listing, isExact = true }: { listing: Publi
 
               <p className="business-location-subtitle">
                 📍 {listing.address || location || "Verified Local Business in India"}
+              </p>
+              <p className="business-location-subtitle">
+                {ratingValue > 0 ? `${ratingValue} / 5 from ${reviewCount || 1} review${(reviewCount || 1) === 1 ? "" : "s"}` : "New listing, reviews welcome"}
               </p>
             </div>
 

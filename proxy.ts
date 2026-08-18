@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-function hasValidSession(request: NextRequest, name: string, role: "admin" | "member") {
+function hasValidSession(request: NextRequest, name: string, role: "admin" | "subadmin" | "member") {
   const token = request.cookies.get(name)?.value;
   const payload = token?.split(".")[0];
 
@@ -20,12 +20,15 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
-    if (!hasValidSession(request, "checkinfo_admin_auth", "admin")) {
+    if (
+      !hasValidSession(request, "checkinfo_admin_auth", "admin") &&
+      !hasValidSession(request, "checkinfo_subadmin_auth", "subadmin")
+    ) {
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
   }
 
-  const publicMemberPages = new Set(["/members/login", "/members/register"]);
+  const publicMemberPages = new Set(["/members/login", "/members/register", "/members/registered"]);
 
   if (pathname.startsWith("/members") && !publicMemberPages.has(pathname)) {
     if (!hasValidSession(request, "checkinfo_member_auth", "member")) {

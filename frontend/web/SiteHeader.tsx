@@ -66,42 +66,74 @@ export function SiteHeader({ showSearch = true, activeNav, className = "" }: Sit
   }, [isMobileOpen]);
 
   const navLinks = [
-    { label: "Home", href: "/#top" },
+    { label: "Home", href: "/" },
     { label: "About Us", href: "/about" },
-    { label: "Business", href: "/new" },
-    { label: "Categories", href: "/#categories" },
-    { label: "Featured Ads", href: "/featured" },
-    { label: "Advertise", href: "/#advertise" },
-    { label: "Contact", href: "/contact" },
+    { label: "Contact Us", href: "/contact" },
   ];
 
   return (
-    <header className={`check-header ${className}`}>
-      <div className="check-header-container">
-        {/* Brand Logo */}
-        <a className="check-logo" href="/" aria-label="Checkinfo home">
-          <img src="/logo.png" alt="Checkinfo - Check Kiya Kya ?" className="check-logo-img" />
-        </a>
-
-        {/* Top Search Bar (visible on mid and large screens) */}
-        {showSearch ? (
-          <div className="check-top-search-wrap">
-            <LocationSearchForm className="check-top-search" compact />
-          </div>
-        ) : null}
-
-        {/* Primary Desktop Navigation */}
-        <nav className="check-desktop-nav" aria-label="Primary navigation">
-          {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className={activeNav === link.label ? "is-active" : ""}
-            >
-              {link.label}
+    <>
+      {/* Atlas Top Utility Bar */}
+      <div className="atlas-topbar">
+        <div className="atlas-topbar-container">
+          <div className="atlas-topbar-left">
+            <a href="tel:9718290290" className="atlas-topbar-item">
+              <span className="atlas-topbar-icon">📞</span>
+              <span>+91 9718-290-290</span>
             </a>
-          ))}
-        </nav>
+            <span className="atlas-topbar-sep">•</span>
+            <span className="atlas-topbar-item">
+              <span className="atlas-topbar-icon">📍</span>
+              <span>Connaught Place, New Delhi, India</span>
+            </span>
+          </div>
+
+          <div className="atlas-topbar-right">
+            <div className="atlas-topbar-socials" aria-label="Social links">
+              <a href="https://facebook.com/checkinfo" target="_blank" rel="noreferrer" title="Facebook">f</a>
+              <a href="https://twitter.com/checkinfo" target="_blank" rel="noreferrer" title="Twitter / X">𝕏</a>
+              <a href="https://linkedin.com/company/checkinfo" target="_blank" rel="noreferrer" title="LinkedIn">in</a>
+            </div>
+            <span className="atlas-topbar-sep">•</span>
+            <div className="atlas-language-select">
+              <span>English ˅</span>
+            </div>
+            <span className="atlas-topbar-sep">•</span>
+            <div className="atlas-topbar-auth">
+              <a href="/members/login">Business Login</a>
+              <span>/</span>
+              <a href="/admin/login">Admin</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <header className={`check-header atlas-header ${className}`}>
+        <div className="check-header-container">
+          {/* Brand Logo */}
+          <a className="check-logo" href="/" aria-label="Checkinfo home">
+            <img src="/logo.png" alt="Checkinfo - Check Kiya Kya ?" className="check-logo-img" />
+          </a>
+
+          {/* Top Search Bar (visible on mid and large screens) */}
+          {showSearch ? (
+            <div className="check-top-search-wrap">
+              <LocationSearchForm className="check-top-search" compact />
+            </div>
+          ) : null}
+
+          {/* Primary Desktop Navigation */}
+          <nav className="check-desktop-nav" aria-label="Primary navigation">
+            {navLinks.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                className={activeNav === link.label ? "is-active" : ""}
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
 
         {/* Header Action Buttons (List Business & Profile Dropdown) */}
         <div className="check-header-actions">
@@ -232,5 +264,6 @@ export function SiteHeader({ showSearch = true, activeNav, className = "" }: Sit
         </a>
       </div>
     </header>
-  );
+  </>
+);
 }

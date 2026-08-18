@@ -2,8 +2,9 @@ import {
   createResponse,
   formDataToObject,
 } from "@/backend/checkinfo";
-import { getAuthCookieName, verifySessionToken } from "@/backend/auth";
-import { getMemberId, getMemberStateAsync, handleMemberActionAsync } from "@/backend/directoryStore";
+import { getAuthCookieName, readSessionToken } from "@/backend/auth";
+import { getMemberStateAsync, handleMemberActionAsync } from "@/backend/directoryStore";
+import { assertCsrf, csrfResponse, rateLimit, rateLimitResponse } from "@/backend/security";
 import { cookies } from "next/headers";
 
 type RouteContext = {
@@ -13,17 +14,30 @@ type RouteContext = {
 async function requireMemberAuth() {
   const cookieStore = await cookies();
   const token = cookieStore.get(getAuthCookieName("member"))?.value;
-  return verifySessionToken(token, "member");
+  return readSessionToken(token, "member");
+}
+
+async function getSessionMemberId(username: string) {
+  try {
+    const { getMongoMemberByUsernameOrEmail, getMongoUserByUsernameOrEmail, isMongoConfigured } = await import("@/backend/mongodb");
+    if (isMongoConfigured()) {
+      const member = (await getMongoMemberByUsernameOrEmail(username)) || (await getMongoUserByUsernameOrEmail(username));
+      if ((member as Record<string, any>)?.profile?.id) return (member as Record<string, any>).profile.id;
+      if ((member as Record<string, any>)?._id) return String((member as Record<string, any>)._id);
+    }
+  } catch {}
+  return username.replace(/[^a-zA-Z0-9_-]/g, "") || "member";
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
-  if (!(await requireMemberAuth())) {
+  const session = await requireMemberAuth();
+  if (!session) {
     return Response.json({ ok: false, message: "Member login required" }, { status: 401 });
   }
 
   const { resource } = await params;
   const active = resource?.[0] ?? "dashboard";
-  const memberId = getMemberId(request);
+  const memberId = await getSessionMemberId(session.username);
 
   try {
     return Response.json({
@@ -45,13 +59,17 @@ export async function GET(request: Request, { params }: RouteContext) {
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
-  if (!(await requireMemberAuth())) {
+  const limited = rateLimit(request, "member:write", 90, 60_000);
+  if (!limited.ok) return rateLimitResponse(limited);
+  if (!assertCsrf(request)) return csrfResponse();
+  const session = await requireMemberAuth();
+  if (!session) {
     return Response.json({ ok: false, message: "Member login required" }, { status: 401 });
   }
 
   const { resource } = await params;
   const active = resource?.[0] ?? "profile";
-  const memberId = getMemberId(request);
+  const memberId = await getSessionMemberId(session.username);
   const contentType = request.headers.get("content-type") ?? "";
   const payload = contentType.includes("application/json")
     ? await request.json()

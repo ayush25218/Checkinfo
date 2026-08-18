@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="740" height="580" viewBox="0 0 740 580" role="img" aria-label="Checkinfo dummy business image">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="0.52" stop-color="#e2e8f0"/>
+      <stop offset="1" stop-color="#cbd5e1"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.88"/>
+      <stop offset="1" stop-color="#f1f5f9" stop-opacity="0.72"/>
+    </linearGradient>
+  </defs>
+  <rect width="740" height="580" rx="34" fill="url(#bg)"/>
+  <path d="M0 440h740v140H0z" fill="#0f172a" opacity="0.08"/>
+  <circle cx="602" cy="92" r="150" fill="#2563eb" opacity="0.08"/>
+  <circle cx="106" cy="492" r="168" fill="#0f172a" opacity="0.06"/>
+  <g opacity="0.36" stroke="#94a3b8" stroke-width="1">
+    <path d="M70 84h600M70 164h600M70 244h600M70 324h600M70 404h600M70 484h600"/>
+    <path d="M100 54v472M210 54v472M320 54v472M430 54v472M540 54v472M650 54v472"/>
+  </g>
+  <rect x="148" y="156" width="444" height="268" rx="26" fill="url(#panel)" stroke="#cbd5e1"/>
+  <rect x="188" y="198" width="184" height="22" rx="11" fill="#0f172a" opacity="0.22"/>
+  <rect x="188" y="244" width="360" height="18" rx="9" fill="#0f172a" opacity="0.13"/>
+  <rect x="188" y="282" width="300" height="18" rx="9" fill="#0f172a" opacity="0.11"/>
+  <rect x="188" y="342" width="142" height="44" rx="22" fill="#0f172a"/>
+  <text x="370" y="122" fill="#0f172a" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700" text-anchor="middle">DUMMY BUSINESS IMAGE</text>
+  <text x="370" y="474" fill="#475569" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" text-anchor="middle">Checkinfo Listing Preview</text>
+</svg>

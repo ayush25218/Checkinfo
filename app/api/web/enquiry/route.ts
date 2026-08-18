@@ -1,23 +1,27 @@
 import { createResponse, formDataToObject } from "@/backend/checkinfo";
 import { addEnquiryToMemberAsync } from "@/backend/directoryStore";
 import { saveContactEnquiry } from "@/backend/mongodb";
+import { assertCsrf, cleanText, csrfResponse, isEmail, isPhone, rateLimit, rateLimitResponse } from "@/backend/security";
 
 export async function POST(request: Request) {
   try {
+    const limited = rateLimit(request, "web:enquiry", 20, 60_000);
+    if (!limited.ok) return rateLimitResponse(limited);
+    if (!assertCsrf(request)) return csrfResponse();
     const contentType = request.headers.get("content-type") ?? "";
     const payload = contentType.includes("application/json")
       ? await request.json()
       : formDataToObject(await request.formData());
 
-    const ownerId = String(payload.ownerId || payload.owner || "").trim();
-    const name = String(payload.name || payload.visitorName || "Website Visitor").trim();
-    const email = String(payload.email || "").trim();
-    const contact = String(payload.phone || payload.contact || payload.mobile || "").trim();
-    const message = String(payload.message || payload.details || "Business enquiry from website").trim();
-    const businessName = String(payload.businessName || payload.listing || "").trim();
+    const ownerId = cleanText(payload.ownerId || payload.owner || "", 100);
+    const name = cleanText(payload.name || payload.visitorName || "Website Visitor", 120);
+    const email = cleanText(payload.email || "", 160);
+    const contact = cleanText(payload.phone || payload.contact || payload.mobile || "", 20);
+    const message = cleanText(payload.message || payload.details || "Business enquiry from website", 900);
+    const businessName = cleanText(payload.businessName || payload.listing || "", 140);
     const subject = businessName ? `Enquiry for: ${businessName}` : "Business Listing Enquiry";
 
-    if (!name && !email && !contact) {
+    if (!name || (!isEmail(email) && !isPhone(contact))) {
       return Response.json(
         createResponse("Please provide your name and contact details.", { ok: false }),
         { status: 400 }
@@ -59,4 +63,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
