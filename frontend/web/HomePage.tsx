@@ -220,8 +220,8 @@ export async function HomePage() {
       <SiteFooter />
 
       <div className="check-floating-actions">
-        <a href="/members/add_listing">Free Listing</a>
-        <a href="#contact">Customer Care</a>
+        <a href="/members/register">Register Your Business</a>
+        <a href="/contact">Get Support</a>
       </div>
     </main>
   );

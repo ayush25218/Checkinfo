@@ -109,6 +109,24 @@ export function AtlasHeroSlider() {
         <h1 className="atlas-hero-title">{activeSlide.title}</h1>
         <p className="atlas-hero-subtitle">{activeSlide.subtitle}</p>
 
+        {/* New CTA Buttons with Professional Microcopy */}
+        <div className="atlas-hero-ctas" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1.5rem', marginBottom: '2rem' }}>
+          <button 
+            onClick={() => document.querySelector('.atlas-search-card')?.scrollIntoView({ behavior: 'smooth' })}
+            className="atlas-btn-primary" 
+            style={{ padding: '0.75rem 1.5rem', background: 'var(--brand)', color: 'white', borderRadius: '6px', fontWeight: 'bold', border: 'none', cursor: 'pointer', transition: 'all 0.3s' }}
+          >
+            Explore Businesses
+          </button>
+          <a 
+            href="/members/register" 
+            className="atlas-btn-secondary" 
+            style={{ padding: '0.75rem 1.5rem', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', fontWeight: 'bold', transition: 'all 0.3s' }}
+          >
+            Register Your Business
+          </a>
+        </div>
+
         {/* Interactive Pagination Indicators (- - • - -) */}
         <div className="atlas-hero-dots" role="tablist" aria-label="Hero slider pagination">
           {slides.map((slide, idx) => (
