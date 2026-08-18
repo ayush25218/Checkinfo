@@ -617,7 +617,10 @@ async function deleteAdminBusinesses(ids: string[]) {
   if (!ids.length) return;
   const members = await listMongoMembers({ limit: 5000 });
   await Promise.all(members.map(async (account) => {
-    const nextListings = account.listings.filter((listing) => !ids.includes(listing.id));
+    const nextListings = account.listings.filter((listing) => {
+      const bId = `${account.profile.id}::${listing.id}`;
+      return !ids.includes(listing.id) && !ids.includes(bId);
+    });
     if (nextListings.length === account.listings.length) return;
     account.listings = nextListings;
     await saveMongoMember(account);
