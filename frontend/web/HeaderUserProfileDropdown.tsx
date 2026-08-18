@@ -50,24 +50,46 @@ export function HeaderUserProfileDropdown() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const cookies = document.cookie || "";
-    // ✅ FIX: Use regex match to ensure cookie has a non-empty value (not just the key presence)
-    const memberIdMatch = cookies.match(/checkinfo_member_id=([^;]+)/);
-    const memberAuthMatch = cookies.match(/checkinfo_member_auth=([^;]+)/);
-    const hasMemberCookie = !!(memberIdMatch?.[1]?.trim() || memberAuthMatch?.[1]?.trim());
+    let mounted = true;
 
-    if (hasMemberCookie) {
-      setMode("member");
-      const memberName = getCookie("checkinfo_member_name") || window.localStorage.getItem("checkinfo_member_name") || "Business Member";
-      setDisplayName(memberName);
-    } else {
-      // Cookies are absent -> Reset header display mode without clearing business listings
+    async function checkAuth() {
       try {
-        window.localStorage.removeItem("checkinfo_member_name");
-      } catch {}
-      setMode("guest");
-      setDisplayName("");
+        const res = await fetch("/api/auth/status", { cache: "no-store" });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        
+        if (mounted) {
+          if (data.loggedIn) {
+            setMode("member");
+            setDisplayName(data.name || getCookie("checkinfo_member_name") || window.localStorage.getItem("checkinfo_member_name") || "Business Member");
+          } else {
+            // Server says NOT logged in. Clear any stale client-side cookies!
+            document.cookie = "checkinfo_member_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=lax";
+            document.cookie = "checkinfo_member_name=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=lax";
+            try { window.localStorage.removeItem("checkinfo_member_name"); } catch {}
+            setMode("guest");
+            setDisplayName("");
+          }
+        }
+      } catch {
+        // Fallback to cookie check if API fails
+        if (mounted) {
+          const cookies = document.cookie || "";
+          const memberIdMatch = cookies.match(/checkinfo_member_id=([^;]+)/);
+          if (memberIdMatch?.[1]?.trim()) {
+            setMode("member");
+            setDisplayName(getCookie("checkinfo_member_name") || "Business Member");
+          } else {
+            setMode("guest");
+            setDisplayName("");
+          }
+        }
+      }
     }
+
+    checkAuth();
+
+    return () => { mounted = false; };
   }, []);
 
   function handlePerformLogout(role: "member" | "user" | "admin") {

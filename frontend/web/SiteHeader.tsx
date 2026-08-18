@@ -13,9 +13,18 @@ type SiteHeaderProps = {
 function useIsMemberLoggedIn() {
   const [loggedIn, setLoggedIn] = useState(false);
   useEffect(() => {
-    const cookies = document.cookie || "";
-    const mid = cookies.match(/checkinfo_member_id=([^;]+)/)?.[1];
-    setLoggedIn(!!(mid?.trim() && mid.trim().length > 2));
+    fetch("/api/auth/status", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data.loggedIn === "boolean") {
+          setLoggedIn(data.loggedIn);
+        }
+      })
+      .catch(() => {
+        const cookies = document.cookie || "";
+        const mid = cookies.match(/checkinfo_member_id=([^;]+)/)?.[1];
+        setLoggedIn(!!(mid?.trim() && mid.trim().length > 2));
+      });
   }, []);
   return loggedIn;
 }
